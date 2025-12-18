@@ -1,0 +1,30 @@
+# Context Coach Module
+# BMAD Module for Prompt Journaling
+
+name: context-coach
+version: 0.1.0
+description: Captures and stores prompts for team learning and improvement
+author: IdeaJetLab Team
+
+# Module type
+type: utility
+
+# Dependencies
+requires:
+  bmad_version: ">=6.0.0"
+
+# Installation paths
+install:
+  module_path: ".bmad/modules/context-coach"
+  config_path: ".bmad/context-coach"
+
+# Files included
+files:
+  - journal-writer.md
+  - config.template.yaml
+  - README.md
+
+# Post-install actions
+post_install:
+  - create_directory: ".bmad/context-coach/journal"
+  - copy_config: "config.template.yaml -> .bmad/context-coach/config.yaml"

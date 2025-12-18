@@ -1,0 +1,21 @@
+# Context Coach Configuration
+# Copy this to .bmad/context-coach/config.yaml
+
+# Enable/disable prompt journaling
+enabled: true
+
+# Your identifier (for team tracking)
+# Change this to your name or username
+user_id: "your-name-here"
+
+# Journal storage location (relative to project root)
+journal_path: ".bmad/context-coach/journal"
+
+# Optional: Include response capture (Phase 2)
+# capture_responses: false
+
+# Optional: Exclude certain patterns from logging
+# exclude_patterns:
+#   - "password"
+#   - "secret"
+#   - "token"
