@@ -12,8 +12,8 @@ generated: 2025-12-19
 existing_artifacts:
   research: "_bmad-output/research/approach-evaluation.md"
   specs: "_bmad-output/specs/mvp-specification.md"
-  brainstorming: "docs/brainstorming/2025-12-18-initial-vision.md"
-  source_code: "src/"
+  brainstorming: "_bmad-output/brainstorming/2025-12-18-initial-vision.md"
+  source_code: "_bmad-output/user-uploads/src_old/"
 
 # Workflow Progress
 phases:
@@ -24,7 +24,7 @@ phases:
     workflows:
       - id: brainstorming
         status: completed
-        output: "docs/brainstorming/2025-12-18-initial-vision.md"
+        output: "_bmad-output/brainstorming/2025-12-18-initial-vision.md"
       - id: research
         status: completed
         output: "_bmad-output/research/approach-evaluation.md"

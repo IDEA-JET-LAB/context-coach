@@ -13,8 +13,8 @@ project_name: 'contextor'
 user_name: 'Edgars'
 date: '2025-12-20'
 visualPrototypes:
-  - 'docs/user-uploads/contextor-marketing-page.html'
-  - 'docs/user-uploads/contextor-web-app-ui.html'
+  - '_bmad-output/user-uploads/contextor-marketing-page.html'
+  - '_bmad-output/user-uploads/contextor-web-app-ui.html'
 ---
 
 # UX Design Specification contextor
@@ -730,8 +730,8 @@ flowchart TD
 
 | Prototype | Contents | Path |
 |-----------|----------|------|
-| **Marketing Page** | Landing page, Hero, Features, Login | `docs/user-uploads/contextor-marketing-page.html` |
-| **Web App UI** | Dashboard, Feed, Analytics, Team, Projects, Detail views | `docs/user-uploads/contextor-web-app-ui.html` |
+| **Marketing Page** | Landing page, Hero, Features, Login | `_bmad-output/user-uploads/contextor-marketing-page.html` |
+| **Web App UI** | Dashboard, Feed, Analytics, Team, Projects, Detail views | `_bmad-output/user-uploads/contextor-web-app-ui.html` |
 
 **Note:** The `_bmad-output/ux-visual-preview.html` file is a color/typography reference only. The above prototypes are the actual UI designs to implement.
 
@@ -904,8 +904,8 @@ flowchart TD
 | Artifact | Location | Purpose |
 |----------|----------|---------|
 | UX Specification | `_bmad-output/ux-design-specification.md` | Requirements, flows, patterns |
-| **Marketing Page Prototype** | `docs/user-uploads/contextor-marketing-page.html` | **Visual source of truth** for landing/login |
-| **Web App UI Prototype** | `docs/user-uploads/contextor-web-app-ui.html` | **Visual source of truth** for dashboard |
+| **Marketing Page Prototype** | `_bmad-output/user-uploads/contextor-marketing-page.html` | **Visual source of truth** for landing/login |
+| **Web App UI Prototype** | `_bmad-output/user-uploads/contextor-web-app-ui.html` | **Visual source of truth** for dashboard |
 | Color/Typography Preview | `_bmad-output/ux-visual-preview.html` | Reference only (not for implementation) |
 | Aura Prompt | `_bmad-output/aura-prompt.md` | AI tool prompt used to generate prototypes |
 

@@ -12,13 +12,16 @@
 # Fix locale warnings
 export LC_ALL=C
 
+# Suppress ALL stderr - Claude Code treats any stderr as hook error
+exec 2>/dev/null
+
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 # Configuration
-CONFIG_FILE="$PROJECT_ROOT/.bmad/contextor/config.yaml"
-JOURNAL_DIR="$PROJECT_ROOT/.bmad/contextor/journal"
+CONFIG_FILE="$PROJECT_ROOT/.bmad/context-coach/config.yaml"
+JOURNAL_DIR="$PROJECT_ROOT/.bmad/context-coach/journal"
 
 # Check if Contextor is installed and enabled
 if [[ ! -f "$CONFIG_FILE" ]]; then
@@ -93,7 +96,45 @@ if [[ -z "$PROMPT_TEXT" ]]; then
     exit 0
 fi
 
-# SECURITY: Redact secrets BEFORE storing
+# SECURITY: Redact secrets and sensitive data from prompts
+# This runs BEFORE storage to prevent secrets from being saved
+redact_secrets() {
+    local text="$1"
+
+    # OpenAI/Anthropic API keys: sk-... or sk-proj-...
+    text=$(echo "$text" | sed -E 's/sk-[a-zA-Z0-9_-]{20,}/[REDACTED:api_key]/g')
+
+    # AWS Access Keys: AKIA...
+    text=$(echo "$text" | sed -E 's/AKIA[0-9A-Z]{16}/[REDACTED:aws_key]/g')
+
+    # AWS Secret Keys (40 char base64-ish after = or :)
+    text=$(echo "$text" | sed -E 's/(aws_secret_access_key|secret_key)[=:][[:space:]]*[A-Za-z0-9\/+=]{40}/\1=[REDACTED:aws_secret]/gi')
+
+    # Generic passwords in assignments
+    text=$(echo "$text" | sed -E 's/(password|passwd|pwd|secret|token|api_key|apikey|auth_token)[=:][[:space:]]*[^[:space:]"'\'']{8,}/\1=[REDACTED:secret]/gi')
+
+    # Private keys (BEGIN ... PRIVATE KEY)
+    text=$(echo "$text" | sed -E 's/-----BEGIN [A-Z ]+ PRIVATE KEY-----[^-]+-----END [A-Z ]+ PRIVATE KEY-----/[REDACTED:private_key]/g')
+
+    # Connection strings with passwords: protocol://user:pass@host
+    text=$(echo "$text" | sed -E 's/([a-z]+:\/\/[^:]+:)[^@]+(@)/\1[REDACTED]\2/g')
+
+    # JWT tokens (three base64 segments separated by dots)
+    text=$(echo "$text" | sed -E 's/eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/[REDACTED:jwt_token]/g')
+
+    # GitHub tokens: ghp_, gho_, ghu_, ghs_, ghr_
+    text=$(echo "$text" | sed -E 's/gh[pousr]_[a-zA-Z0-9]{36,}/[REDACTED:github_token]/g')
+
+    # Supabase keys
+    text=$(echo "$text" | sed -E 's/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/[REDACTED:supabase_key]/g')
+
+    # Generic long hex strings (likely secrets) - 32+ chars
+    text=$(echo "$text" | sed -E 's/[0-9a-f]{32,}/[REDACTED:hex_secret]/g')
+
+    echo "$text"
+}
+
+# Redact secrets BEFORE storing
 PROMPT_TEXT=$(redact_secrets "$PROMPT_TEXT")
 
 # Create journal directory if needed
@@ -107,7 +148,7 @@ generate_deterministic_id() {
     # Use first 200 chars of prompt + minute timestamp for hash
     local hash_input="${timestamp_minute}:${prompt:0:200}"
     # Generate short hash (first 12 chars of md5)
-    local hash=$(echo -n "$hash_input" | md5 2>/dev/null || echo -n "$hash_input" | md5sum | cut -d' ' -f1)
+    local hash=$(echo -n "$hash_input" | /sbin/md5 2>/dev/null || echo -n "$hash_input" | md5sum 2>/dev/null | cut -d' ' -f1)
     echo "cc-${hash:0:12}"
 }
 
@@ -155,44 +196,6 @@ extract_file_references() {
         json+="]"
         echo "$json"
     fi
-}
-
-# SECURITY: Redact secrets and sensitive data from prompts
-# This runs BEFORE storage to prevent secrets from being saved
-redact_secrets() {
-    local text="$1"
-
-    # OpenAI/Anthropic API keys: sk-... or sk-proj-...
-    text=$(echo "$text" | sed -E 's/sk-[a-zA-Z0-9_-]{20,}/[REDACTED:api_key]/g')
-
-    # AWS Access Keys: AKIA...
-    text=$(echo "$text" | sed -E 's/AKIA[0-9A-Z]{16}/[REDACTED:aws_key]/g')
-
-    # AWS Secret Keys (40 char base64-ish after = or :)
-    text=$(echo "$text" | sed -E 's/(aws_secret_access_key|secret_key)[=:][[:space:]]*[A-Za-z0-9\/+=]{40}/\1=[REDACTED:aws_secret]/gi')
-
-    # Generic passwords in assignments
-    text=$(echo "$text" | sed -E 's/(password|passwd|pwd|secret|token|api_key|apikey|auth_token)[=:][[:space:]]*[^[:space:]"'\'']{8,}/\1=[REDACTED:secret]/gi')
-
-    # Private keys (BEGIN ... PRIVATE KEY)
-    text=$(echo "$text" | sed -E 's/-----BEGIN [A-Z ]+ PRIVATE KEY-----[^-]+-----END [A-Z ]+ PRIVATE KEY-----/[REDACTED:private_key]/g')
-
-    # Connection strings with passwords: protocol://user:pass@host
-    text=$(echo "$text" | sed -E 's/([a-z]+:\/\/[^:]+:)[^@]+(@)/\1[REDACTED]\2/g')
-
-    # JWT tokens (three base64 segments separated by dots)
-    text=$(echo "$text" | sed -E 's/eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/[REDACTED:jwt_token]/g')
-
-    # GitHub tokens: ghp_, gho_, ghu_, ghs_, ghr_
-    text=$(echo "$text" | sed -E 's/gh[pousr]_[a-zA-Z0-9]{36,}/[REDACTED:github_token]/g')
-
-    # Supabase keys
-    text=$(echo "$text" | sed -E 's/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/[REDACTED:supabase_key]/g')
-
-    # Generic long hex strings (likely secrets) - 32+ chars
-    text=$(echo "$text" | sed -E 's/[0-9a-f]{32,}/[REDACTED:hex_secret]/g')
-
-    echo "$text"
 }
 
 # Check if prompt mentions images

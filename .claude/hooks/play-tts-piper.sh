@@ -38,6 +38,11 @@
 # Fix locale warnings
 export LC_ALL=C
 
+# Fix Homebrew library path for macOS (espeak-ng dependency)
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  export DYLD_LIBRARY_PATH="/opt/homebrew/lib:${DYLD_LIBRARY_PATH:-}"
+fi
+
 TEXT="$1"
 VOICE_OVERRIDE="$2"  # Optional: voice model name
 

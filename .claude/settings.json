@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/contextor-capture.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/context-coach-capture.sh",
             "timeout": 5000
           }
         ]

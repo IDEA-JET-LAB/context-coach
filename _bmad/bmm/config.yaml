@@ -9,6 +9,9 @@ planning_artifacts: "{project-root}/_bmad-output/project-planning-artifacts"
 implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"
 project_knowledge: "{project-root}/docs"
 
+# Sprint/Implementation Tracking
+sprint_artifacts: "{project-root}/_bmad-output/stories"
+
 # Core Configuration Values
 user_name: Edgars
 communication_language: English

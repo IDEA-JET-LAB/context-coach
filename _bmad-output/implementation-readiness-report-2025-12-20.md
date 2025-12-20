@@ -273,7 +273,7 @@ Epics & Stories document will be created after this readiness assessment. Once c
 ### UX Document Status
 
 ✅ **Found:** `_bmad-output/ux-design-specification.md` (35 KB, complete)
-✅ **Visual Prototypes:** 2 HTML files in `docs/user-uploads/`
+✅ **Visual Prototypes:** 2 HTML files in `_bmad-output/user-uploads/`
 
 ### UX ↔ PRD Alignment
 

@@ -1,0 +1,143 @@
+# generated: 2025-12-20
+# project: contextor
+# tracking_system: file-system
+# story_location: _bmad-output/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2025-12-20
+project: contextor
+tracking_system: file-system
+story_location: _bmad-output/stories
+
+development_status:
+  # =============================================================================
+  # Epic 1: Project Foundation & Authentication
+  # Users can register, login, and access the Contextor platform securely.
+  # FRs Covered: FR1-FR6, FR51-FR54
+  # =============================================================================
+  epic-1: backlog
+  1-1-project-initialization: ready-for-dev
+  1-2-user-registration-email: ready-for-dev
+  1-3-user-login-email: ready-for-dev
+  1-4-oauth-gmail: ready-for-dev
+  1-5-password-reset: ready-for-dev
+  1-6-user-profile: ready-for-dev
+  1-7-session-security: ready-for-dev
+  epic-1-retrospective: optional
+
+  # =============================================================================
+  # Epic 2: Team & Project Management
+  # Users can create teams, invite members, set roles, and register projects.
+  # FRs Covered: FR7-FR19
+  # =============================================================================
+  epic-2: backlog
+  2-1-team-creation-and-schema: ready-for-dev
+  2-2-team-member-invitation: ready-for-dev
+  2-3-role-management-and-member-removal: ready-for-dev
+  2-4-team-settings: ready-for-dev
+  2-5-team-switching: ready-for-dev
+  2-6-project-creation: ready-for-dev
+  2-7-project-management: ready-for-dev
+  epic-2-retrospective: optional
+
+  # =============================================================================
+  # Epic 3: CLI Installation Experience
+  # Developers can install Contextor in their projects with a single command.
+  # FRs Covered: FR55-FR65, FR76
+  # =============================================================================
+  epic-3: backlog
+  3-1-cli-package-foundation: ready-for-dev
+  3-2-install-token-parsing: ready-for-dev
+  3-3-installation-state-detection: ready-for-dev
+  3-4-configuration-file-creation: ready-for-dev
+  3-5-claude-code-hook-configuration: ready-for-dev
+  3-6-connection-testing-and-success: ready-for-dev
+  3-7-cli-status-and-uninstall-commands: ready-for-dev
+  epic-3-retrospective: optional
+
+  # =============================================================================
+  # Epic 4: Prompt Capture Pipeline
+  # System captures prompts from Claude Code securely and queues for analysis.
+  # FRs Covered: FR20-FR26, FR72
+  # =============================================================================
+  epic-4: backlog
+  4-1-capture-api-endpoint: ready-for-dev
+  4-2-rate-limiting: ready-for-dev
+  4-3-input-validation: ready-for-dev
+  4-4-secret-redaction: ready-for-dev
+  4-5-prompt-storage-and-queue: ready-for-dev
+  4-6-capture-error-handling: ready-for-dev
+  epic-4-retrospective: optional
+
+  # =============================================================================
+  # Epic 5: AI Analysis Engine
+  # System analyzes every prompt with 5-dimension scoring and suggestions.
+  # FRs Covered: FR27-FR35, FR73-FR74
+  # =============================================================================
+  epic-5: backlog
+  5-1-analysis-edge-function: ready-for-dev
+  5-2-5-dimension-scoring: ready-for-dev
+  5-3-improvement-suggestions: ready-for-dev
+  5-4-analysis-storage: ready-for-dev
+  5-5-retry-logic-and-error-handling: ready-for-dev
+  5-6-analysis-configuration-management: ready-for-dev
+  epic-5-retrospective: optional
+
+  # =============================================================================
+  # Epic 6: Dashboard, Feed & Analytics
+  # Users can view prompts with scores and track improvement over time.
+  # FRs Covered: FR36-FR45, FR66-FR71
+  # =============================================================================
+  epic-6: backlog
+  6-1-dashboard-layout-and-navigation: ready-for-dev
+  6-2-prompt-feed-with-real-time-updates: ready-for-dev
+  6-3-feed-filtering-and-search: ready-for-dev
+  6-4-prompt-detail-view: ready-for-dev
+  6-5-score-display-and-team-comparison: ready-for-dev
+  6-6-personal-analytics-and-trends: ready-for-dev
+  6-7-team-analytics-team-leads: ready-for-dev
+  6-8-onboarding-checklist: ready-for-dev
+  6-9-empty-states-and-guidance: ready-for-dev
+  epic-6-retrospective: optional
+
+  # =============================================================================
+  # Epic 7: Platform Administration
+  # Super admins can manage users, teams, analysis configs, and system health.
+  # FRs Covered: FR46-FR50
+  # =============================================================================
+  epic-7: backlog
+  7-1-admin-access-control: ready-for-dev
+  7-2-admin-dashboard-overview: ready-for-dev
+  7-3-user-management: ready-for-dev
+  7-4-team-overview: ready-for-dev
+  7-5-analysis-config-editor: ready-for-dev
+  7-6-system-health-monitoring: ready-for-dev
+  epic-7-retrospective: optional

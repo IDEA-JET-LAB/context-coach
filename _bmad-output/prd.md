@@ -3,7 +3,7 @@ stepsCompleted: [1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
 status: complete
 prdScope: 'cloud-first-evolution'
 inputDocuments:
-  - 'docs/brainstorming/2025-12-18-initial-vision.md'
+  - '_bmad-output/brainstorming/2025-12-18-initial-vision.md'
   - '_bmad-output/research/approach-evaluation.md'
   - '_bmad-output/specs/mvp-specification.md'
 documentCounts:
