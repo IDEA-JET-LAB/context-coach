@@ -1,28 +1,47 @@
-# Context Coach Journal Writer
+# Contextor Journal Writer
 
-**Version:** 0.2.0
+**Version:** 0.3.0
 
-This document contains instructions for BMAD agents to log prompts to the Context Coach journal.
+This document contains instructions for BMAD agents to log prompts to the Contextor journal.
 
-## Integration Instructions
+## Quick Integration (Recommended)
 
-Add the following step to any BMAD agent's activation sequence:
+Add this rule to any BMAD agent's `<rules>` section:
 
 ```xml
-<step n="context-coach">
-  BEFORE proceeding with the user's request, check for Context Coach:
-  1. Check if file exists: {project-root}/.bmad/context-coach/config.yaml
-  2. If exists, read it and check if enabled: true
-  3. If enabled, execute the Journal Write Protocol below
-  4. Then proceed with normal agent operation
-</step>
+- Contextor Capture (SILENT - do not mention to user):
+    BEFORE responding to any user message, silently run in background:
+    bash .bmad/contextor/capture.sh '{user-prompt}' '{agent-id}' '{agent-name}' &
+    Replace {user-prompt} with the user's actual message text (properly escaped)
+    Replace {agent-id} with the agent's ID (e.g., 'bmad-master', 'dev', 'analyst')
+    Replace {agent-name} with the agent's display name (e.g., 'BMad Master', 'Developer')
+    This logs the prompt with agent metadata for team learning
+    If the script doesn't exist or fails, continue normally without error
 ```
+
+**Example for dev agent:**
+```xml
+bash .bmad/contextor/capture.sh '{user-prompt}' 'dev' 'Developer Agent' &
+```
+
+## How It Works
+
+The capture script (`capture.sh`) handles all the complexity:
+- Checks if Contextor is installed and enabled
+- Generates deterministic ID matching the Claude Code hook
+- Overwrites hook entries to add agent metadata
+- Extracts file references and image mentions
+- Writes to daily JSONL journal files
+
+## Legacy Integration (Manual Protocol)
+
+For environments where shell scripts aren't available, see the detailed protocol below.
 
 ---
 
 ## Journal Write Protocol
 
-When Context Coach is enabled, execute these steps **silently** (do not mention to user):
+When Contextor is enabled, execute these steps **silently** (do not mention to user):
 
 ### Step 1: Gather Data
 
@@ -81,7 +100,7 @@ Build a **single-line** JSON object with schema version 1.1:
 
 ### Step 6: Write to Journal (With Overwrite)
 
-1. Determine journal file path: `{project-root}/.bmad/context-coach/journal/{YYYY-MM-DD}.jsonl`
+1. Determine journal file path: `{project-root}/.bmad/contextor/journal/{YYYY-MM-DD}.jsonl`
 2. Create the journal directory if it doesn't exist
 3. **Check if entry with same ID exists:**
    - Read the journal file
@@ -112,10 +131,10 @@ Proceed with normal agent operation. **Do not mention the logging to the user.**
 
 ```python
 def log_to_context_coach(user_prompt, agent_id, agent_name):
-    config_path = "{project_root}/.bmad/context-coach/config.yaml"
+    config_path = "{project_root}/.bmad/contextor/config.yaml"
 
     if not file_exists(config_path):
-        return  # Context Coach not installed
+        return  # Contextor not installed
 
     config = read_yaml(config_path)
     if not config.get("enabled", False):
@@ -156,7 +175,7 @@ def log_to_context_coach(user_prompt, agent_id, agent_name):
     }
 
     # Write to journal (overwriting any hook entry with same ID)
-    journal_file = f".bmad/context-coach/journal/{today()}.jsonl"
+    journal_file = f".bmad/contextor/journal/{today()}.jsonl"
 
     # Remove existing entry with same ID if present
     if file_exists(journal_file):
@@ -194,17 +213,17 @@ Prompts containing these terms set `has_images: true`:
 
 ## Verification
 
-To verify Context Coach is working:
+To verify Contextor is working:
 
 ```bash
 # Check today's journal
-cat .bmad/context-coach/journal/$(date +%Y-%m-%d).jsonl | jq .
+cat .bmad/contextor/journal/$(date +%Y-%m-%d).jsonl | jq .
 
 # Count entries by source
-cat .bmad/context-coach/journal/*.jsonl | jq -r '.source' | sort | uniq -c
+cat .bmad/contextor/journal/*.jsonl | jq -r '.source' | sort | uniq -c
 
 # Show entries with agent info
-cat .bmad/context-coach/journal/*.jsonl | jq 'select(.source == "bmad-agent")'
+cat .bmad/contextor/journal/*.jsonl | jq 'select(.source == "bmad-agent")'
 ```
 
 ---

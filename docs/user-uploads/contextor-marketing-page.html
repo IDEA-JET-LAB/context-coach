@@ -1,0 +1,315 @@
+<html lang="en" class="antialiased"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contextor - Your Context Tutor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <style>
+      body {
+          font-family: 'Inter', sans-serif;
+          background-color: #0a0a0a;
+          color: #fafafa;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+    </style>
+    <link id="all-fonts-link-font-geist" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-geist">
+      .font-geist { font-family: 'Geist', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-roboto" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-roboto">
+      .font-roboto { font-family: 'Roboto', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-montserrat" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-montserrat">
+      .font-montserrat { font-family: 'Montserrat', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-poppins" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-poppins">
+      .font-poppins { font-family: 'Poppins', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-playfair" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&amp;display=swap">
+    <style id="all-fonts-style-font-playfair">
+      .font-playfair { font-family: 'Playfair Display', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-instrument-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-instrument-serif">
+      .font-instrument-serif { font-family: 'Instrument Serif', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-merriweather" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&amp;display=swap">
+    <style id="all-fonts-style-font-merriweather">
+      .font-merriweather { font-family: 'Merriweather', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-bricolage" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-bricolage">
+      .font-bricolage { font-family: 'Bricolage Grotesque', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-jakarta" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-jakarta">
+      .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-manrope" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-manrope">
+      .font-manrope { font-family: 'Manrope', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-space-grotesk" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-space-grotesk">
+      .font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-work-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-work-sans">
+      .font-work-sans { font-family: 'Work Sans', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-pt-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&amp;display=swap">
+    <style id="all-fonts-style-font-pt-serif">
+      .font-pt-serif { font-family: 'PT Serif', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-geist-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-geist-mono">
+      .font-geist-mono { font-family: 'Geist Mono', monospace !important; }
+    </style>
+    <link id="all-fonts-link-font-space-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;display=swap">
+    <style id="all-fonts-style-font-space-mono">
+      .font-space-mono { font-family: 'Space Mono', monospace !important; }
+    </style>
+    <link id="all-fonts-link-font-quicksand" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-quicksand">
+      .font-quicksand { font-family: 'Quicksand', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-nunito" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-nunito">
+      .font-nunito { font-family: 'Nunito', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-newsreader" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&amp;display=swap">
+    <style id="all-fonts-style-font-newsreader">
+      .font-newsreader { font-family: 'Newsreader', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-google-sans-flex" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-google-sans-flex">
+      .font-google-sans-flex { font-family: 'Google Sans Flex', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-oswald" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-oswald">
+      .font-oswald { font-family: 'Oswald', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-dm-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-dm-sans">
+      .font-dm-sans { font-family: 'DM Sans', sans-serif !important; }
+    </style>
+  </head>
+  <body class="h-screen flex overflow-hidden selection:bg-[#14b8a6] selection:text-white">
+    <!-- LANDING PAGE (ID: page-landing) -->
+    <div id="page-landing" class="absolute inset-0 z-50 bg-[#0a0a0a] overflow-y-auto">
+      <!-- Nav -->
+      <nav class="sticky top-0 z-40 border-b border-[#27272a] bg-[#0a0a0a]/80 backdrop-blur-md">
+        <div class="flex h-16 max-w-7xl mr-auto ml-auto pr-6 pl-6 items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:sparkles">
+              <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594zM20 2v4m2-2h-4"></path>
+                <circle cx="4" cy="20" r="2"></circle>
+              </g>
+            </svg>
+            <span class="text-lg font-bold tracking-tight text-white">
+              Contextor
+            </span>
+          </div>
+          <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[#a1a1aa]">
+            <a href="#" class="hover:text-white transition-colors">Features</a>
+            <a href="#" class="hover:text-white transition-colors">Pricing</a>
+            <a href="#" class="hover:text-white transition-colors">Docs</a>
+          </div>
+          <div class="flex items-center gap-4">
+            <button onclick="navigateTo('page-login'); document.getElementById('page-login').style.display = 'flex'" class="hover:text-white transition-colors text-sm font-medium text-[#a1a1aa]">
+              Log In
+            </button>
+            <button onclick="navigateTo('page-login')" class="hover:bg-[#0d9488] transition-colors text-sm font-medium text-white bg-[#14b8a6] rounded-md pt-2 pr-4 pb-2 pl-4">
+              Sign Up
+            </button>
+          </div>
+        </div>
+      </nav>
+      <!-- Hero -->
+      <section class="text-center pt-24 pr-6 pb-12 pl-6">
+        <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-500">
+          Your Context Tutor
+        </h1>
+        <p class="text-lg md:text-xl text-[#a1a1aa] max-w-2xl mx-auto mb-10 leading-relaxed">
+          Help your team master AI prompting. Capture, analyze, and improve
+          every prompt with real-time feedback and scoring.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button onclick="navigateTo('page-login')" class="hover:bg-[#0d9488] transition-all transform hover:scale-105 text-base font-medium text-white bg-[#14b8a6] rounded-md pt-3 pr-8 pb-3 pl-8">
+            Get Started Free
+          </button>
+          <button class="bg-transparent border border-[#27272a] text-white px-8 py-3 rounded-md font-medium text-base hover:bg-white/5 transition-colors">
+            See Demo
+          </button>
+        </div>
+        <!-- Mockup Preview -->
+        <div class="mt-20 max-w-5xl mx-auto border border-[#27272a] rounded-xl overflow-hidden shadow-2xl shadow-[#14b8a6]/10 bg-[#141414] p-2">
+          <img src="https://placehold.co/1200x600/141414/333333?text=Contextor+Dashboard+Preview" alt="Dashboard" class="rounded-lg opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
+        </div>
+      </section>
+      <!-- Features -->
+      <section class="bg-[#0a0a0a] border-[#27272a] border-t pt-24 pb-24">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div class="p-6 rounded-2xl bg-[#141414] border border-[#27272a]">
+            <div class="w-10 h-10 rounded-lg bg-[#14b8a6]/10 flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:zap">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              Automatic Capture
+            </h3>
+            <p class="text-[#a1a1aa] text-sm leading-relaxed">
+              Seamlessly integrates with your existing AI tools to capture
+              prompts as they happen without breaking flow.
+            </p>
+          </div>
+          <div class="p-6 rounded-2xl bg-[#141414] border border-[#27272a]">
+            <div class="w-10 h-10 rounded-lg bg-[#8b5cf6]/10 flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:brain-circuit">
+                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                  <path d="M12 5a3 3 0 1 0-5.997.125a4 4 0 0 0-2.526 5.77a4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path>
+                  <path d="M9 13a4.5 4.5 0 0 0 3-4M6.003 5.125A3 3 0 0 0 6.401 6.5m-2.924 4.396a4 4 0 0 1 .585-.396M6 18a4 4 0 0 1-1.967-.516M12 13h4m-4 5h6a2 2 0 0 1 2 2v1M12 8h8m-4 0V5a2 2 0 0 1 2-2"></path>
+                  <circle cx="16" cy="13" r=".5"></circle>
+                  <circle cx="18" cy="3" r=".5"></circle>
+                  <circle cx="20" cy="21" r=".5"></circle>
+                  <circle cx="20" cy="8" r=".5"></circle>
+                </g>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              AI-Powered Analysis
+            </h3>
+            <p class="text-[#a1a1aa] text-sm leading-relaxed">
+              Instant scoring across context, clarity, and structure dimensions
+              with actionable suggestions for improvement.
+            </p>
+          </div>
+          <div class="p-6 rounded-2xl bg-[#141414] border border-[#27272a]">
+            <div class="w-10 h-10 rounded-lg bg-[#38bdf8]/10 flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:users">
+                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3.128a4 4 0 0 1 0 7.744M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                </g>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Team Insights</h3>
+            <p class="text-[#a1a1aa] text-sm leading-relaxed">
+              Track your team's velocity and prompt quality over time. Identify
+              top performers and coaching opportunities.
+            </p>
+          </div>
+        </div>
+      </section>
+      <footer class="text-sm text-[#52525b] text-center border-[#27272a] border-t pt-12 pb-12">
+        <p>© 2025 Contextor. All rights reserved.</p>
+      </footer>
+    </div>
+
+    <!-- LOGIN PAGE (ID: page-login) -->
+    <div class="hidden z-50 flex bg-[#0a0a0a] pt-6 pr-6 pb-6 pl-6 absolute top-0 right-0 bottom-0 left-0 items-center justify-center" id="page-login" style="display: none;">
+      <div class="w-full max-w-[400px] bg-[#141414] border border-[#27272a] rounded-2xl p-8 shadow-2xl">
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#14b8a6]/10 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:sparkles">
+              <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594zM20 2v4m2-2h-4"></path>
+                <circle cx="4" cy="20" r="2"></circle>
+              </g>
+            </svg>
+          </div>
+          <h2 class="text-xl font-semibold text-white tracking-tight">
+            Welcome back
+          </h2>
+          <p class="text-[#a1a1aa] text-sm mt-1">Sign in to your account</p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); navigateTo('app-layout');" class="flex flex-col gap-4">
+          <div>
+            <label class="block text-xs font-medium text-[#a1a1aa] mb-1.5">
+              Email address
+            </label>
+            <input type="email" class="w-full bg-[#0a0a0a] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#14b8a6] transition-colors" placeholder="name@company.com">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#a1a1aa] mb-1.5">
+              Password
+            </label>
+            <input type="password" class="w-full bg-[#0a0a0a] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#14b8a6] transition-colors" placeholder="••••••••">
+            <div class="text-right mt-1">
+              <a href="#" class="text-xs text-[#14b8a6] hover:text-[#0d9488]">
+                Forgot password?
+              </a>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white py-2.5 rounded-md text-sm font-medium transition-colors mt-2">
+            Sign In
+          </button>
+        </form>
+
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-[#27272a]"></div>
+          </div>
+          <div class="relative flex justify-center text-xs">
+            <span class="px-2 bg-[#141414] text-[#52525b]">
+              or continue with
+            </span>
+          </div>
+        </div>
+
+        <button onclick="navigateTo('app-layout')" class="w-full bg-transparent border border-[#27272a] hover:bg-white/5 text-white py-2.5 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:chrome">
+            <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M21.17 8H12M3.95 6.06L8.54 14m2.34 7.94L15.46 14"></path>
+            </g>
+          </svg>
+          Google
+        </button>
+
+        <p class="text-center text-xs text-[#a1a1aa] mt-8">
+          Don't have an account?
+          <a href="#" class="text-[#14b8a6] hover:underline">Sign up</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- APP LAYOUT (ID: app-layout) -->
+
+    <!-- Tooltip Element -->
+
+    <script>
+      // --- Navigation Logic ---
+      function navigateTo(pageId) {
+          // Hide all main page containers
+          document.getElementById('page-landing').style.display = 'none';
+          document.getElementById('page-login').classList.add('hidden');
+          document.getElementById('page-login').style.display = 'none';
+
+          if (pageId === 'page-login') {
+              document.getElementById('page-login').classList.remove('hidden');
+              document.getElementById('page-login').style.display = 'flex';
+          } else {
+              document.getElementById('page-landing').style.display = 'block';
+          }
+      }
+    </script>
+  
+</body></html>

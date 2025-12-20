@@ -1,0 +1,1492 @@
+<html lang="en" class="antialiased"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contextor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <style>
+      body {
+          font-family: 'Inter', sans-serif;
+          background-color: #0a0a0a;
+          color: #fafafa;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+      .sidebar-icon.active {
+          background-color: #14b8a6;
+          color: white;
+      }
+      .score-teal { color: #14b8a6; background-color: rgba(20, 184, 166, 0.1); }
+      .border-teal { border-color: #14b8a6; }
+      .bg-teal { background-color: #14b8a6; }
+
+      .score-amber { color: #f59e0b; background-color: rgba(245, 158, 11, 0.1); }
+      .border-amber { border-color: #f59e0b; }
+      .bg-amber { background-color: #f59e0b; }
+
+      .score-coral { color: #f87171; background-color: rgba(248, 113, 113, 0.1); }
+      .border-coral { border-color: #f87171; }
+      .bg-coral { background-color: #f87171; }
+
+      /* Chart Tooltip */
+      .tooltip {
+          position: absolute;
+          padding: 6px 10px;
+          font-size: 11px;
+          background: #18181b;
+          color: #fff;
+          border: 1px solid #27272a;
+          border-radius: 4px;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s;
+          z-index: 50;
+          font-weight: 500;
+      }
+    </style>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  <link id="all-fonts-link-font-geist" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-geist">
+.font-geist { font-family: 'Geist', sans-serif !important; }
+</style><link id="all-fonts-link-font-roboto" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-roboto">
+.font-roboto { font-family: 'Roboto', sans-serif !important; }
+</style><link id="all-fonts-link-font-montserrat" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-montserrat">
+.font-montserrat { font-family: 'Montserrat', sans-serif !important; }
+</style><link id="all-fonts-link-font-poppins" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-poppins">
+.font-poppins { font-family: 'Poppins', sans-serif !important; }
+</style><link id="all-fonts-link-font-playfair" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&amp;display=swap"><style id="all-fonts-style-font-playfair">
+.font-playfair { font-family: 'Playfair Display', serif !important; }
+</style><link id="all-fonts-link-font-instrument-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-instrument-serif">
+.font-instrument-serif { font-family: 'Instrument Serif', serif !important; }
+</style><link id="all-fonts-link-font-merriweather" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&amp;display=swap"><style id="all-fonts-style-font-merriweather">
+.font-merriweather { font-family: 'Merriweather', serif !important; }
+</style><link id="all-fonts-link-font-bricolage" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-bricolage">
+.font-bricolage { font-family: 'Bricolage Grotesque', sans-serif !important; }
+</style><link id="all-fonts-link-font-jakarta" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-jakarta">
+.font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+</style><link id="all-fonts-link-font-manrope" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-manrope">
+.font-manrope { font-family: 'Manrope', sans-serif !important; }
+</style><link id="all-fonts-link-font-space-grotesk" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-space-grotesk">
+.font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }
+</style><link id="all-fonts-link-font-work-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-work-sans">
+.font-work-sans { font-family: 'Work Sans', sans-serif !important; }
+</style><link id="all-fonts-link-font-pt-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&amp;display=swap"><style id="all-fonts-style-font-pt-serif">
+.font-pt-serif { font-family: 'PT Serif', serif !important; }
+</style><link id="all-fonts-link-font-geist-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-geist-mono">
+.font-geist-mono { font-family: 'Geist Mono', monospace !important; }
+</style><link id="all-fonts-link-font-space-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;display=swap"><style id="all-fonts-style-font-space-mono">
+.font-space-mono { font-family: 'Space Mono', monospace !important; }
+</style><link id="all-fonts-link-font-quicksand" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-quicksand">
+.font-quicksand { font-family: 'Quicksand', sans-serif !important; }
+</style><link id="all-fonts-link-font-nunito" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-nunito">
+.font-nunito { font-family: 'Nunito', sans-serif !important; }
+</style><link id="all-fonts-link-font-newsreader" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&amp;display=swap"><style id="all-fonts-style-font-newsreader">
+.font-newsreader { font-family: 'Newsreader', serif !important; }
+</style><link id="all-fonts-link-font-google-sans-flex" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-google-sans-flex">
+.font-google-sans-flex { font-family: 'Google Sans Flex', sans-serif !important; }
+</style><link id="all-fonts-link-font-oswald" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-oswald">
+.font-oswald { font-family: 'Oswald', sans-serif !important; }
+</style><link id="all-fonts-link-font-dm-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-dm-sans">
+.font-dm-sans { font-family: 'DM Sans', sans-serif !important; }
+</style></head>
+  <body class="h-screen flex overflow-hidden selection:bg-[#14b8a6] selection:text-white">
+    <!-- LANDING PAGE (ID: page-landing) -->
+
+    <!-- LOGIN PAGE (ID: page-login) -->
+
+    <!-- APP LAYOUT (ID: app-layout) -->
+    <div class="flex bg-[#0a0a0a] w-full h-full" style="" id="app-layout">
+      <!-- Sidebar -->
+      <aside class="flex-shrink-0 flex flex-col gap-6 z-20 bg-[#0a0a0a] w-16 border-[#27272a] border-r pt-6 pb-6 gap-x-6 gap-y-6 items-center">
+        <div class="mb-2 text-white cursor-pointer hover:opacity-80 transition-opacity" onclick="showTab('tab-feed')">
+          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:sparkles">
+            <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+              <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594zM20 2v4m2-2h-4"></path>
+              <circle cx="4" cy="20" r="2"></circle>
+            </g>
+          </svg>
+        </div>
+
+        <nav class="flex flex-col gap-4 w-full items-center">
+          <button onclick="showTab('tab-feed')" id="nav-feed" class="sidebar-icon hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg pt-2.5 pr-2.5 pb-2.5 pl-2.5">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:layout-list" class="">
+              <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+                <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+                <path d="M14 4h7m-7 5h7m-7 6h7m-7 5h7"></path>
+              </g>
+            </svg>
+          </button>
+          <button onclick="showTab('tab-analytics')" id="nav-analytics" class="sidebar-icon p-2.5 rounded-lg hover:text-white hover:bg-white/5 transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:bar-chart-2" class="" stroke-width="2" data-icon-replaced="true" style="color: rgb(255, 255, 255); width: 20px; height: 20px">
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 21v-6m7 6V3m7 18V9"></path>
+            </svg>
+          </button>
+          <button onclick="showTab('tab-team')" id="nav-team" class="sidebar-icon p-2.5 rounded-lg hover:text-white hover:bg-white/5 transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[20px] h-[20px]" aria-hidden="true" role="img" data-icon="lucide:users" data-lucide="users" data-icon-set="lucide" data-icon-replaced="true" style="width: 20px; height: 20px; color: rgb(255, 255, 255);">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" class=""></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </button>
+          <button onclick="showTab('tab-projects')" id="nav-projects" class="sidebar-icon p-2.5 rounded-lg hover:text-white hover:bg-white/5 transition-all duration-200 text-[#a1a1aa]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="">
+              <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+              <line x1="12" y1="10" x2="12" y2="16"></line>
+              <line x1="9" y1="13" x2="15" y2="13"></line>
+            </svg>
+          </button>
+          <button class="sidebar-icon p-2.5 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/5 transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:folder-kanban" class="">
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2m4-10v4m4-4v2m4-2v6" class=""></path>
+            </svg>
+          </button>
+        </nav>
+
+        <div class="mt-auto">
+          <button class="p-2.5 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/5 transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:settings">
+              <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </g>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 flex flex-col overflow-y-auto scroll-smooth bg-[#0a0a0a] h-screen relative">
+        <!-- FEED TAB -->
+        <div class="flex flex-col w-full border-[#27272a] border-b pb-20" id="tab-feed">
+          <!-- Header -->
+          <header class="flex bg-[#0a0a0a] border-[#27272a] border-b pt-6 pr-8 pb-6 pl-8 items-center justify-between">
+            <div class="flex items-center">
+              <h1 class="text-xl font-semibold text-white tracking-tight">
+                Prompt Feed
+              </h1>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-white bg-[#14b8a6]/10 text-[#14b8a6] px-2.5 py-1 rounded-full">
+                  7.2 Avg Score
+                </span>
+                <span class="text-xs font-medium text-[#14b8a6]">
+                  +14% this week
+                </span>
+              </div>
+            </div>
+            <button class="bg-[#14b8a6] hover:bg-[#0d9488] text-white pl-3 pr-4 py-2 rounded-md font-medium text-sm transition-colors flex items-center gap-2 shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]">
+              <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:plus">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7v14"></path>
+              </svg>
+              New Project
+            </button>
+          </header>
+
+          <!-- Filters -->
+          <div class="flex gap-2 flex-wrap border-[#27272a] border-b pt-4 pr-8 pb-4 pl-8 gap-x-2 gap-y-2 items-center">
+            <button class="px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white">
+              All Prompts
+            </button>
+            <button class="px-3 py-1.5 rounded-full text-xs font-medium text-[#a1a1aa] hover:text-white hover:bg-white/5 transition-colors">
+              My Prompts
+            </button>
+            
+            
+
+            <div class="h-5 w-px bg-[#27272a] mx-2"></div>
+
+            <div class="relative">
+              <button class="flex hover:border-[#3f3f46] hover:text-white transition-colors text-xs font-medium text-[#a1a1aa] bg-[#141414] border-[#27272a] border rounded-md pt-1.5 pr-3 pb-1.5 pl-3 gap-x-2 gap-y-2 items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[14px] h-[14px]" style="color: rgb(255, 255, 255); width: 14px; height: 14px">
+                  <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" class=""></path>
+                </svg>
+                <span class="">All Projects</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="relative">
+              <button class="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-[#a1a1aa] bg-[#141414] border border-[#27272a] hover:border-[#3f3f46] hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                  <line x1="16" x2="16" y1="2" y2="6"></line>
+                  <line x1="8" x2="8" y1="2" y2="6"></line>
+                  <line x1="3" x2="21" y1="10" y2="10"></line>
+                </svg>
+                <span class="">Last 7 days</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="relative">
+              <button class="flex gap-2 hover:border-[#3f3f46] hover:text-white transition-colors text-xs font-medium text-[#a1a1aa] bg-[#141414] border-[#27272a] border rounded-md pt-1.5 pr-3 pb-1.5 pl-3 gap-x-2 gap-y-2 items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m3 16 4 4 4-4"></path>
+                  <path d="M7 20V4"></path>
+                  <path d="m21 8-4-4-4 4"></path>
+                  <path d="M17 4v16"></path>
+                </svg>
+                <span class="">Sort by</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sticky Date Header -->
+          <div id="sticky-date-header" class="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-[#27272a] px-8 py-3">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#a1a1aa]">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                <line x1="16" x2="16" y1="2" y2="6"></line>
+                <line x1="8" x2="8" y1="2" y2="6"></line>
+                <line x1="3" x2="21" y1="10" y2="10"></line>
+              </svg>
+              <span id="sticky-date-text" class="text-sm font-medium text-white">December 19, 2024</span>
+            </div>
+          </div>
+
+          <!-- List Content -->
+          <div class="flex-1 pb-10" id="prompt-feed-list">
+            <!-- December 19, 2024 -->
+            <div class="date-group" data-date="December 19, 2024">
+              <div class="sticky bg-[#0a0a0a] z-[5] border-[#27272a] border-b pt-3 pr-8 pb-3 pl-8 top-0">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#a1a1aa]">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                    <line x1="16" x2="16" y1="2" y2="6"></line>
+                    <line x1="8" x2="8" y1="2" y2="6"></line>
+                    <line x1="3" x2="21" y1="10" y2="10"></line>
+                  </svg>
+                  <span class="text-sm font-medium text-white">
+                    December 19, 2024
+                  </span>
+                  <span class="text-xs text-[#52525b]">Today</span>
+                </div>
+              </div>
+
+              <!-- Row 1 (Teal - Detail Trigger) -->
+              <div onclick="showTab('tab-detail')" class="group relative w-full border-b border-[#27272a] hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#14b8a6]"></div>
+                <div class="flex gap-6 pt-5 pr-8 pb-5 pl-8 gap-x-6 gap-y-6 items-start">
+                  <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full score-teal flex items-center justify-center text-lg font-bold border border-[#14b8a6]/20">
+                      8.5
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 text-xs mb-2">
+                      <span class="text-[#52525b]">2:34 PM</span>
+                      <span class="text-[#52525b]">•</span>
+                      <span class="bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        E-commerce Platform
+                      </span>
+                      <span class="bg-[#27272a] text-[#a1a1aa] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        Claude Code
+                      </span>
+                      <span class="text-[#52525b]">•</span>
+                      <div class="flex items-center gap-1.5">
+                        <div class="w-5 h-5 rounded-full bg-[#3f3f46] flex items-center justify-center text-[10px] font-bold text-white">
+                          E
+                        </div>
+                        <span class="text-[#a1a1aa]">Edgars</span>
+                      </div>
+                    </div>
+                    <p class="leading-relaxed line-clamp-2 group-hover:text-white transition-colors text-sm font-normal text-[#d4d4d8]">
+                      I need to implement user authentication middleware for our
+                      Next.js API routes. The middleware should check for a
+                      valid JWT token in the Authorization header, validate it
+                      against our Supabase auth, and add the user object to the
+                      request context..
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 text-right self-center">
+                    <span class="text-[#14b8a6] text-xs font-semibold block">
+                      +0.8 ↑
+                    </span>
+                    <div class="mt-2 text-[#52525b] group-hover:text-white transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:more-horizontal">
+                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                          <circle cx="12" cy="12" r="1"></circle>
+                          <circle cx="19" cy="12" r="1"></circle>
+                          <circle cx="5" cy="12" r="1"></circle>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2 (Amber) -->
+              <div class="group relative w-full border-b border-[#27272a] hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#f59e0b]"></div>
+                <div class="px-8 py-5 flex items-start gap-6">
+                  <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full score-amber flex items-center justify-center text-lg font-bold border border-[#f59e0b]/20">
+                      5.2
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 text-xs mb-2">
+                      <span class="text-[#52525b]">11:42 AM</span>
+                      <span class="text-[#52525b]">•</span>
+                      <span class="bg-[#f59e0b]/10 text-[#f59e0b] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        Mobile App Backend
+                      </span>
+                      <span class="bg-[#27272a] text-[#a1a1aa] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        Claude Code
+                      </span>
+                      <span class="text-[#52525b]">•</span>
+                      <div class="flex items-center gap-1.5">
+                        <div class="w-5 h-5 rounded-full bg-[#3f3f46] flex items-center justify-center text-[10px] font-bold text-white">
+                          M
+                        </div>
+                        <span class="text-[#a1a1aa]">Martins</span>
+                      </div>
+                    </div>
+                    <p class="text-sm text-[#d4d4d8] leading-relaxed line-clamp-2 font-normal group-hover:text-white transition-colors">
+                      Fix the database connection issue that happens when too
+                      many users connect at once. I think it's a pool problem..
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 text-right self-center">
+                    <span class="text-[#14b8a6] text-xs font-semibold block">
+                      +1.2 ↑
+                    </span>
+                    <div class="mt-2 text-[#52525b] group-hover:text-white transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:more-horizontal">
+                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                          <circle cx="12" cy="12" r="1"></circle>
+                          <circle cx="19" cy="12" r="1"></circle>
+                          <circle cx="5" cy="12" r="1"></circle>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <script>
+                (function() {
+                  const feedList = document.getElementById('prompt-feed-list');
+                  const stickyHeader = document.getElementById('sticky-date-header');
+                  const stickyDateText = document.getElementById('sticky-date-text');
+
+                  if (!feedList || !stickyHeader || !stickyDateText) return;
+
+                  const dateGroups = feedList.querySelectorAll('.date-group');
+
+                  const observer = new IntersectionObserver((entries) => {
+                    let visibleGroup = null;
+
+                    dateGroups.forEach(group => {
+                      const rect = group.getBoundingClientRect();
+                      if (rect.top <= 100 && rect.bottom > 100) {
+                        visibleGroup = group;
+                      }
+                    });
+
+                    if (visibleGroup) {
+                      const date = visibleGroup.getAttribute('data-date');
+                      stickyDateText.textContent = date;
+                      stickyHeader.classList.remove('hidden');
+                    } else {
+                      stickyHeader.classList.add('hidden');
+                    }
+                  }, {
+                    root: null,
+                    threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+                  });
+
+                  dateGroups.forEach(group => observer.observe(group));
+
+                  feedList.parentElement.addEventListener('scroll', () => {
+                    let currentDate = null;
+
+                    dateGroups.forEach(group => {
+                      const rect = group.getBoundingClientRect();
+                      const mainRect = feedList.parentElement.getBoundingClientRect();
+
+                      if (rect.top <= mainRect.top + 60) {
+                        currentDate = group.getAttribute('data-date');
+                      }
+                    });
+
+                    if (currentDate) {
+                      stickyDateText.textContent = currentDate;
+                      stickyHeader.classList.remove('hidden');
+                    }
+                  });
+                })();
+              </script>
+            </div>
+            <div class="date-group" data-date="December 18, 2024">
+              <div class="sticky bg-[#0a0a0a] z-[5] border-[#27272a] border-b pt-3 pr-8 pb-3 pl-8 top-0">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#a1a1aa]">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                    <line x1="16" x2="16" y1="2" y2="6"></line>
+                    <line x1="8" x2="8" y1="2" y2="6"></line>
+                    <line x1="3" x2="21" y1="10" y2="10"></line>
+                  </svg>
+                  <span class="text-sm font-medium text-white">
+                    December 18, 2024
+                  </span>
+                  <span class="text-xs text-[#52525b]">Yesterday</span>
+                </div>
+              </div>
+
+              <!-- Row 1 - December 18 (Teal) -->
+              <div class="group relative w-full border-b border-[#27272a] hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#14b8a6]"></div>
+                <div class="flex gap-6 pt-5 pr-8 pb-5 pl-8 gap-x-6 gap-y-6 items-start">
+                  <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full score-teal flex items-center justify-center text-lg font-bold border border-[#14b8a6]/20">
+                      7.8
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 text-xs mb-2">
+                      <span class="text-[#52525b]">4:15 PM</span>
+                      <span class="text-[#52525b]">•</span>
+                      <span class="bg-[#a78bfa]/10 text-[#a78bfa] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        Internal Tools
+                      </span>
+                      <span class="bg-[#27272a] text-[#a1a1aa] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        Claude Code
+                      </span>
+                      <span class="text-[#52525b]">•</span>
+                      <div class="flex items-center gap-1.5">
+                        <div class="w-5 h-5 rounded-full bg-[#3f3f46] flex items-center justify-center text-[10px] font-bold text-white">
+                          S
+                        </div>
+                        <span class="text-[#a1a1aa]">Sofia</span>
+                      </div>
+                    </div>
+                    <p class="leading-relaxed line-clamp-2 group-hover:text-white transition-colors text-sm font-normal text-[#d4d4d8]">
+                      Create a reusable React hook for handling form validation
+                      with Zod schemas. The hook should support async
+                      validation, field-level errors, and form-level submission
+                      handling with loading states.
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 text-right self-center">
+                    <span class="text-[#14b8a6] text-xs font-semibold block">
+                      +0.5 ↑
+                    </span>
+                    <div class="mt-2 text-[#52525b] group-hover:text-white transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:more-horizontal">
+                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                          <circle cx="12" cy="12" r="1"></circle>
+                          <circle cx="19" cy="12" r="1"></circle>
+                          <circle cx="5" cy="12" r="1"></circle>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2 - December 18 (Coral) -->
+              <div class="group relative w-full border-b border-[#27272a] hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#f87171]"></div>
+                <div class="px-8 py-5 flex items-start gap-6">
+                  <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full score-coral flex items-center justify-center text-lg font-bold border border-[#f87171]/20">
+                      3.4
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3 text-xs mb-2">
+                      <span class="text-[#52525b]">10:22 AM</span>
+                      <span class="text-[#52525b]">•</span>
+                      <span class="bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        E-commerce Platform
+                      </span>
+                      <span class="bg-[#27272a] text-[#a1a1aa] px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                        Claude Code
+                      </span>
+                      <span class="text-[#52525b]">•</span>
+                      <div class="flex items-center gap-1.5">
+                        <div class="w-5 h-5 rounded-full bg-[#3f3f46] flex items-center justify-center text-[10px] font-bold text-white">
+                          M
+                        </div>
+                        <span class="text-[#a1a1aa]">Martins</span>
+                      </div>
+                    </div>
+                    <p class="text-sm text-[#d4d4d8] leading-relaxed line-clamp-2 font-normal group-hover:text-white transition-colors">
+                      Make it work better and faster please
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 text-right self-center">
+                    <span class="text-[#f87171] text-xs font-semibold block">
+                      -0.2 ↓
+                    </span>
+                    <div class="mt-2 text-[#52525b] group-hover:text-white transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:more-horizontal">
+                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                          <circle cx="12" cy="12" r="1"></circle>
+                          <circle cx="19" cy="12" r="1"></circle>
+                          <circle cx="5" cy="12" r="1"></circle>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANALYTICS TAB -->
+        <div class="flex-col min-h-screen w-full border-[#27272a] border-b pt-8 pr-8 pb-20 pl-8" id="tab-analytics">
+          <header class="flex items-center justify-between mb-8">
+            <h1 class="text-2xl font-semibold text-white tracking-tight">
+              Analytics
+            </h1>
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <select class="appearance-none focus:outline-none focus:border-[#14b8a6] cursor-pointer hover:border-[#3f3f46] transition-colors text-xs font-medium text-[#a1a1aa] bg-[#141414] border-[#27272a] border rounded-md pt-2 pr-8 pb-2 pl-3">
+                  <option class="">Whole Team</option>
+                  <option class="">Edgars</option>
+                  <option>Sofia</option>
+                  <option>Martins</option>
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#52525b] pointer-events-none">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </div>
+              <div class="relative">
+                <button class="flex items-center gap-2 bg-[#141414] border border-[#27272a] text-[#a1a1aa] text-xs font-medium rounded-md py-2 pl-3 pr-3 focus:outline-none focus:border-[#14b8a6] cursor-pointer hover:border-[#3f3f46] transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                    <line x1="16" x2="16" y1="2" y2="6"></line>
+                    <line x1="8" x2="8" y1="2" y2="6"></line>
+                    <line x1="3" x2="21" y1="10" y2="10"></line>
+                  </svg>
+                  <span>Last 7 days</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#52525b]">
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-[#141414] p-5 rounded-2xl border border-[#27272a]">
+              <p class="text-xs text-[#a1a1aa] font-medium mb-1">
+                Average Score
+              </p>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold text-white">7.2</span>
+                <span class="text-xs font-medium text-[#14b8a6] mb-1.5">
+                  +0.8 this week
+                </span>
+              </div>
+            </div>
+            <div class="bg-[#141414] p-5 rounded-2xl border border-[#27272a]">
+              <p class="text-xs text-[#a1a1aa] font-medium mb-1">
+                Total Prompts
+              </p>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold text-white">156</span>
+                <span class="text-xs font-medium text-[#52525b] mb-1.5">
+                  This month
+                </span>
+              </div>
+            </div>
+            <div class="bg-[#141414] p-5 rounded-2xl border border-[#27272a]">
+              <p class="text-xs text-[#a1a1aa] font-medium mb-1">Improvement</p>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold text-white">+23%</span>
+                <span class="text-xs font-medium text-[#14b8a6] mb-1.5">
+                  Trend
+                </span>
+              </div>
+            </div>
+            <div class="bg-[#141414] p-5 rounded-2xl border border-[#27272a]">
+              <p class="text-xs text-[#a1a1aa] font-medium mb-1">
+                Top Dimension
+              </p>
+              <div class="flex items-end gap-2">
+                <span class="text-2xl font-bold text-white tracking-tight">
+                  Clarity
+                </span>
+                <span class="text-xs font-medium text-[#14b8a6] mb-1.5">
+                  9.1 avg
+                </span>
+              </div>
+            </div>
+            <div class="bg-[#141414] p-5 rounded-2xl border border-[#27272a]">
+              <p class="text-xs text-[#a1a1aa] font-medium mb-1">
+                Avg Characters
+              </p>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold text-white">342</span>
+                <span class="text-xs font-medium text-[#52525b] mb-1.5">
+                  per prompt
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-[#141414] p-6 rounded-2xl border border-[#27272a] h-80 flex flex-col">
+              <h3 class="text-sm font-semibold text-white mb-4">Score Trend</h3>
+              <div id="trend-chart" class="flex-1 w-full"><svg width="756" height="294" class=""><g transform="translate(25,0)" fill="none" font-size="10" font-family="sans-serif" text-anchor="end" color="#27272a"><g class="tick" opacity="1" transform="translate(0,274)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g><g class="tick" opacity="1" transform="translate(0,230)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g><g class="tick" opacity="1" transform="translate(0,186.00000000000003)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g><g class="tick" opacity="1" transform="translate(0,142)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g><g class="tick" opacity="1" transform="translate(0,98.00000000000001)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g><g class="tick" opacity="1" transform="translate(0,53.99999999999999)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g><g class="tick" opacity="1" transform="translate(0,10)"><line stroke="currentColor" x2="721"></line><text fill="currentColor" x="-3" dy="0.32em"></text></g></g><defs><linearGradient id="line-gradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#14b8a6" stop-opacity="0.5"></stop><stop offset="100%" stop-color="#14b8a6" stop-opacity="0"></stop></linearGradient></defs><path fill="url(#line-gradient)" d="M25,208C65.056,197,105.111,186,145.167,186C185.222,186,225.278,194.8,265.333,194.8C305.389,194.8,345.444,133.2,385.5,133.2C425.556,133.2,465.611,150.8,505.667,150.8C545.722,150.8,585.778,130.267,625.833,120C665.889,109.733,705.944,99.467,746,89.2L746,274C705.944,274,665.889,274,625.833,274C585.778,274,545.722,274,505.667,274C465.611,274,425.556,274,385.5,274C345.444,274,305.389,274,265.333,274C225.278,274,185.222,274,145.167,274C105.111,274,65.056,274,25,274Z" class=""></path><path fill="none" stroke="#14b8a6" stroke-width="2" d="M25,208C65.056,197,105.111,186,145.167,186C185.222,186,225.278,194.8,265.333,194.8C305.389,194.8,345.444,133.2,385.5,133.2C425.556,133.2,465.611,150.8,505.667,150.8C545.722,150.8,585.778,130.267,625.833,120C665.889,109.733,705.944,99.467,746,89.2"></path><circle cx="25" cy="208" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><circle cx="145.16666666666666" cy="186.00000000000003" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><circle cx="265.3333333333333" cy="194.79999999999998" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><circle cx="385.5" cy="133.20000000000002" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><circle cx="505.66666666666663" cy="150.8" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><circle cx="625.8333333333334" cy="119.99999999999999" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><circle cx="746" cy="89.20000000000005" r="4" fill="#0a0a0a" stroke="#14b8a6" stroke-width="2"></circle><g transform="translate(0,274)" fill="none" font-size="10" font-family="sans-serif" text-anchor="middle" color="#52525b"><g class="tick" opacity="1" transform="translate(25,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 1</text></g><g class="tick" opacity="1" transform="translate(145.16666666666666,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 2</text></g><g class="tick" opacity="1" transform="translate(265.3333333333333,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 3</text></g><g class="tick" opacity="1" transform="translate(385.5,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 4</text></g><g class="tick" opacity="1" transform="translate(505.66666666666663,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 5</text></g><g class="tick" opacity="1" transform="translate(625.8333333333334,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 6</text></g><g class="tick" opacity="1" transform="translate(746,0)"><line stroke="currentColor" y2="6"></line><text fill="currentColor" y="9" dy="0.71em">Day 7</text></g></g><g transform="translate(25,0)" fill="none" font-size="10" font-family="sans-serif" text-anchor="end" color="#52525b"><g class="tick" opacity="1" transform="translate(0,274)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">4</text></g><g class="tick" opacity="1" transform="translate(0,230)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">5</text></g><g class="tick" opacity="1" transform="translate(0,186.00000000000003)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">6</text></g><g class="tick" opacity="1" transform="translate(0,142)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">7</text></g><g class="tick" opacity="1" transform="translate(0,98.00000000000001)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">8</text></g><g class="tick" opacity="1" transform="translate(0,53.99999999999999)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">9</text></g><g class="tick" opacity="1" transform="translate(0,10)"><line stroke="currentColor" x2="-6"></line><text fill="currentColor" x="-9" dy="0.32em">10</text></g></g></svg></div>
+            </div>
+            <div class="bg-[#141414] p-6 rounded-2xl border border-[#27272a] h-80 flex flex-col">
+              <h3 class="text-sm font-semibold text-white mb-4">
+                Dimension Analysis
+              </h3>
+              <div id="dimension-chart" class="flex-1 w-full"><svg width="756" height="294"><g transform="translate(70,10)"><rect class="bar" y="19.555555555555557" height="29.333333333333336" x="0" width="557.6" rx="4" fill="#14b8a6"></rect><rect class="bar" y="68.44444444444446" height="29.333333333333336" x="0" width="596.9599999999999" rx="4" fill="#14b8a6"></rect><rect class="bar" y="117.33333333333334" height="29.333333333333336" x="0" width="406.71999999999997" rx="4" fill="#f59e0b"></rect><rect class="bar" y="166.22222222222223" height="29.333333333333336" x="0" width="642.8800000000001" rx="4" fill="#14b8a6"></rect><rect class="bar" y="215.11111111111114" height="29.333333333333336" x="0" width="360.8" rx="4" fill="#f59e0b"></rect><g fill="none" font-size="10" font-family="sans-serif" text-anchor="end" color="#a1a1aa" style="font-size: 11px;"><g class="tick" opacity="1" transform="translate(0,34.22222222222223)"><line stroke="currentColor" x2="0"></line><text fill="currentColor" x="-3" dy="0.32em">Context</text></g><g class="tick" opacity="1" transform="translate(0,83.11111111111113)"><line stroke="currentColor" x2="0"></line><text fill="currentColor" x="-3" dy="0.32em">Clarity</text></g><g class="tick" opacity="1" transform="translate(0,132)"><line stroke="currentColor" x2="0"></line><text fill="currentColor" x="-3" dy="0.32em">Spec</text></g><g class="tick" opacity="1" transform="translate(0,180.88888888888889)"><line stroke="currentColor" x2="0"></line><text fill="currentColor" x="-3" dy="0.32em">Security</text></g><g class="tick" opacity="1" transform="translate(0,229.7777777777778)"><line stroke="currentColor" x2="0"></line><text fill="currentColor" x="-3" dy="0.32em">Struct</text></g></g><text x="562.6" y="34.22222222222223" dy=".35em" fill="#white" style="font-size: 10px; font-weight: bold;">8.5</text><text x="601.9599999999999" y="83.11111111111113" dy=".35em" fill="#white" style="font-size: 10px; font-weight: bold;">9.1</text><text x="411.71999999999997" y="132" dy=".35em" fill="#white" style="font-size: 10px; font-weight: bold;">6.2</text><text x="647.8800000000001" y="180.88888888888889" dy=".35em" fill="#white" style="font-size: 10px; font-weight: bold;">9.8</text><text x="365.8" y="229.7777777777778" dy=".35em" fill="#white" style="font-size: 10px; font-weight: bold;">5.5</text></g></svg></div>
+            </div>
+          </div>
+
+          <!-- Team Breakdown -->
+          <div class="bg-[#141414] border border-[#27272a] rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-[#27272a]">
+              <h3 class="text-sm font-semibold text-white">Team Performance</h3>
+            </div>
+            <table class="w-full text-left text-sm">
+              <thead class="bg-[#0a0a0a] text-[#a1a1aa] text-xs uppercase font-medium">
+                <tr class="">
+                  <th class="px-6 py-3">User</th>
+                  <th class="px-6 py-3">Prompts</th>
+                  <th class="px-6 py-3">Avg Score</th>
+                  <th class="px-6 py-3">Trend</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#27272a]">
+                <tr class="hover:bg-white/[0.02]">
+                  <td class="px-6 py-4 font-medium text-white">Edgars</td>
+                  <td class="px-6 py-4 text-[#a1a1aa]">45</td>
+                  <td class="px-6 py-4 text-white">8.2</td>
+                  <td class="px-6 py-4 text-[#14b8a6]">+1.2</td>
+                </tr>
+                <tr class="hover:bg-white/[0.02]">
+                  <td class="px-6 py-4 font-medium text-white">Sofia</td>
+                  <td class="px-6 py-4 text-[#a1a1aa]">73</td>
+                  <td class="px-6 py-4 text-white">7.8</td>
+                  <td class="px-6 py-4 text-[#14b8a6]">+0.3</td>
+                </tr>
+                <tr class="hover:bg-white/[0.02]">
+                  <td class="px-6 py-4 font-medium text-white">Martins</td>
+                  <td class="px-6 py-4 text-[#a1a1aa]">38</td>
+                  <td class="px-6 py-4 text-white">5.4</td>
+                  <td class="px-6 py-4 text-[#14b8a6]">+2.1</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TEAM TAB -->
+        <div class="flex-col min-h-screen w-full pt-8 pr-8 pb-20 pl-8" style="position: relative; display: flex; margin-top: 80px" id="tab-team">
+          <header class="flex mb-8 items-center justify-between">
+            <h1 class="text-2xl font-semibold text-white tracking-tight">Teams &amp; Users</h1>
+            <div class="flex items-center gap-3">
+              <button class="hover:bg-[#3f3f46] transition-colors flex gap-2 text-sm font-medium text-white bg-[#27272a] border-[#3f3f46] border rounded-md pt-2 pr-4 pb-2 pl-4 gap-x-2 gap-y-2 items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" x2="19" y1="8" y2="14"></line>
+                  <line x1="22" x2="16" y1="11" y2="11"></line>
+                </svg>
+                Create Team
+              </button>
+              <button class="bg-[#14b8a6] hover:bg-[#0d9488] text-white px-4 py-2 rounded-md font-medium text-sm transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:plus">
+                  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7v14"></path>
+                </svg>
+                Invite Member
+              </button>
+            </div>
+          </header>
+          <div class="bg-[#141414] border border-[#27272a] rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-start mb-6">
+              <div class="">
+                <h2 class="text-lg font-bold text-white">Acme Development</h2>
+                <p class="text-sm text-[#a1a1aa] mt-1">
+                  3 active members • Created Dec 2024
+                </p>
+              </div>
+              <span class="bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-1 rounded text-xs font-medium">
+                Pro Plan
+              </span>
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#0a0a0a] border border-[#27272a]">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-full bg-[#27272a] flex items-center justify-center text-white font-bold">
+                    E
+                  </div>
+                  <div class="">
+                    <p class="text-sm font-medium text-white">Edgars (You)</p>
+                    <p class="text-xs text-[#a1a1aa]">edgars@acme.dev</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="bg-[#27272a] text-[#a1a1aa] px-2 py-1 rounded text-xs font-medium">
+                    Admin
+                  </span>
+                  <button class="text-[#52525b] hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:more-vertical">
+                      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                      </g>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#0a0a0a] border border-[#27272a]">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-full bg-[#27272a] flex items-center justify-center text-white font-bold">
+                    S
+                  </div>
+                  <div class="">
+                    <p class="text-sm font-medium text-white">Sofia</p>
+                    <p class="text-xs text-[#a1a1aa]">sofia@acme.dev</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="bg-[#27272a] text-[#a1a1aa] px-2 py-1 rounded text-xs font-medium">
+                    Member
+                  </span>
+                  <button class="text-[#52525b] hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:more-vertical">
+                      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                      </g>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex-col min-h-screen w-full pt-8 pr-8 pb-20 pl-8" style="position: relative; display: flex; margin-top: 80px" id="tab-projects">
+          <header class="flex mb-8 items-center justify-between">
+            <h1 class="text-2xl font-semibold text-white tracking-tight">
+              Projects
+            </h1>
+            <div class="flex items-center gap-3">
+              <button class="bg-[#14b8a6] hover:bg-[#0d9488] text-white px-4 py-2 rounded-md font-medium text-sm transition-colors flex items-center gap-2 shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14m-7-7v14"></path>
+                </svg>
+                New Project
+              </button>
+            </div>
+          </header>
+          <div class="space-y-4">
+            <div class="bg-[#141414] border border-[#27272a] rounded-2xl overflow-hidden">
+              <div class="px-6 py-4 border-b border-[#27272a] flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#14b8a6]/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-semibold text-white">
+                      E-commerce Platform
+                    </h3>
+                    <p class="text-xs text-[#a1a1aa]">
+                      Created Dec 15, 2024 • 3 members
+                    </p>
+                  </div>
+                </div>
+                <button class="text-[#52525b] hover:text-white transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
+                  </svg>
+                </button>
+              </div>
+              <div class="px-6 py-4 space-y-4">
+                <div class="">
+                  <p class="text-xs text-[#52525b] uppercase tracking-wider font-medium mb-2">
+                    Installation Command
+                  </p>
+                  <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-lg px-4 py-3">
+                    <code class="text-sm text-[#14b8a6] font-mono flex-1">
+                      npm install contextor --project 23454
+                    </code>
+                    <button class="text-[#52525b] hover:text-white transition-colors" onclick="navigator.clipboard.writeText('npm install contextor --project 23454')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="">
+                  <p class="text-xs text-[#52525b] uppercase tracking-wider font-medium mb-3">
+                    Team Members
+                  </p>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-full px-3 py-1.5">
+                      <div class="w-6 h-6 rounded-full bg-[#27272a] flex items-center justify-center text-[10px] font-bold text-white">
+                        E
+                      </div>
+                      <span class="text-xs text-[#a1a1aa]">Edgars</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-full px-3 py-1.5">
+                      <div class="w-6 h-6 rounded-full bg-[#27272a] flex items-center justify-center text-[10px] font-bold text-white">
+                        S
+                      </div>
+                      <span class="text-xs text-[#a1a1aa]">Sofia</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-full px-3 py-1.5">
+                      <div class="w-6 h-6 rounded-full bg-[#27272a] flex items-center justify-center text-[10px] font-bold text-white">
+                        M
+                      </div>
+                      <span class="text-xs text-[#a1a1aa]">Martins</span>
+                    </div>
+                    <button class="flex items-center gap-1.5 text-[#14b8a6] hover:text-[#0d9488] text-xs font-medium transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <line x1="19" x2="19" y1="8" y2="14"></line>
+                        <line x1="22" x2="16" y1="11" y2="11"></line>
+                      </svg>
+                      Add Member
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-[#141414] border border-[#27272a] rounded-2xl overflow-hidden">
+              <div class="px-6 py-4 border-b border-[#27272a] flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#f59e0b]/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+                    </svg>
+                  </div>
+                  <div class="">
+                    <h3 class="text-base font-semibold text-white">
+                      Mobile App Backend
+                    </h3>
+                    <p class="text-xs text-[#a1a1aa]">
+                      Created Dec 10, 2024 • 2 members
+                    </p>
+                  </div>
+                </div>
+                <button class="text-[#52525b] hover:text-white transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
+                  </svg>
+                </button>
+              </div>
+              <div class="px-6 py-4 space-y-4">
+                <div class="">
+                  <p class="text-xs text-[#52525b] uppercase tracking-wider font-medium mb-2">
+                    Installation Command
+                  </p>
+                  <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-lg px-4 py-3">
+                    <code class="text-sm text-[#14b8a6] font-mono flex-1">
+                      npm install contextor --project 78921
+                    </code>
+                    <button class="text-[#52525b] hover:text-white transition-colors" onclick="navigator.clipboard.writeText('npm install contextor --project 78921')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="">
+                  <p class="text-xs text-[#52525b] uppercase tracking-wider font-medium mb-3">
+                    Team Members
+                  </p>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-full px-3 py-1.5">
+                      <div class="w-6 h-6 rounded-full bg-[#27272a] flex items-center justify-center text-[10px] font-bold text-white">
+                        E
+                      </div>
+                      <span class="text-xs text-[#a1a1aa]">Edgars</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-full px-3 py-1.5">
+                      <div class="w-6 h-6 rounded-full bg-[#27272a] flex items-center justify-center text-[10px] font-bold text-white">
+                        M
+                      </div>
+                      <span class="text-xs text-[#a1a1aa]">Martins</span>
+                    </div>
+                    <button class="flex items-center gap-1.5 text-[#14b8a6] hover:text-[#0d9488] text-xs font-medium transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <line x1="19" x2="19" y1="8" y2="14"></line>
+                        <line x1="22" x2="16" y1="11" y2="11"></line>
+                      </svg>
+                      Add Member
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-[#141414] border border-[#27272a] rounded-2xl overflow-hidden">
+              <div class="px-6 py-4 border-b border-[#27272a] flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#a78bfa]/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-semibold text-white">
+                      Internal Tools
+                    </h3>
+                    <p class="text-xs text-[#a1a1aa]">
+                      Created Dec 5, 2024 • 1 member
+                    </p>
+                  </div>
+                </div>
+                <button class="text-[#52525b] hover:text-white transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
+                  </svg>
+                </button>
+              </div>
+              <div class="px-6 py-4 space-y-4">
+                <div class="">
+                  <p class="text-xs text-[#52525b] uppercase tracking-wider font-medium mb-2">
+                    Installation Command
+                  </p>
+                  <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-lg px-4 py-3">
+                    <code class="text-sm text-[#14b8a6] font-mono flex-1">
+                      npm install contextor --project 45632
+                    </code>
+                    <button class="text-[#52525b] hover:text-white transition-colors" onclick="navigator.clipboard.writeText('npm install contextor --project 45632')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="">
+                  <p class="text-xs text-[#52525b] uppercase tracking-wider font-medium mb-3">
+                    Team Members
+                  </p>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 bg-[#0a0a0a] border border-[#27272a] rounded-full px-3 py-1.5">
+                      <div class="w-6 h-6 rounded-full bg-[#27272a] flex items-center justify-center text-[10px] font-bold text-white">
+                        S
+                      </div>
+                      <span class="text-xs text-[#a1a1aa]">Sofia</span>
+                    </div>
+                    <button class="flex items-center gap-1.5 text-[#14b8a6] hover:text-[#0d9488] text-xs font-medium transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <line x1="19" x2="19" y1="8" y2="14"></line>
+                        <line x1="22" x2="16" y1="11" y2="11"></line>
+                      </svg>
+                      Add Member
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAIL VIEW (Overlay/Separate Page simulation) -->
+        <div class="flex flex-col min-h-screen w-full border-[#27272a] border-b pb-20" id="tab-detail">
+          <header class="flex items-center justify-between px-8 py-6 border-b border-[#27272a] bg-[#0a0a0a]">
+            <div class="flex items-center gap-4">
+              <h1 class="text-xl font-semibold text-white tracking-tight">
+                Prompt Details
+              </h1>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl font-bold text-[#14b8a6]">8.5</span>
+              <span class="text-sm text-[#52525b] mt-1">/ 10</span>
+            </div>
+          </header>
+          <div class="flex flex-col lg:flex-row">
+            <!-- Left: Prompt Text -->
+            <div class="lg:w-2/3 lg:border-r border-[#27272a] pt-8 pr-8 pb-8 pl-8">
+              <div class="max-w-3xl">
+                <div class="flex items-center gap-3 mb-6">
+                  <span class="bg-[#27272a] text-white px-3 py-1 rounded-full text-xs font-medium tracking-wide">
+                    CLAUDE CODE
+                  </span>
+                  <span class="bg-[#14b8a6]/10 text-[#14b8a6] px-3 py-1 rounded-full text-xs font-medium tracking-wide">
+                    E-commerce Platform
+                  </span>
+                  <span class="text-xs text-[#a1a1aa]">
+                    Captured Dec 19, 2:34 PM by Edgars
+                  </span>
+                </div>
+
+                <!-- Suggestions moved above prompt -->
+                <div class="bg-[#141414] border border-[#27272a] rounded-xl p-5 mb-6">
+                <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:lightbulb">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 14c.2-1 .7-1.7 1.5-2.5c1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5c.7.7 1.3 1.5 1.5 2.5m0 4h6m-5 4h4"></path>
+                  </svg>
+                  Suggestions
+                </h3>
+                <ul class="space-y-3">
+                  <li class="text-xs text-[#a1a1aa] leading-relaxed flex gap-2">
+                    <span class="text-[#14b8a6] mt-0.5">•</span>
+                    <span class="">
+                      Consider breaking down the implementation steps into
+                      numbered items for better logic flow.
+                    </span>
+                  </li>
+                  <li class="text-xs text-[#a1a1aa] leading-relaxed flex gap-2">
+                    <span class="text-[#14b8a6] mt-0.5">•</span>
+                    d file reference! This helps the AI understand existing
+                      patterns significantly.
+                    
+                  </li>
+                  <li class="text-xs text-[#a1a1aa] leading-relaxed flex gap-2">
+                    <span class="text-[#f59e0b] mt-0.5">•</span>
+                    <span class="">
+                      Could specify expected error handling behavior for
+                 timeout scenarios.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-sm font-semibold text-[#52525b] uppercase tracking-wider">
+                    Prompt
+                  </h2>
+                  <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#52525b]">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="text-xs text-[#a1a1aa]">512 characters</span>
+                  </div>
+                </div>
+                <div class="bg-[#141414] border border-[#27272a] rounded-xl p-6 relative group">
+                  <button class="absolute top-4 right-4 text-[#52525b] hover:text-white opacity-0 group-hover:opacity-100 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" data-icon="lucide:copy">
+                      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2&lt;/path&gt;
+                      &lt;/g&gt;
+                    &lt;/svg&gt;
+                  &lt;/button&gt;
+                  &lt;pre class=" font-mono="" text-sm="" text-[#d4d4d8]="" whitespace-pre-wrap="" leading-relaxed"="">I need to implement user authentication middleware for our Next.js API routes. The middleware should check for a valid JWT token in the Authorization header, validate it against our Supabase auth, and add the user object to the request context.
+
+Requirements:
+- Check Authorization header exists
+- Validate JWT token format
+- Verify against Supabase auth.getUser()
+- Add user to request context
+- Return 401 for invalid/missing tokens
+
+Reference the existing /lib/auth/session.ts for patterns.
+                </path></g></svg></button></div>
+              </div>
+            </div>
+            <!-- Right: Analysis -->
+            <div class="lg:w-1/3 bg-[#0a0a0a] pt-8 pr-8 pb-8 pl-8">
+              <h2 class="text-sm font-semibold text-[#52525b] uppercase tracking-wider mb-6">
+                Analysis
+              </h2>
+
+              <!-- Dimensions -->
+              <div class="space-y-5 mb-10">
+                <!-- Context -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-[#14b8a6]"></div>
+                    <span class="text-sm font-medium text-white">Context</span>
+                  </div>
+                  <span class="text-sm font-bold text-[#14b8a6]">8.5</span>
+                </div>
+                <div class="w-full bg-[#27272a] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-[#14b8a6] h-full rounded-full" style="width: 85%"></div>
+                </div>
+
+                <!-- Clarity -->
+                <div class="flex items-center justify-between pt-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-[#14b8a6]"></div>
+                    <span class="text-sm font-medium text-white">Clarity</span>
+                  </div>
+                  <span class="text-sm font-bold text-[#14b8a6]">9.0</span>
+                </div>
+                <div class="w-full bg-[#27272a] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-[#14b8a6] h-full rounded-full" style="width: 90%"></div>
+                </div>
+
+                <!-- Specificity -->
+                <div class="flex items-center justify-between pt-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
+                    <span class="text-sm font-medium text-white">
+                      Specificity
+                    </span>
+                  </div>
+                  <span class="text-sm font-bold text-[#f59e0b]">6.2</span>
+                </div>
+                <div class="w-full bg-[#27272a] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-[#f59e0b] h-full rounded-full" style="width: 62%"></div>
+                </div>
+
+                <!-- Security -->
+                <div class="flex items-center justify-between pt-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 b8a6]"></div>
+                    <span class="text-sm font-medium text-white">Security</span>
+                  </div>
+                  <span class="text-sm font-bold text-[#14b8a6]">10.0</span>
+                </div>
+                <div class="w-full bg-[#27272a] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-[#14b8a6] h-full rounded-full" style="width: 100%"></div>
+                </div>
+
+                <!-- Structure -->
+                <div class="flex items-center justify-between pt-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
+                    <span class="text-sm font-medium text-white">
+                      Structure
+                    </span>
+                  </div>
+                  <span class="text-sm font-bold text-[#f59e0b]">5.5</span>
+                </div>
+                <div class="w-full bg-[#27272a] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-[#f59e0b] h-full rounded-full" style="width: 55%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Tooltip Element -->
+    <div id="tooltip" class="tooltip" style="opacity: 0; left: 907px; top: 330px;">Score: 8.2</div>
+
+    <script>
+      // Initialize Dashboard
+      document.addEventListener('DOMContentLoaded', () => {
+          renderCharts();
+          setupScrollSpy();
+      });
+
+      function showTab(tabId) {
+          const detailTab = document.getElementById('tab-detail');
+
+          // Handle Detail View Toggle
+          if (tabId === 'tab-detail') {
+              if(detailTab) {
+                  detailTab.classList.remove('hidden');
+                  detailTab.classList.add('flex');
+              }
+              return;
+          }
+
+          // Close Detail View if navigating elsewhere
+          if(detailTab && !detailTab.classList.contains('hidden')) {
+              detailTab.classList.add('hidden');
+              detailTab.classList.remove('flex');
+          }
+
+          // Scroll to Section
+          const target = document.getElementById(tabId);
+          if (target) {
+              target.scrollIntoView({ behavior: 'smooth' });
+          }
+      }
+
+      function setupScrollSpy() {
+          const sections = ['tab-feed', 'tab-analytics', 'tab-team'];
+          const navMap = {
+              'tab-feed': 'nav-feed',
+              'tab-analytics': 'nav-analytics',
+              'tab-team': 'nav-team'
+          };
+
+          const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                  if (entry.isIntersecting) {
+                      // Reset all icons
+                      document.querySelectorAll('.sidebar-icon').forEach(el => {
+                          el.classList.remove('active', 'text-white');
+                          el.classList.add('text-[#a1a1aa]');
+                      });
+
+                      // Activate current
+                      const navId = navMap[entry.target.id];
+                      const navBtn = document.getElementById(navId);
+                      if (navBtn) {
+                          navBtn.classList.add('active', 'text-white');
+                          navBtn.classList.remove('text-[#a1a1aa]');
+                      }
+                  }
+              });
+          }, { root: document.querySelector('main'), threshold: 0.2 });
+
+          sections.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) observer.observe(el);
+          });
+      }
+
+      // --- D3 Charts ---
+      let chartsRendered = false;
+      function renderCharts() {
+          if (chartsRendered) return;
+          chartsRendered = true;
+
+          const tooltip = d3.select("#tooltip");
+
+          // 1. Trend Line Chart
+          (function() {
+              const container = document.getElementById('trend-chart');
+              if(!container) return;
+              container.innerHTML = '';
+              const width = container.clientWidth;
+              const height = container.clientHeight;
+              const margin = {top: 10, right: 10, bottom: 20, left: 25};
+
+              const svg = d3.select("#trend-chart").append("svg")
+                  .attr("width", width)
+                  .attr("height", height);
+
+              const data = [
+                  {d: 1, v: 5.5}, {d: 2, v: 6.0}, {d: 3, v: 5.8}, {d: 4, v: 7.2},
+                  {d: 5, v: 6.8}, {d: 6, v: 7.5}, {d: 7, v: 8.2}
+              ];
+
+              const x = d3.scaleLinear().domain([1, 7]).range([margin.left, width - margin.right]);
+              const y = d3.scaleLinear().domain([4, 10]).range([height - margin.bottom, margin.top]);
+
+              // Grid lines
+              const yAxis = d3.axisLeft(y).ticks(5).tickSize(-(width - margin.left - margin.right)).tickFormat("");
+              svg.append("g")
+                  .attr("transform", `translate(${margin.left},0)`)
+                  .call(yAxis)
+                  .attr("color", "#27272a")
+                  .select(".domain").remove();
+
+              const line = d3.line()
+                  .x(d => x(d.d))
+                  .y(d => y(d.v))
+                  .curve(d3.curveMonotoneX);
+
+              // Gradient
+              const defs = svg.append("defs");
+              const gradient = defs.append("linearGradient")
+                  .attr("id", "line-gradient")
+                  .attr("x1", "0%").attr("y1", "0%")
+                  .attr("x2", "0%").attr("y2", "100%");
+              gradient.append("stop").attr("offset", "0%").attr("stop-color", "#14b8a6").attr("stop-opacity", 0.5);
+              gradient.append("stop").attr("offset", "100%").attr("stop-color", "#14b8a6").attr("stop-opacity", 0);
+
+              // Area under line
+              const area = d3.area()
+                  .x(d => x(d.d))
+                  .y0(height - margin.bottom)
+                  .y1(d => y(d.v))
+                  .curve(d3.curveMonotoneX);
+
+              svg.append("path")
+                  .datum(data)
+                  .attr("fill", "url(#line-gradient)")
+                  .attr("d", area);
+
+              // Line
+              svg.append("path")
+                  .datum(data)
+                  .attr("fill", "none")
+                  .attr("stroke", "#14b8a6")
+                  .attr("stroke-width", 2)
+                  .attr("d", line);
+
+              // Dots
+              svg.selectAll(".dot")
+                  .data(data)
+                  .enter().append("circle")
+                  .attr("cx", d => x(d.d))
+                  .attr("cy", d => y(d.v))
+                  .attr("r", 4)
+                  .attr("fill", "#0a0a0a")
+                  .attr("stroke", "#14b8a6")
+                  .attr("stroke-width", 2)
+                  .on("mouseover", function(event, d) {
+                      d3.select(this).attr("r", 6);
+                      tooltip.style("opacity", 1)
+                          .html(`Score: ${d.v}`)
+                          .style("left", (event.pageX + 10) + "px")
+                          .style("top", (event.pageY - 20) + "px");
+                  })
+                  .on("mouseout", function() {
+                      d3.select(this).attr("r", 4);
+                      tooltip.style("opacity", 0);
+                  });
+
+              // Labels
+              svg.append("g")
+                  .attr("transform", `translate(0,${height - margin.bottom})`)
+                  .call(d3.axisBottom(x).ticks(7).tickFormat(d => "Day " + d))
+                  .attr("color", "#52525b")
+                  .select(".domain").remove();
+
+               svg.append("g")
+                  .attr("transform", `translate(${margin.left},0)`)
+                  .call(d3.axisLeft(y).ticks(5))
+                  .attr("color", "#52525b")
+                  .select(".domain").remove();
+
+          })();
+
+          // 2. Horizontal Bar Chart (Dimensions)
+          (function() {
+              const container = document.getElementById('dimension-chart');
+              if (!container) return;
+              container.innerHTML = '';
+              const width = container.clientWidth;
+              const height = container.clientHeight;
+              const margin = {top: 10, right: 30, bottom: 20, left: 70};
+
+              const svg = d3.select("#dimension-chart").append("svg")
+                  .attr("width", width)
+                  .attr("height", height);
+
+              const data = [
+                  {label: "Context", val: 8.5},
+                  {label: "Clarity", val: 9.1},
+                  {label: "Spec", val: 6.2},
+                  {label: "Security", val: 9.8},
+                  {label: "Struct", val: 5.5}
+              ];
+
+              const y = d3.scaleBand()
+                  .range([0, height - margin.bottom - margin.top])
+                  .domain(data.map(d => d.label))
+                  .padding(0.4);
+
+              const x = d3.scaleLinear()
+                  .domain([0, 10])
+                  .range([0, width - margin.left - margin.right]);
+
+              const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+              // Bars
+              g.selectAll(".bar")
+                  .data(data)
+                  .enter().append("rect")
+                  .attr("class", "bar")
+                  .attr("y", d => y(d.label))
+                  .attr("height", y.bandwidth())
+                  .attr("x", 0)
+                  .attr("width", d => x(d.val))
+                  .attr("rx", 4)
+                  .attr("fill", d => d.val >= 7 ? "#14b8a6" : d.val >= 4 ? "#f59e0b" : "#f87171")
+                  .on("mouseover", function(event, d) {
+                      d3.select(this).attr("opacity", 0.8);
+                      tooltip.style("opacity", 1)
+                          .html(`${d.label}: ${d.val}`)
+                          .style("left", (event.pageX + 10) + "px")
+                          .style("top", (event.pageY - 20) + "px");
+                  })
+                  .on("mouseout", function() {
+                      d3.select(this).attr("opacity", 1);
+                      tooltip.style("opacity", 0);
+                  });
+
+              // Y Axis
+              g.append("g")
+                  .call(d3.axisLeft(y).tickSize(0))
+                  .attr("color", "#a1a1aa")
+                  .style("font-size", "11px")
+                  .select(".domain").remove();
+
+              // Values on right
+              g.selectAll(".val-label")
+                  .data(data)
+                  .enter().append("text")
+                  .attr("x", d => x(d.val) + 5)
+                  .attr("y", d => y(d.label) + y.bandwidth()/2)
+                  .attr("dy", ".35em")
+                  .text(d => d.val)
+                  .attr("fill", "#white")
+                  .style("font-size", "10px")
+                  .style("font-weight", "bold");
+
+          })();
+      }
+    </script>
+  
+</body></html>

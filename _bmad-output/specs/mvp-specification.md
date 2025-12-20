@@ -1,4 +1,4 @@
-# Context Coach MVP Specification
+# Contextor MVP Specification
 
 **Version:** 0.2.0
 **Date:** 2025-12-18
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Context Coach is a prompt journaling system for teams using AI-assisted development. It captures prompts to enable learning, reflection, and improvement of prompting skills.
+Contextor is a prompt journaling system for teams using AI-assisted development. It captures prompts to enable learning, reflection, and improvement of prompting skills.
 
 **MVP Focus:** Prompt capture and storage only.
 
@@ -31,7 +31,7 @@ Context Coach is a prompt journaling system for teams using AI-assisted developm
 
 **Behavior:**
 1. User activates BMAD agent (e.g., `/bmad:bmm:agents:dev`)
-2. Agent reads Context Coach config
+2. Agent reads Contextor config
 3. If enabled, agent appends entry to journal
 4. Agent proceeds with normal operation
 
@@ -59,7 +59,7 @@ Context Coach is a prompt journaling system for teams using AI-assisted developm
 
 **Description:** Prompts stored in append-friendly format.
 
-**Location:** `{project-root}/.bmad/context-coach/journal/`
+**Location:** `{project-root}/.bmad/contextor/journal/`
 
 **Format:** JSONL (JSON Lines) - one JSON object per line
 
@@ -67,7 +67,7 @@ Context Coach is a prompt journaling system for teams using AI-assisted developm
 
 **Example:**
 ```
-.bmad/context-coach/journal/
+.bmad/contextor/journal/
 ├── 2025-12-18.jsonl
 ├── 2025-12-19.jsonl
 └── index.json
@@ -75,16 +75,16 @@ Context Coach is a prompt journaling system for teams using AI-assisted developm
 
 ### FR-4: Configuration
 
-**Description:** User can enable/disable and configure Context Coach.
+**Description:** User can enable/disable and configure Contextor.
 
-**Location:** `.bmad/core/config.yaml` or `.bmad/context-coach/config.yaml`
+**Location:** `.bmad/core/config.yaml` or `.bmad/contextor/config.yaml`
 
 **Options:**
 ```yaml
 context_coach:
   enabled: true
   capture_responses: false  # MVP: prompts only
-  journal_path: '{project-root}/.bmad/context-coach/journal'
+  journal_path: '{project-root}/.bmad/contextor/journal'
   user_id: 'edgars'  # For team identification
 ```
 
@@ -162,22 +162,22 @@ ID = "cc-" + MD5(YYYYMMDDHHMM + ":" + prompt[0:200])[:12]
 
 **Implementation:** Markdown instructions that any LLM can follow
 
-**File:** `.bmad/modules/context-coach/journal-writer.md`
+**File:** `.bmad/modules/contextor/journal-writer.md`
 
 **Mechanism:**
 ```markdown
-## Context Coach Journal Writer
+## Contextor Journal Writer
 
 When activated, perform these steps BEFORE proceeding with user request:
 
-1. Check if `.bmad/context-coach/config.yaml` exists and `enabled: true`
+1. Check if `.bmad/contextor/config.yaml` exists and `enabled: true`
 2. If enabled:
    - Generate UUID for entry
    - Get current timestamp
    - Read user_id from config
    - Get project path and git branch
    - Construct journal entry JSON
-   - Append to `.bmad/context-coach/journal/{YYYY-MM-DD}.jsonl`
+   - Append to `.bmad/contextor/journal/{YYYY-MM-DD}.jsonl`
 3. Proceed with normal agent operation
 ```
 
@@ -185,7 +185,7 @@ When activated, perform these steps BEFORE proceeding with user request:
 
 **Type:** Shell script
 
-**File:** `.claude/hooks/context-coach-capture.sh`
+**File:** `.claude/hooks/contextor-capture.sh`
 
 **Hook Config:** `~/.claude/hooks.json`
 
@@ -194,7 +194,7 @@ When activated, perform these steps BEFORE proceeding with user request:
   "hooks": {
     "user-prompt-submit": [
       {
-        "command": ".claude/hooks/context-coach-capture.sh"
+        "command": ".claude/hooks/contextor-capture.sh"
       }
     ]
   }
@@ -211,13 +211,13 @@ When activated, perform these steps BEFORE proceeding with user request:
 
 ### Component 3: Configuration
 
-**File:** `.bmad/context-coach/config.yaml`
+**File:** `.bmad/contextor/config.yaml`
 
 ```yaml
-# Context Coach Configuration
+# Contextor Configuration
 enabled: true
 user_id: "${USER}"  # Uses system username by default
-journal_path: ".bmad/context-coach/journal"
+journal_path: ".bmad/contextor/journal"
 ```
 
 ---
@@ -228,31 +228,31 @@ journal_path: ".bmad/context-coach/journal"
 
 ```bash
 # From BMAD module repository
-cp -r context-coach/ {project}/.bmad/modules/context-coach/
+cp -r contextor/ {project}/.bmad/modules/contextor/
 ```
 
 ### Step 2: Create Config
 
 ```bash
 # Create config file
-cat > {project}/.bmad/context-coach/config.yaml << 'EOF'
+cat > {project}/.bmad/contextor/config.yaml << 'EOF'
 enabled: true
 user_id: "your-name"
-journal_path: ".bmad/context-coach/journal"
+journal_path: ".bmad/contextor/journal"
 EOF
 ```
 
 ### Step 3: Create Journal Directory
 
 ```bash
-mkdir -p {project}/.bmad/context-coach/journal
+mkdir -p {project}/.bmad/contextor/journal
 ```
 
 ### Step 4 (Optional): Install Claude Code Hook
 
 ```bash
 # Copy hook script
-cp context-coach-capture.sh {project}/.claude/hooks/
+cp contextor-capture.sh {project}/.claude/hooks/
 
 # Add to Claude Code hooks config
 # (manual step - edit ~/.claude/hooks.json)
@@ -265,21 +265,21 @@ cp context-coach-capture.sh {project}/.claude/hooks/
 ```
 .bmad/
 ├── modules/
-│   └── context-coach/
+│   └── contextor/
 │       ├── module.yaml           # Module metadata
 │       ├── journal-writer.md     # BMAD capture instructions
 │       └── README.md             # Usage documentation
-├── context-coach/
+├── contextor/
 │   ├── config.yaml               # User configuration
 │   └── journal/
 │       ├── 2025-12-18.jsonl      # Daily journal files
 │       └── index.json            # Optional: journal index
 └── core/
-    └── config.yaml               # Can reference context-coach
+    └── config.yaml               # Can reference contextor
 
 .claude/
 └── hooks/
-    └── context-coach-capture.sh  # Claude Code hook script
+    └── contextor-capture.sh  # Claude Code hook script
 ```
 
 ---
@@ -317,4 +317,4 @@ cp context-coach-capture.sh {project}/.claude/hooks/
 
 ---
 
-*Specification created for Context Coach MVP*
+*Specification created for Contextor MVP*

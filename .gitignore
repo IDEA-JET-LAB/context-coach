@@ -1,0 +1,29 @@
+# Contextor - Git Ignore
+# Protect sensitive prompt data from being committed
+
+# Journal files (contain user prompts - may have secrets)
+.bmad/contextor/journal/
+*.jsonl
+
+# Environment and credentials
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+node_modules/
+dist/
+build/
+*.log

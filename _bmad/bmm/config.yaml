@@ -3,7 +3,7 @@
 # Version: 6.0.0-alpha.19
 # Date: 2025-12-18T08:29:11.125Z
 
-project_name: context-coach
+project_name: contextor
 user_skill_level: expert
 planning_artifacts: "{project-root}/_bmad-output/project-planning-artifacts"
 implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"

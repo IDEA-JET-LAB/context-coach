@@ -1,5 +1,5 @@
-# Context Coach Configuration
-# Copy this to .bmad/context-coach/config.yaml
+# Contextor Configuration
+# Copy this to .bmad/contextor/config.yaml
 
 # Enable/disable prompt journaling
 enabled: true
@@ -9,7 +9,7 @@ enabled: true
 user_id: "your-name-here"
 
 # Journal storage location (relative to project root)
-journal_path: ".bmad/context-coach/journal"
+journal_path: ".bmad/contextor/journal"
 
 # Optional: Include response capture (Phase 2)
 # capture_responses: false

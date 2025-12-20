@@ -1,7 +1,7 @@
-# Context Coach Module
+# Contextor Module
 # BMAD Module for Prompt Journaling
 
-name: context-coach
+name: contextor
 version: 0.1.0
 description: Captures and stores prompts for team learning and improvement
 author: IdeaJetLab Team
@@ -15,8 +15,8 @@ requires:
 
 # Installation paths
 install:
-  module_path: ".bmad/modules/context-coach"
-  config_path: ".bmad/context-coach"
+  module_path: ".bmad/modules/contextor"
+  config_path: ".bmad/contextor"
 
 # Files included
 files:
@@ -26,5 +26,5 @@ files:
 
 # Post-install actions
 post_install:
-  - create_directory: ".bmad/context-coach/journal"
-  - copy_config: "config.template.yaml -> .bmad/context-coach/config.yaml"
+  - create_directory: ".bmad/contextor/journal"
+  - copy_config: "config.template.yaml -> .bmad/contextor/config.yaml"

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contextor - Visual Design Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Base Palette */
+            --background: #0a0a0a;
+            --surface: #141414;
+            --muted: #27272a;
+            --foreground: #fafafa;
+            --muted-foreground: #a1a1aa;
+
+            /* Score Colors */
+            --score-high: #14b8a6;
+            --score-high-bg: #0d9488;
+            --score-medium: #f59e0b;
+            --score-medium-bg: #d97706;
+            --score-growth: #f87171;
+            --score-growth-bg: #ef4444;
+
+            /* Accents */
+            --primary: #14b8a6;
+            --secondary: #8b5cf6;
+            --info: #38bdf8;
+
+            /* Spacing */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-6: 24px;
+            --space-8: 32px;
+            --space-12: 48px;
+
+            /* Radius */
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            line-height: 1.5;
+            padding: var(--space-8);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: var(--space-12);
+            margin-bottom: var(--space-6);
+            color: var(--muted-foreground);
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: var(--space-4);
+        }
+
+        .subtitle {
+            color: var(--muted-foreground);
+            font-size: 14px;
+            margin-bottom: var(--space-8);
+        }
+
+        /* Color Swatches */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-8);
+        }
+
+        .color-swatch {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .color-preview {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--foreground);
+        }
+
+        .color-info {
+            padding: var(--space-3);
+        }
+
+        .color-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .color-hex {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted-foreground);
+        }
+
+        /* Typography Scale */
+        .type-scale {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .type-row {
+            display: flex;
+            align-items: baseline;
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--muted);
+        }
+
+        .type-row:last-child {
+            border-bottom: none;
+        }
+
+        .type-label {
+            width: 100px;
+            font-size: 12px;
+            color: var(--muted-foreground);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .type-display { font-size: 48px; font-weight: 700; line-height: 1.1; }
+        .type-h1 { font-size: 32px; font-weight: 600; line-height: 1.2; }
+        .type-h2 { font-size: 24px; font-weight: 600; line-height: 1.3; }
+        .type-h3 { font-size: 18px; font-weight: 500; line-height: 1.4; }
+        .type-body { font-size: 14px; font-weight: 400; line-height: 1.5; }
+        .type-small { font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--muted-foreground); }
+        .type-metric { font-size: 32px; font-weight: 700; line-height: 1.0; }
+
+        /* Prompt Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-8);
+        }
+
+        .prompt-card {
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .prompt-card.high {
+            background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+        }
+
+        .prompt-card.medium {
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+        }
+
+        .prompt-card.growth {
+            background: linear-gradient(135deg, #dc2626 0%, #f87171 100%);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-4);
+        }
+
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            background: rgba(0,0,0,0.2);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-menu {
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+            color: #fff;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: auto;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: var(--space-4);
+        }
+
+        .card-score {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-1);
+        }
+
+        .card-score-max {
+            font-size: 16px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .card-trend {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .avatar-stack {
+            display: flex;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            border: 2px solid rgba(0,0,0,0.2);
+            margin-left: -8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .avatar:first-child {
+            margin-left: 0;
+        }
+
+        /* Mini Dashboard Preview */
+        .dashboard-preview {
+            background: var(--background);
+            border: 1px solid var(--muted);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: var(--space-8);
+        }
+
+        .dashboard-layout {
+            display: flex;
+            min-height: 500px;
+        }
+
+        .sidebar {
+            width: 64px;
+            background: var(--surface);
+            border-right: 1px solid var(--muted);
+            padding: var(--space-4) 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .sidebar-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted-foreground);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-icon:hover {
+            background: var(--muted);
+            color: var(--foreground);
+        }
+
+        .sidebar-icon.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: var(--space-6);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+        }
+
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .dashboard-stats {
+            display: flex;
+            gap: var(--space-6);
+            align-items: center;
+        }
+
+        .stat {
+            text-align: right;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted-foreground);
+        }
+
+        .stat-trend {
+            color: var(--score-high);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: var(--space-2);
+            margin-bottom: var(--space-6);
+        }
+
+        .filter-btn {
+            background: var(--surface);
+            border: 1px solid var(--muted);
+            color: var(--muted-foreground);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--muted);
+            color: var(--foreground);
+            border-color: var(--muted);
+        }
+
+        /* Dimension Breakdown Preview */
+        .dimension-preview {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .dimension-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-3) 0;
+        }
+
+        .dimension-label {
+            width: 160px;
+            font-size: 14px;
+        }
+
+        .dimension-bar-container {
+            flex: 1;
+            height: 8px;
+            background: var(--muted);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+
+        .dimension-bar {
+            height: 100%;
+            border-radius: var(--radius-full);
+            transition: width 0.3s ease;
+        }
+
+        .dimension-bar.high { background: var(--score-high); }
+        .dimension-bar.medium { background: var(--score-medium); }
+        .dimension-bar.growth { background: var(--score-growth); }
+
+        .dimension-score {
+            width: 40px;
+            text-align: right;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Section Divider */
+        .divider {
+            border-top: 1px solid var(--muted);
+            margin: var(--space-12) 0;
+        }
+
+        /* Icon placeholders */
+        .icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Contextor</h1>
+        <p class="subtitle">Visual Design System Preview - Sparks Dashboard Inspired</p>
+
+        <!-- Color Palette -->
+        <h2>Color Palette</h2>
+
+        <h3>Base Colors (Dark Mode)</h3>
+        <div class="color-grid">
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #0a0a0a;">Aa</div>
+                <div class="color-info">
+                    <div class="color-name">Background</div>
+                    <div class="color-hex">#0a0a0a</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #141414;">Aa</div>
+                <div class="color-info">
+                    <div class="color-name">Surface</div>
+                    <div class="color-hex">#141414</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #27272a;">Aa</div>
+                <div class="color-info">
+                    <div class="color-name">Muted</div>
+                    <div class="color-hex">#27272a</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #fafafa; color: #0a0a0a;">Aa</div>
+                <div class="color-info">
+                    <div class="color-name">Foreground</div>
+                    <div class="color-hex">#fafafa</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #a1a1aa; color: #0a0a0a;">Aa</div>
+                <div class="color-info">
+                    <div class="color-name">Muted Text</div>
+                    <div class="color-hex">#a1a1aa</div>
+                </div>
+            </div>
+        </div>
+
+        <h3>Score Colors (Growth-Oriented)</h3>
+        <div class="color-grid">
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #14b8a6;">8.5</div>
+                <div class="color-info">
+                    <div class="color-name">High (7-10)</div>
+                    <div class="color-hex">#14b8a6</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #f59e0b;">5.2</div>
+                <div class="color-info">
+                    <div class="color-name">Medium (4-6)</div>
+                    <div class="color-hex">#f59e0b</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #f87171;">2.8</div>
+                <div class="color-info">
+                    <div class="color-name">Growth (1-3)</div>
+                    <div class="color-hex">#f87171</div>
+                </div>
+            </div>
+        </div>
+
+        <h3>Accent Colors</h3>
+        <div class="color-grid">
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #14b8a6;">Primary</div>
+                <div class="color-info">
+                    <div class="color-name">Primary (Teal)</div>
+                    <div class="color-hex">#14b8a6</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #8b5cf6;">Badge</div>
+                <div class="color-info">
+                    <div class="color-name">Secondary (Violet)</div>
+                    <div class="color-hex">#8b5cf6</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-preview" style="background: #38bdf8;">Info</div>
+                <div class="color-info">
+                    <div class="color-name">Info (Sky)</div>
+                    <div class="color-hex">#38bdf8</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Typography -->
+        <h2>Typography Scale</h2>
+        <div class="type-scale">
+            <div class="type-row">
+                <span class="type-label">Display</span>
+                <span class="type-display">Contextor</span>
+            </div>
+            <div class="type-row">
+                <span class="type-label">H1 / 32px</span>
+                <span class="type-h1">Prompt Feed</span>
+            </div>
+            <div class="type-row">
+                <span class="type-label">H2 / 24px</span>
+                <span class="type-h2">Analysis Breakdown</span>
+            </div>
+            <div class="type-row">
+                <span class="type-label">H3 / 18px</span>
+                <span class="type-h3">Context Completeness</span>
+            </div>
+            <div class="type-row">
+                <span class="type-label">Body / 14px</span>
+                <span class="type-body">Your prompt could benefit from referencing the auth.ts file mentioned in your earlier context.</span>
+            </div>
+            <div class="type-row">
+                <span class="type-label">Small / 12px</span>
+                <span class="type-small">Dec 19, 2024 &bull; Claude Code &bull; High Priority</span>
+            </div>
+            <div class="type-row">
+                <span class="type-label">Metric / 32px</span>
+                <span class="type-metric" style="color: var(--score-high);">8.5</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Prompt Cards -->
+        <h2>Prompt Cards (Sparks-Inspired)</h2>
+        <div class="card-grid">
+            <div class="prompt-card high">
+                <div class="card-header">
+                    <span class="card-badge">
+                        <span>CLAUDE CODE</span>
+                    </span>
+                    <span class="card-menu">...</span>
+                </div>
+                <div class="card-title">Implement auth middleware</div>
+                <div class="card-meta">Dec 19 &bull; Excellent context</div>
+                <div class="card-footer">
+                    <div class="card-score">
+                        8.5<span class="card-score-max">/10</span>
+                        <span class="card-trend">+0.8</span>
+                    </div>
+                    <div class="avatar-stack">
+                        <div class="avatar">E</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prompt-card medium">
+                <div class="card-header">
+                    <span class="card-badge">
+                        <span>BMAD</span>
+                    </span>
+                    <span class="card-menu">...</span>
+                </div>
+                <div class="card-title">Fix database connection</div>
+                <div class="card-meta">Dec 19 &bull; Missing file refs</div>
+                <div class="card-footer">
+                    <div class="card-score">
+                        5.2<span class="card-score-max">/10</span>
+                        <span class="card-trend">-</span>
+                    </div>
+                    <div class="avatar-stack">
+                        <div class="avatar">M</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prompt-card growth">
+                <div class="card-header">
+                    <span class="card-badge">
+                        <span>CLAUDE CODE</span>
+                    </span>
+                    <span class="card-menu">...</span>
+                </div>
+                <div class="card-title">Make it work</div>
+                <div class="card-meta">Dec 19 &bull; Growth opportunity</div>
+                <div class="card-footer">
+                    <div class="card-score">
+                        2.8<span class="card-score-max">/10</span>
+                        <span class="card-trend">+1.2</span>
+                    </div>
+                    <div class="avatar-stack">
+                        <div class="avatar">M</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Dimension Breakdown -->
+        <h2>Dimension Breakdown</h2>
+        <div class="dimension-preview">
+            <div class="dimension-row">
+                <span class="dimension-label">Context Completeness</span>
+                <div class="dimension-bar-container">
+                    <div class="dimension-bar high" style="width: 85%;"></div>
+                </div>
+                <span class="dimension-score" style="color: var(--score-high);">8.5</span>
+            </div>
+            <div class="dimension-row">
+                <span class="dimension-label">Clarity of Intent</span>
+                <div class="dimension-bar-container">
+                    <div class="dimension-bar high" style="width: 90%;"></div>
+                </div>
+                <span class="dimension-score" style="color: var(--score-high);">9.0</span>
+            </div>
+            <div class="dimension-row">
+                <span class="dimension-label">Specificity</span>
+                <div class="dimension-bar-container">
+                    <div class="dimension-bar medium" style="width: 62%;"></div>
+                </div>
+                <span class="dimension-score" style="color: var(--score-medium);">6.2</span>
+            </div>
+            <div class="dimension-row">
+                <span class="dimension-label">Security Awareness</span>
+                <div class="dimension-bar-container">
+                    <div class="dimension-bar high" style="width: 100%;"></div>
+                </div>
+                <span class="dimension-score" style="color: var(--score-high);">10</span>
+            </div>
+            <div class="dimension-row">
+                <span class="dimension-label">Structure</span>
+                <div class="dimension-bar-container">
+                    <div class="dimension-bar medium" style="width: 55%;"></div>
+                </div>
+                <span class="dimension-score" style="color: var(--score-medium);">5.5</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Mini Dashboard -->
+        <h2>Dashboard Layout Preview</h2>
+        <div class="dashboard-preview">
+            <div class="dashboard-layout">
+                <div class="sidebar">
+                    <div class="sidebar-icon active" title="Feed">
+                        <span class="icon">&#9776;</span>
+                    </div>
+                    <div class="sidebar-icon" title="Analytics">
+                        <span class="icon">&#9783;</span>
+                    </div>
+                    <div class="sidebar-icon" title="Team">
+                        <span class="icon">&#9787;</span>
+                    </div>
+                    <div class="sidebar-icon" title="Projects">
+                        <span class="icon">&#9744;</span>
+                    </div>
+                    <div style="flex: 1;"></div>
+                    <div class="sidebar-icon" title="Settings">
+                        <span class="icon">&#9881;</span>
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div class="dashboard-header">
+                        <div>
+                            <div class="dashboard-title">Prompt Feed</div>
+                        </div>
+                        <div class="dashboard-stats">
+                            <div class="stat">
+                                <div class="stat-value">7.2</div>
+                                <div class="stat-label">Avg Score</div>
+                                <div class="stat-trend">+14% this week</div>
+                            </div>
+                            <button class="btn-primary">
+                                <span>+</span> New Project
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filter-bar">
+                        <button class="filter-btn active">All Prompts</button>
+                        <button class="filter-btn">My Prompts</button>
+                        <button class="filter-btn">High Scores</button>
+                        <button class="filter-btn">Growth Opportunities</button>
+                    </div>
+
+                    <div class="card-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="prompt-card high" style="min-height: 140px;">
+                            <div class="card-header">
+                                <span class="card-badge">CLAUDE CODE</span>
+                                <span class="card-menu">...</span>
+                            </div>
+                            <div class="card-title">Implement user auth flow</div>
+                            <div class="card-meta">Just now &bull; Edgars</div>
+                            <div class="card-footer">
+                                <div class="card-score">8.5<span class="card-score-max">/10</span></div>
+                                <div class="avatar-stack"><div class="avatar">E</div></div>
+                            </div>
+                        </div>
+                        <div class="prompt-card medium" style="min-height: 140px;">
+                            <div class="card-header">
+                                <span class="card-badge">BMAD</span>
+                                <span class="card-menu">...</span>
+                            </div>
+                            <div class="card-title">Debug API endpoint</div>
+                            <div class="card-meta">2 min ago &bull; Martins</div>
+                            <div class="card-footer">
+                                <div class="card-score">5.8<span class="card-score-max">/10</span></div>
+                                <div class="avatar-stack"><div class="avatar">M</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Design Notes</h2>
+        <div class="type-scale">
+            <p style="margin-bottom: var(--space-4);">
+                <strong>Key Design Decisions:</strong>
+            </p>
+            <ul style="padding-left: var(--space-6); color: var(--muted-foreground);">
+                <li style="margin-bottom: var(--space-2);">Dark mode as default - reduces eye strain for developers</li>
+                <li style="margin-bottom: var(--space-2);">Vibrant card colors inspired by Sparks Dashboard - instant visual scanning</li>
+                <li style="margin-bottom: var(--space-2);">No red for low scores - coral ("growth") feels encouraging, not punishing</li>
+                <li style="margin-bottom: var(--space-2);">Icon-only sidebar (64px) - Linear-inspired minimal chrome</li>
+                <li style="margin-bottom: var(--space-2);">Large border radius (16px) on cards - modern, approachable feel</li>
+                <li style="margin-bottom: var(--space-2);">Bold metric typography - scores are the hero element</li>
+            </ul>
+        </div>
+
+    </div>
+</body>
+</html>

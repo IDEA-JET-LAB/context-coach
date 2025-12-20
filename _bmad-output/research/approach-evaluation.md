@@ -1,4 +1,4 @@
-# Context Coach: Approach Evaluation
+# Contextor: Approach Evaluation
 
 **Date:** 2025-12-18
 **Participants:** Edgars, BMad Master
@@ -172,7 +172,7 @@
 │                                                                  │
 │  Storage: Unified Journal                                        │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │ • .bmad/context-coach/journal/                             │ │
+│  │ • .bmad/contextor/journal/                             │ │
 │  │ • JSONL format (append-friendly)                           │ │
 │  │ • Daily rotation                                           │ │
 │  │ • Consistent schema regardless of capture source           │ │
@@ -203,4 +203,4 @@
 
 ---
 
-*Document created during Context Coach exploration session*
+*Document created during Contextor exploration session*

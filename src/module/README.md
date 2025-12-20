@@ -1,8 +1,8 @@
-# Context Coach
+# Contextor
 
 **Prompt Journaling for AI-Assisted Development Teams**
 
-Context Coach captures your prompts during development sessions, enabling team learning and prompt quality improvement.
+Contextor captures your prompts during development sessions, enabling team learning and prompt quality improvement.
 
 ---
 
@@ -14,11 +14,11 @@ Copy the module to your project:
 
 ```bash
 # From your project root
-mkdir -p .bmad/modules/context-coach
-mkdir -p .bmad/context-coach/journal
+mkdir -p .bmad/modules/contextor
+mkdir -p .bmad/contextor/journal
 
 # Copy module files
-cp -r path/to/context-coach/module/* .bmad/modules/context-coach/
+cp -r path/to/contextor/module/* .bmad/modules/contextor/
 ```
 
 ### 2. Configure
@@ -26,15 +26,15 @@ cp -r path/to/context-coach/module/* .bmad/modules/context-coach/
 Create your config file:
 
 ```bash
-cp .bmad/modules/context-coach/config.template.yaml .bmad/context-coach/config.yaml
+cp .bmad/modules/contextor/config.template.yaml .bmad/contextor/config.yaml
 ```
 
-Edit `.bmad/context-coach/config.yaml`:
+Edit `.bmad/contextor/config.yaml`:
 
 ```yaml
 enabled: true
 user_id: "your-name"  # Change this!
-journal_path: ".bmad/context-coach/journal"
+journal_path: ".bmad/contextor/journal"
 ```
 
 ### 3. Use Normally
@@ -47,7 +47,7 @@ That's it! When you use BMAD agents, your prompts will be automatically logged.
 
 ### BMAD Agent Capture
 
-When you activate any BMAD agent, the agent checks for Context Coach and logs your prompt before proceeding.
+When you activate any BMAD agent, the agent checks for Contextor and logs your prompt before proceeding.
 
 **What's captured:**
 - Your prompt text
@@ -73,7 +73,7 @@ See: [Claude Code Hook Setup](#claude-code-hook-setup)
 Prompts are stored in daily JSONL files:
 
 ```
-.bmad/context-coach/journal/
+.bmad/contextor/journal/
 ├── 2025-12-18.jsonl
 ├── 2025-12-19.jsonl
 └── ...
@@ -113,20 +113,20 @@ Each line is a JSON object:
 
 ```bash
 # Today's prompts
-cat .bmad/context-coach/journal/$(date +%Y-%m-%d).jsonl | jq .
+cat .bmad/contextor/journal/$(date +%Y-%m-%d).jsonl | jq .
 
 # Count today's prompts
-wc -l .bmad/context-coach/journal/$(date +%Y-%m-%d).jsonl
+wc -l .bmad/contextor/journal/$(date +%Y-%m-%d).jsonl
 
 # Search for specific text
-grep "refactor" .bmad/context-coach/journal/*.jsonl | jq .
+grep "refactor" .bmad/contextor/journal/*.jsonl | jq .
 ```
 
 ### Pretty Print
 
 ```bash
 # View all prompts nicely formatted
-cat .bmad/context-coach/journal/*.jsonl | jq -s '.'
+cat .bmad/contextor/journal/*.jsonl | jq -s '.'
 ```
 
 ---
@@ -134,7 +134,7 @@ cat .bmad/context-coach/journal/*.jsonl | jq -s '.'
 ## Configuration Options
 
 ```yaml
-# .bmad/context-coach/config.yaml
+# .bmad/contextor/config.yaml
 
 # Master switch
 enabled: true
@@ -143,7 +143,7 @@ enabled: true
 user_id: "your-name"
 
 # Storage location
-journal_path: ".bmad/context-coach/journal"
+journal_path: ".bmad/contextor/journal"
 
 # Exclude sensitive patterns (optional)
 exclude_patterns:
@@ -160,20 +160,20 @@ For Claude Code users, add automatic capture of ALL prompts:
 
 ### 1. Create Hook Script
 
-Save this as `.claude/hooks/context-coach-capture.sh`:
+Save this as `.claude/hooks/contextor-capture.sh`:
 
 ```bash
 #!/bin/bash
-# Context Coach - Claude Code Hook
+# Contextor - Claude Code Hook
 # Captures prompts automatically
 
-# ... (see implementation/hooks/context-coach-capture.sh)
+# ... (see implementation/hooks/contextor-capture.sh)
 ```
 
 ### 2. Make Executable
 
 ```bash
-chmod +x .claude/hooks/context-coach-capture.sh
+chmod +x .claude/hooks/contextor-capture.sh
 ```
 
 ### 3. Configure Claude Code
@@ -185,7 +185,7 @@ Add to your Claude Code hooks configuration:
   "hooks": {
     "user-prompt-submit": [
       {
-        "command": ".claude/hooks/context-coach-capture.sh"
+        "command": ".claude/hooks/contextor-capture.sh"
       }
     ]
   }
@@ -206,7 +206,7 @@ Add to your Claude Code hooks configuration:
 Add to your `.gitignore` if you don't want to share journals:
 
 ```
-.bmad/context-coach/journal/
+.bmad/contextor/journal/
 ```
 
 Or commit them for team visibility - your choice!
@@ -228,9 +228,9 @@ For team learning:
 
 ### Prompts Not Being Logged
 
-1. Check config exists: `cat .bmad/context-coach/config.yaml`
-2. Verify enabled: `grep enabled .bmad/context-coach/config.yaml`
-3. Check journal directory exists: `ls .bmad/context-coach/journal/`
+1. Check config exists: `cat .bmad/contextor/config.yaml`
+2. Verify enabled: `grep enabled .bmad/contextor/config.yaml`
+3. Check journal directory exists: `ls .bmad/contextor/journal/`
 
 ### Large Journal Files
 
@@ -238,7 +238,7 @@ Daily rotation keeps files manageable. For archival:
 
 ```bash
 # Compress old journals
-gzip .bmad/context-coach/journal/2025-12-*.jsonl
+gzip .bmad/contextor/journal/2025-12-*.jsonl
 ```
 
 ---
@@ -260,4 +260,4 @@ Questions or issues? Open an issue in the repository.
 
 ---
 
-*Context Coach - Learn from every prompt*
+*Contextor - Learn from every prompt*

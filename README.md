@@ -1,4 +1,4 @@
-# Context Coach Project
+# Contextor Project
 
 **Prompt Journaling for AI-Assisted Development Teams**
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Context Coach is a system for capturing and analyzing prompts during AI-assisted development sessions. It enables teams to:
+Contextor is a system for capturing and analyzing prompts during AI-assisted development sessions. It enables teams to:
 
 - Learn from each other's prompting techniques
 - Identify patterns in effective prompts
@@ -42,7 +42,7 @@ Context Coach is a system for capturing and analyzing prompts during AI-assisted
 ## Project Structure
 
 ```
-context-coach/
+contextor/
 ├── _bmad/                             # BMAD platform installation
 ├── _bmad-output/                      # BMAD workflow artifacts
 │   ├── research/
@@ -57,11 +57,11 @@ context-coach/
 │   │   ├── journal-writer.md          # BMAD agent instructions
 │   │   └── README.md                  # User documentation
 │   └── hooks/
-│       ├── context-coach-capture.sh   # Claude Code hook script
+│       ├── contextor-capture.sh   # Claude Code hook script
 │       └── hooks-config-example.json  # Hook configuration example
 ├── dist/                              # Distributable package (for sharing)
-├── .bmad/                             # Context Coach installed (for testing)
-│   └── context-coach/
+├── .bmad/                             # Contextor installed (for testing)
+│   └── contextor/
 └── README.md                          # This file
 ```
 
@@ -81,9 +81,9 @@ cd src
 
 ### Manual Installation
 
-1. Copy module files to `.bmad/modules/context-coach/`
-2. Create config at `.bmad/context-coach/config.yaml`
-3. Create journal directory `.bmad/context-coach/journal/`
+1. Copy module files to `.bmad/modules/contextor/`
+2. Create config at `.bmad/contextor/config.yaml`
+3. Create journal directory `.bmad/contextor/journal/`
 4. (Optional) Install Claude Code hook
 
 See `src/module/README.md` for detailed instructions.
@@ -108,7 +108,7 @@ See `src/module/README.md` for detailed instructions.
 
 Prompts stored in JSONL format:
 ```
-.bmad/context-coach/journal/
+.bmad/contextor/journal/
 ├── 2025-12-18.jsonl
 ├── 2025-12-19.jsonl
 └── ...
@@ -146,7 +146,7 @@ See [Approach Evaluation](_bmad-output/research/approach-evaluation.md) for full
 
 For team deployment:
 
-1. Each team member installs Context Coach in their projects
+1. Each team member installs Contextor in their projects
 2. Set unique `user_id` in config
 3. Optionally share journals via git or shared storage
 4. Review prompts in team sessions for learning
@@ -166,8 +166,8 @@ For team deployment:
 
 This is an internal IdeaJetLab project. For suggestions:
 1. Create an issue in the main repository
-2. Tag with `context-coach` label
+2. Tag with `contextor` label
 
 ---
 
-*Context Coach - Learn from every prompt*
+*Contextor - Learn from every prompt*
