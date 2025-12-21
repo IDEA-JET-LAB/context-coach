@@ -284,15 +284,15 @@ This document provides the complete epic and story breakdown for Contextor, deco
 
 ## Epic List
 
-### Epic 1: Project Foundation & Authentication
+### Epic 1: Project Foundation & Authentication ✅ COMPLETE
 Users can register, login, and access the Contextor platform securely.
 **FRs covered:** FR1-FR6, FR51-FR54
 
-### Epic 2: Team & Project Management
+### Epic 2: Team & Project Management ✅ COMPLETE
 Users can create teams, invite members, set roles, and register projects for tracking.
 **FRs covered:** FR7-FR19
 
-### Epic 3: CLI Installation Experience
+### Epic 3: CLI Installation Experience ✅ COMPLETE
 Developers can install Contextor in their projects with a single command.
 **FRs covered:** FR55-FR65, FR76
 
@@ -314,11 +314,16 @@ Super admins can manage users, teams, analysis configs, and monitor system healt
 
 ---
 
-## Epic 1: Project Foundation & Authentication
+## Epic 1: Project Foundation & Authentication ✅ COMPLETE
 
 Users can register, login, and access the Contextor platform securely.
 
 **FRs Covered:** FR1-FR6, FR51-FR54
+
+**Status:** Complete (2025-12-20)
+**Implementation:** `app/` - Auth flows, password reset, session management
+**Tests:** 21 E2E tests passing
+**Agent:** Claude Opus 4.5
 
 ---
 
@@ -538,11 +543,16 @@ Users can register, login, and access the Contextor platform securely.
 
 ---
 
-## Epic 2: Team & Project Management
+## Epic 2: Team & Project Management ✅ COMPLETE
 
 Users can create teams, invite members, set roles, and register projects for tracking.
 
 **FRs Covered:** FR7-FR19
+
+**Status:** Complete (2025-12-21)
+**Implementation:** `app/` - Team management, project CRUD, invitations, settings
+**Tests:** 114 E2E tests passing
+**Agent:** Claude Opus 4.5
 
 ---
 
@@ -752,11 +762,16 @@ Users can create teams, invite members, set roles, and register projects for tra
 
 ---
 
-## Epic 3: CLI Installation Experience
+## Epic 3: CLI Installation Experience ✅ COMPLETE
 
 Developers can install Contextor in their projects with a single command.
 
 **FRs Covered:** FR55-FR65, FR76
+
+**Status:** Complete (2025-12-21)
+**Implementation:** `packages/cli/` + `app/api/cli/` - 112 unit tests, E2E verified
+**Agent:** Claude Opus 4.5
+**Notes:** Fixed Claude Code hooks format, capture script payload, and API URL path during E2E testing
 
 ---
 
