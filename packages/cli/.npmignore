@@ -1,0 +1,14 @@
+# Source files (only dist is published)
+src/
+tsconfig.json
+.gitignore
+
+# Development files
+node_modules/
+*.log
+.DS_Store
+
+# Test files
+**/__tests__/
+*.test.ts
+vitest.config.ts
