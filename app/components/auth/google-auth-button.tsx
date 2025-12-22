@@ -25,7 +25,8 @@ export function GoogleAuthButton() {
 
     if (error) {
       setIsLoading(false);
-      console.error("[AUTH] Google OAuth error:", error.message);
+      // Error is handled by user seeing the button reset - no need to log to console
+      // OAuth errors are already logged server-side in the callback route
     }
   };
 

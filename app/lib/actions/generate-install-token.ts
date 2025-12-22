@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { TOKEN_EXPIRATION_HOURS } from '@/lib/utils/install-token';
 
 export async function generateInstallToken(projectId?: string): Promise<string> {
   const supabase = await createClient();
@@ -39,12 +40,13 @@ export async function generateInstallToken(projectId?: string): Promise<string> 
   }
 
   // Generate token payload
+  // SECURITY: Token expiration is intentionally short to minimize exposure window
   const payload = {
     project_id: projectId,
     team_id: teamId,
     user_id: user.id,
     api_endpoint: process.env.NEXT_PUBLIC_API_URL || 'https://api.contextor.co',
-    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+    expires_at: new Date(Date.now() + TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000).toISOString(),
   };
 
   // Encode as base64

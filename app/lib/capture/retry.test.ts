@@ -337,9 +337,11 @@ describe("withRetry", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("1250ms")
-      );
+      // Check the JSON log contains delayMs of 1250
+      expect(consoleSpy).toHaveBeenCalled();
+      const logCall = consoleSpy.mock.calls[0][0];
+      const logData = JSON.parse(logCall);
+      expect(logData.delayMs).toBe(1250);
 
       randomSpy.mockRestore();
       consoleSpy.mockRestore();
@@ -359,9 +361,11 @@ describe("withRetry", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("1000ms")
-      );
+      // Check the JSON log contains exact delayMs of 1000 (no jitter)
+      expect(consoleSpy).toHaveBeenCalled();
+      const logCall = consoleSpy.mock.calls[0][0];
+      const logData = JSON.parse(logCall);
+      expect(logData.delayMs).toBe(1000);
 
       consoleSpy.mockRestore();
     });
@@ -380,9 +384,11 @@ describe("withRetry", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("1000ms")
-      );
+      // Check the JSON log contains exact delayMs of 1000 (no jitter when undefined)
+      expect(consoleSpy).toHaveBeenCalled();
+      const logCall = consoleSpy.mock.calls[0][0];
+      const logData = JSON.parse(logCall);
+      expect(logData.delayMs).toBe(1000);
 
       consoleSpy.mockRestore();
     });
@@ -403,9 +409,14 @@ describe("withRetry", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("[API] prompts/capture: retry attempt 1/3")
-      );
+      // Check the JSON log format with structured data
+      expect(consoleSpy).toHaveBeenCalled();
+      const logCall = consoleSpy.mock.calls[0][0];
+      const logData = JSON.parse(logCall);
+      expect(logData.context).toBe("RETRY");
+      expect(logData.message).toContain("Retry attempt");
+      expect(logData.attempt).toBe(1);
+      expect(logData.maxRetries).toBe(3);
 
       consoleSpy.mockRestore();
     });
@@ -520,9 +531,14 @@ describe("withRetry", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/retry attempt 1\/3 after \d+ms/)
-      );
+      // Check the JSON log format with default config values
+      expect(consoleSpy).toHaveBeenCalled();
+      const logCall = consoleSpy.mock.calls[0][0];
+      const logData = JSON.parse(logCall);
+      expect(logData.attempt).toBe(1);
+      expect(logData.maxRetries).toBe(3); // DEFAULT_RETRY_CONFIG.maxRetries
+      expect(logData.delayMs).toBeGreaterThanOrEqual(1000); // Base delay
+      expect(logData.delayMs).toBeLessThanOrEqual(1500); // Base + max jitter
 
       consoleSpy.mockRestore();
     });

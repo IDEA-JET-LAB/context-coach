@@ -4,40 +4,19 @@
  *
  * GET /api/admin/stats - Get platform statistics and trends
  * Protected by admin authentication.
+ *
+ * M41 Fix: Uses consistent admin authorization pattern.
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireSuperAdminApi } from "@/lib/auth/admin";
 import { getAdminDashboardData } from "@/lib/db/queries/admin-stats";
 
 export async function GET() {
   try {
-    // Verify admin authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is super admin
-    const { data: userData } = await supabase
-      .from("users")
-      .select("is_super_admin")
-      .eq("id", user.id)
-      .single();
-
-    if (!userData?.is_super_admin) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Admin access required" } },
-        { status: 403 }
-      );
-    }
+    // M41 Fix: Use consistent admin authorization guard
+    const auth = await requireSuperAdminApi();
+    if (!auth.authorized) return auth.response;
 
     // Fetch platform stats and trends
     const data = await getAdminDashboardData();
@@ -49,9 +28,14 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("[API] admin/stats: Error", error);
+    // M39 Fix: Log full error details server-side only, return generic message to client
+    console.error("[API] admin/stats: Error", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Failed to fetch stats" } },
+      { error: { code: "INTERNAL_ERROR", message: "An error occurred while processing your request" } },
       { status: 500 }
     );
   }

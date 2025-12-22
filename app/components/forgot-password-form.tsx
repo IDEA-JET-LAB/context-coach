@@ -126,9 +126,8 @@ export function ForgotPasswordForm({
                 >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    {initialError === "expired"
-                      ? "This reset link has expired. Please request a new one."
-                      : initialError}
+                    {/* Error message is already sanitized by getResetPasswordError in the parent page */}
+                    {initialError}
                   </AlertDescription>
                 </Alert>
               )}

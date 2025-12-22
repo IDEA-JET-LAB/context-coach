@@ -20,10 +20,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserProfile } from "@/lib/auth/session";
 import { retryFailedPrompt } from "@/lib/db/queries/dead-letter";
-
-// UUID validation regex
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isValidUuid } from "@/lib/utils/uuid";
 
 interface RetryRequest {
   prompt_id?: string;
@@ -81,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate prompt_id format
-    if (typeof prompt_id !== "string" || !UUID_REGEX.test(prompt_id)) {
+    if (!isValidUuid(prompt_id)) {
       return NextResponse.json(
         {
           error: {
@@ -125,12 +122,17 @@ export async function POST(request: NextRequest) {
       prompt_id,
     });
   } catch (error) {
-    console.error("[API] admin/prompts/retry: unexpected error", error);
+    // M39 Fix: Log full error details server-side only, return generic message to client
+    console.error("[API] admin/prompts/retry: unexpected error", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json(
       {
         error: {
           code: "INTERNAL_ERROR",
-          message: "Failed to retry prompt",
+          message: "An error occurred while processing your request",
         },
       },
       { status: 500 }

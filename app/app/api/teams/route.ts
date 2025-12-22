@@ -26,9 +26,8 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error('[API] teams POST: error creating team', error);
       return NextResponse.json(
-        { error: { code: 'TEAM_CREATION_FAILED', message: error.message } },
+        { error: { code: 'TEAM_CREATION_FAILED', message: 'Failed to create team' } },
         { status: 400 }
       );
     }
@@ -43,7 +42,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    console.error('[API] teams POST: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -76,9 +74,8 @@ export async function GET() {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('[API] teams GET: error fetching teams', error);
       return NextResponse.json(
-        { error: { code: 'FETCH_FAILED', message: error.message } },
+        { error: { code: 'FETCH_FAILED', message: 'Failed to fetch teams' } },
         { status: 400 }
       );
     }
@@ -90,7 +87,6 @@ export async function GET() {
 
     return NextResponse.json({ data: { teams: formattedTeams } });
   } catch (error) {
-    console.error('[API] teams GET: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

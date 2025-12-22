@@ -149,8 +149,27 @@ export async function getSystemMetrics(): Promise<SystemMetrics> {
     responseTime = Date.now() - startTime;
   }
 
-  // Edge function status - check if we can reach it
-  // For now, we'll assume it's operational if the database is connected
+  /**
+   * M44 Fix: Edge function status approximation documentation.
+   *
+   * IMPORTANT: This is an APPROXIMATION of the edge function status.
+   * We cannot directly check the edge function health from within the Next.js app
+   * because:
+   * 1. Edge functions run in a separate Deno runtime managed by Supabase
+   * 2. There's no direct health check endpoint exposed for edge functions
+   * 3. Calling the edge function just to check status would consume resources
+   *
+   * Current approximation logic:
+   * - If database is disconnected -> edge function is likely down
+   * - If database is degraded (slow) -> edge function may be degraded
+   * - Otherwise -> assume operational
+   *
+   * For accurate edge function monitoring, consider:
+   * 1. Supabase Dashboard -> Edge Functions -> Logs
+   * 2. Setting up external monitoring (e.g., Checkly, Pingdom)
+   * 3. Implementing a dedicated /health edge function with Supabase's pg_net
+   * 4. Checking the recent analysis success/failure ratio as a proxy
+   */
   let edgeFunctionStatus: 'operational' | 'degraded' | 'down' = 'operational';
   if (databaseStatus === 'disconnected') {
     edgeFunctionStatus = 'down';

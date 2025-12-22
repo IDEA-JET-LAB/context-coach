@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
 import { Loader2 } from "lucide-react";
+import { getResetPasswordError } from "@/lib/utils/auth-messages";
 
 async function ResetPasswordContent({
   searchParams,
@@ -9,7 +10,10 @@ async function ResetPasswordContent({
 }) {
   const params = await searchParams;
 
-  return <ForgotPasswordForm error={params.error} />;
+  // Use whitelisted error messages to prevent phishing via crafted URLs
+  const safeError = getResetPasswordError(params.error);
+
+  return <ForgotPasswordForm error={safeError ?? undefined} />;
 }
 
 export default async function Page({

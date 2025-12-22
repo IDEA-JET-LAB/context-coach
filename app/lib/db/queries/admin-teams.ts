@@ -7,6 +7,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { escapeSqlLikePattern } from "@/lib/utils/sql-sanitize";
 
 // ============================================
 // TYPES
@@ -97,8 +98,10 @@ export async function getTeamsWithStats({
       .from("teams")
       .select("id, name, description, created_at", { count: "exact" });
 
+    // Escape SQL pattern characters to prevent pattern injection attacks
     if (search) {
-      query = query.ilike("name", `%${search}%`);
+      const escapedSearch = escapeSqlLikePattern(search);
+      query = query.ilike("name", `%${escapedSearch}%`);
     }
 
     // Apply sorting for simple fields

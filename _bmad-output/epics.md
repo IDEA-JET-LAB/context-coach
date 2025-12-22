@@ -14,8 +14,8 @@ validation_results:
   architecture_compliance: 'PASS'
   story_quality: 'PASS'
   dependency_validation: 'PASS'
-total_epics: 9
-total_stories: 58
+total_epics: 10
+total_stories: 63
 ---
 
 # Contextor - Epic Breakdown
@@ -2279,54 +2279,325 @@ Before going live, verify:
 
 ---
 
-### Local to Production Transition Guide
+## Epic 10: Development Environment & Database Branching
 
-**Development Workflow:**
+Enable safe development workflow using Supabase branching with developer prompt mirroring for testing.
+
+**Status:** Not Started (Created 2025-12-22)
+**Priority:** High - Required for safe development and testing
+**Automation:** All tasks achievable via CLI/API
+
+**Approach:**
+Instead of a full staging environment (separate Supabase project + Cloud Run service), use Supabase Branching:
+- **Dev Branch:** Database branch from production for schema testing
+- **Developer Mirroring:** Flagged developers' prompts auto-replicate to dev branch
+- **Local Dev:** localhost:3050 connects to dev branch database
+- **Deploy:** Merge branch + deploy container when ready
+
+**Benefits:**
+- Test migrations safely on branch before production
+- Real prompt data flows to dev branch for testing
+- No duplicate infrastructure costs
+- Simpler workflow: local dev → deploy → merge branch
+
+**Architecture:**
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    LOCAL DEVELOPMENT                        │
-│  - `supabase start` for local DB                           │
-│  - `npm run dev` for Next.js                               │
-│  - All changes made locally first                          │
-│  - Migrations created with `supabase migration new`        │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  PRODUCTION DATABASE                                             │
+│                                                                  │
+│  prompts table                                                   │
+│       │                                                          │
+│       ├── INSERT → Check: Is user.is_developer = true?          │
+│       │       │                                                  │
+│       │       ├── NO → Normal flow only                         │
+│       │       │                                                  │
+│       │       └── YES → Also replicate to dev branch            │
+│       │                                                          │
+└──────────────────────────────────────────────────────────────────┘
                               │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    STAGING (Optional)                       │
-│  - Supabase free tier project                              │
-│  - Cloud Run with --no-traffic revision                    │
-│  - Team testing before production                          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    PRODUCTION                               │
-│  - `supabase db push --linked` for migrations              │
-│  - GitHub Actions deploys on merge to main                 │
-│  - Zero-downtime with Cloud Run revisions                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Key Commands:**
-
-```bash
-# Link to production Supabase
-supabase link --project-ref <your-project-ref>
-
-# Push migrations to production
-supabase db push
-
-# Deploy Edge Functions
-supabase functions deploy analyze-prompt
-
-# Check migration status
-supabase migration list
-
-# Generate types from production schema
-supabase gen types typescript --linked > types/supabase.ts
+         ┌────────────────────┴────────────────────┐
+         ▼                                         ▼
+┌───────────────────┐                    ┌───────────────────────┐
+│ Production DB     │                    │ Dev Branch DB         │
+│ (all prompts)     │                    │ (developer prompts    │
+│                   │                    │  mirrored here)       │
+└───────────────────┘                    └───────────────────────┘
 ```
 
 ---
 
+### Story 10.1: Supabase Branch Creation
+
+**As a** developer,
+**I want** a Supabase development branch,
+**So that** I can test schema changes before production.
+
+**Acceptance Criteria:**
+
+**Given** the production Supabase project `ddskanjiobrjphscskog`
+**When** I create a development branch
+**Then** a new branch `dev` is created via CLI or dashboard
+**And** it has its own connection string
+**And** the schema matches production at creation time
+
+**Given** the dev branch exists
+**When** I make schema changes
+**Then** they only affect the branch, not production
+**And** I can merge changes to production when ready
+
+**Given** Edge Functions
+**When** deployed to the branch
+**Then** they run against the branch database
+**And** analysis works independently from production
+
+**CLI Commands:**
+```bash
+# Create branch (requires Supabase Pro plan)
+supabase branches create dev --project-ref ddskanjiobrjphscskog
+
+# List branches
+supabase branches list --project-ref ddskanjiobrjphscskog
+
+# Get branch connection info
+supabase branches get dev --project-ref ddskanjiobrjphscskog
+```
+
+**Note:** Supabase branching requires Pro plan (~$25/month). Branches cost ~$0.32/day when active.
+
+---
+
+### Story 10.2: Developer Flag on Users Table
+
+**As a** superadmin,
+**I want** a developer flag on user accounts,
+**So that** I can identify which users' prompts should be mirrored to dev.
+
+**Acceptance Criteria:**
+
+**Given** the users table
+**When** this story is complete
+**Then** `is_developer` boolean column exists (default: false)
+**And** only superadmins can modify this field (RLS policy)
+
+**Given** the admin user management page
+**When** a superadmin views a user
+**Then** they see a "Developer Mode" toggle
+**And** toggling it updates `is_developer` field
+
+**Given** a user with `is_developer = true`
+**When** they submit prompts
+**Then** those prompts are marked for replication
+
+**Migration:**
+```sql
+ALTER TABLE users ADD COLUMN is_developer BOOLEAN DEFAULT false;
+
+-- RLS: Only superadmins can update is_developer
+CREATE POLICY "Superadmins can update developer flag"
+  ON users FOR UPDATE
+  USING (is_super_admin = true)
+  WITH CHECK (is_super_admin = true);
+```
+
+---
+
+### Story 10.3: Prompt Replication to Dev Branch
+
+**As a** developer,
+**I want** my prompts replicated to the dev branch,
+**So that** I can test the capture flow with real data.
+
+**Acceptance Criteria:**
+
+**Given** a prompt is captured from a developer user
+**When** stored in production
+**Then** it is also copied to the dev branch database
+**And** analysis is triggered on the dev branch
+
+**Given** the capture API route
+**When** a prompt is stored
+**Then** it checks if user `is_developer = true`
+**And** if so, calls `replicateToDevBranch(promptId)`
+
+**Given** the replication call
+**When** it runs
+**Then** it's fire-and-forget (doesn't block capture)
+**And** failures are logged but don't fail the main request
+
+**Implementation (API-level, more reliable than triggers):**
+```typescript
+// In app/api/prompts/capture/route.ts
+
+// After successful storage
+if (result.analysis_status === "pending") {
+  void triggerAnalysis(result.id);
+}
+
+// Replicate for developers
+if (await isUserDeveloper(userId)) {
+  void replicateToDevBranch(result);
+}
+
+async function replicateToDevBranch(prompt: PromptRow): Promise<void> {
+  const devBranchUrl = process.env.DEV_BRANCH_SUPABASE_URL;
+  const devBranchKey = process.env.DEV_BRANCH_SERVICE_ROLE_KEY;
+
+  if (!devBranchUrl || !devBranchKey) return;
+
+  // Insert into dev branch
+  await fetch(`${devBranchUrl}/rest/v1/prompts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${devBranchKey}`,
+      "apikey": devBranchKey,
+    },
+    body: JSON.stringify(prompt),
+  });
+}
+```
+
+---
+
+### Story 10.4: Admin UI for Developer Management
+
+**As a** superadmin,
+**I want** to toggle developer mode in the admin panel,
+**So that** I can manage which users get prompt mirroring.
+
+**Acceptance Criteria:**
+
+**Given** I'm on Admin > Users page
+**When** I view the user list
+**Then** I see a "Dev" badge on developer users
+**And** I can filter by "Developers only"
+
+**Given** I click on a user
+**When** viewing their details
+**Then** I see a "Developer Mode" toggle switch
+**And** it shows the current `is_developer` value
+
+**Given** I toggle developer mode ON
+**When** I save
+**Then** `is_developer = true` for that user
+**And** a toast confirms "Developer mode enabled"
+**And** their future prompts will be mirrored
+
+**Given** I toggle developer mode OFF
+**When** I save
+**Then** `is_developer = false`
+**And** mirroring stops for future prompts
+
+**UI Components:**
+- Add `Switch` component to user detail view
+- Add "Dev" badge to UserRow component
+- Add filter option in user list header
+
+---
+
+### Story 10.5: Local Development Configuration
+
+**As a** developer,
+**I want** easy switching between production and dev branch,
+**So that** I can test locally against the dev database.
+
+**Acceptance Criteria:**
+
+**Given** the `.env.local` file
+**When** I want to use dev branch
+**Then** I update `NEXT_PUBLIC_SUPABASE_URL` to dev branch URL
+**And** I update `SUPABASE_SERVICE_ROLE_KEY` to dev branch key
+
+**Given** the dev branch is active
+**When** I run `npm run dev`
+**Then** localhost:3050 connects to dev branch database
+**And** I see prompts mirrored from production
+
+**Given** I want to switch back to local Supabase
+**When** I update env vars to local values
+**Then** `npm run dev` uses local database again
+
+**Environment Variables:**
+```bash
+# .env.local for dev branch
+NEXT_PUBLIC_SUPABASE_URL=https://ddskanjiobrjphscskog-dev.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<dev-branch-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<dev-branch-service-role-key>
+
+# Production environment variables (for reference)
+# DEV_BRANCH_SUPABASE_URL=https://ddskanjiobrjphscskog-dev.supabase.co
+# DEV_BRANCH_SERVICE_ROLE_KEY=<dev-branch-service-role-key>
+```
+
+---
+
+### Story 10.6: Branch Merge and Deployment Workflow
+
+**As a** developer,
+**I want** a clear process to merge schema changes and deploy,
+**So that** I can safely promote changes to production.
+
+**Acceptance Criteria:**
+
+**Given** schema changes tested on dev branch
+**When** ready for production
+**Then** I merge the branch to production via CLI/dashboard
+**And** migrations are applied automatically
+
+**Given** app code changes tested locally
+**When** ready for production
+**Then** I deploy the Docker image to Cloud Run
+**And** verify health check passes
+
+**Given** both schema and code are deployed
+**When** complete
+**Then** production uses new schema + new code
+**And** dev branch can be reset or deleted
+
+**Deployment Flow:**
+```bash
+# 1. Merge Supabase branch to production
+supabase branches merge dev --project-ref ddskanjiobrjphscskog
+
+# 2. Build and deploy app
+docker build --platform linux/amd64 -t gcr.io/ideajetlab-website/contextor:vX.Y.Z .
+docker push gcr.io/ideajetlab-website/contextor:vX.Y.Z
+gcloud run deploy contextor-web --image gcr.io/ideajetlab-website/contextor:vX.Y.Z --region us-central1
+
+# 3. Verify
+curl https://contextor.co/api/health
+```
+
+---
+
+### Implementation Checklist
+
+**Supabase Branch:**
+- [ ] Upgrade to Pro plan if needed
+- [ ] Create `dev` branch from production
+- [ ] Note branch connection strings
+- [ ] Deploy Edge Functions to branch
+
+**Database:**
+- [ ] Add `is_developer` column to users table
+- [ ] Add RLS policy for superadmin-only updates
+- [ ] Test migration on dev branch first
+
+**API:**
+- [ ] Add `isUserDeveloper()` helper function
+- [ ] Add `replicateToDevBranch()` function
+- [ ] Add env vars: `DEV_BRANCH_SUPABASE_URL`, `DEV_BRANCH_SERVICE_ROLE_KEY`
+- [ ] Update capture route to call replication
+
+**Admin UI:**
+- [ ] Add developer toggle to user detail page
+- [ ] Add "Dev" badge to user list
+- [ ] Add "Developers only" filter
+
+**Testing:**
+- [ ] Mark yourself as developer in admin panel
+- [ ] Capture a prompt
+- [ ] Verify prompt appears in dev branch
+- [ ] Verify analysis runs on dev branch
+- [ ] Test local dev against dev branch

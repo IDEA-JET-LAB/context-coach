@@ -76,9 +76,9 @@ phases:
 
 # Current position
 current_phase: 3
-current_workflow: completed
-next_agent: none
-next_command: "All implementation complete - ready for deployment"
+current_workflow: implementation
+next_agent: dev
+next_command: "Deploy pending fixes (garbage filter + direct analysis trigger), then start Epic 10 or 11"
 
 # Epic Implementation Status
 epics:
@@ -139,6 +139,21 @@ epics:
     stories: 1
     stories_done: 1
 
+  epic-9:
+    name: "Production Deployment & Infrastructure"
+    status: completed
+    completed: "2025-12-21"
+    stories: 8
+    stories_done: 8
+    note: "Cloud Run deployed, contextor.co live with SSL, npm package published"
+
+  epic-10:
+    name: "Development Environment & Database Branching"
+    status: backlog
+    stories: 6
+    stories_done: 0
+    note: "Supabase branching with developer prompt mirroring for safe testing"
+
 # Completed workflows
 completed_workflows:
   prd:
@@ -170,5 +185,6 @@ completed_workflows:
     status: complete
     output: "_bmad-output/epics.md"
     completed: "2025-12-20"
-    total_epics: 8
-    total_stories: 49
+    total_epics: 10
+    total_stories: 55
+    note: "Epics 1-9 implemented, Epic 10 planned (consolidated from Epic 10+11)"

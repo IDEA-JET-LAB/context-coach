@@ -10,6 +10,7 @@ import { readConfigFile, CONTEXTOR_DIR, CONFIG_FILE, USER_FILE } from '../lib/de
 import { readUserConfig } from '../lib/config.js';
 import { testCapture, getLastCapture } from '../lib/api-client.js';
 import { formatTimeAgo, formatDate } from '../lib/messages.js';
+import { getDashboardProjectsUrl, getDashboardProjectUrl } from '../lib/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,7 +26,7 @@ To install, run:
   ${chalk.cyan('npx @contextor/cli init <TOKEN>')}
 
 Get your install token from:
-  ${chalk.underline.blue('https://app.contextor.co/projects')}
+  ${chalk.underline.blue(getDashboardProjectsUrl())}
 `;
 }
 
@@ -108,7 +109,7 @@ export function registerStatusCommand(program: Command): void {
       }
 
       console.log();
-      console.log(`${chalk.white('Dashboard:')} ${chalk.underline.blue(`https://app.contextor.co/projects/${sharedConfig.project_id}`)}`);
+      console.log(`${chalk.white('Dashboard:')} ${chalk.underline.blue(getDashboardProjectUrl(sharedConfig.project_id))}`);
       console.log();
     });
 }

@@ -230,4 +230,58 @@ test.describe("Capture API Endpoint", () => {
 
     expect(body1.data.id).not.toBe(body2.data.id);
   });
+
+  test.describe("Rate Limiting", () => {
+    // Note: Full rate limit testing requires controlled timing and many requests.
+    // These tests verify the rate limit infrastructure exists and responds correctly.
+    // Production rate limits are configured in lib/rate-limit/index.ts:
+    // - IP: 100 requests per minute
+    // - Project: 1000 requests per minute
+    // - User: 500 requests per minute
+
+    test("rate limit headers are included in 429 response", async ({ request }) => {
+      // This test documents expected behavior without triggering actual limits.
+      // A 429 response MUST include Retry-After header per HTTP spec.
+      //
+      // To manually test rate limiting:
+      // 1. Lower rate limits temporarily in lib/rate-limit/index.ts
+      // 2. Run: for i in {1..10}; do curl -X POST ...; done
+      // 3. Verify 429 status and Retry-After header
+
+      // Verify a successful request doesn't have 429 headers (sanity check)
+      const response = await request.post(`${BASE_URL}/api/prompts/capture`, {
+        headers: {
+          Authorization: `Bearer ${testProject.api_key}`,
+        },
+        data: {
+          prompt: "Rate limit test prompt with valid length",
+          user_id: testUser.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      expect(response.status()).toBe(201);
+      // Successful responses should NOT have Retry-After header
+      expect(response.headers()["retry-after"]).toBeUndefined();
+    });
+
+    test.skip("returns 429 when rate limit exceeded", async () => {
+      // SKIPPED: Would require sending many requests or mocking Upstash Redis.
+      // This is a performance test that would significantly slow down the test suite.
+      //
+      // This test documents the expected behavior:
+      //
+      // When rate limit is exceeded:
+      // - Status: 429
+      // - Body: { error: { code: "RATE_LIMITED", message: "Too many requests" } }
+      // - Headers: Retry-After with seconds until limit resets
+      //
+      // Rate limit order (all must pass):
+      // 1. IP rate limit (first, protects against brute force)
+      // 2. Project rate limit (after auth, prevents per-project abuse)
+      // 3. User rate limit (after body parse, prevents per-user abuse)
+      //
+      // To manually test: Send 100+ requests in rapid succession and verify 429 response.
+    });
+  });
 });

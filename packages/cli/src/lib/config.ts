@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readFile, unlink, access } from 'fs/promises';
+import { mkdir, writeFile, readFile, unlink, access, chmod } from 'fs/promises';
 import { join } from 'path';
 import { constants } from 'fs';
 import type { InstallToken } from './token.js';
@@ -24,6 +24,13 @@ export interface SharedConfig {
 /**
  * Personal user configuration stored in .contextor/.user
  * This file is gitignored and contains the API key
+ *
+ * SECURITY NOTE: The API key is stored in plaintext JSON. While this file
+ * is gitignored, it remains readable by any process with file access on the
+ * local machine. The file permissions are set to 0600 (owner read/write only)
+ * to limit exposure, but this does not protect against malicious processes
+ * running as the same user. For high-security environments, consider using
+ * OS-level secret management (e.g., macOS Keychain, Windows Credential Manager).
  */
 export interface UserConfig {
   user_id: string;
@@ -71,12 +78,18 @@ export async function writeSharedConfig(config: SharedConfig, cwd: string): Prom
 
 /**
  * Write user config to .contextor/.user
+ *
+ * Sets file permissions to 0600 (owner read/write only) to limit exposure
+ * of the plaintext API key stored in this file.
  */
 export async function writeUserConfig(config: UserConfig, cwd: string): Promise<void> {
   const dir = join(cwd, CONTEXTOR_DIR);
   const filePath = join(dir, USER_FILE);
   await mkdir(dir, { recursive: true });
   await writeFile(filePath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  // Set restrictive permissions: owner read/write only (0600)
+  // This limits exposure but does not protect against processes running as the same user
+  await chmod(filePath, 0o600);
 }
 
 /**

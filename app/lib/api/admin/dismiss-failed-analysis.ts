@@ -1,11 +1,13 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { verifySuperAdmin, SuperAdminError } from '@/lib/auth/admin';
 import { revalidatePath } from 'next/cache';
 
 /**
  * Dismisses a failed analysis by marking it as 'dismissed'.
  * The prompt is not deleted, but it's removed from the dead letter queue view.
+ * Requires super admin access.
  *
  * @param promptId - The ID of the prompt to dismiss
  * @returns Success status
@@ -14,6 +16,9 @@ export async function dismissFailedAnalysis(
   promptId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     // First, verify the prompt exists and is in failed state
@@ -52,6 +57,9 @@ export async function dismissFailedAnalysis(
 
     return { success: true };
   } catch (error) {
+    if (error instanceof SuperAdminError) {
+      return { success: false, error: error.message };
+    }
     console.error('[Admin] Unexpected error dismissing analysis:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
@@ -59,6 +67,7 @@ export async function dismissFailedAnalysis(
 
 /**
  * Bulk dismisses all failed analyses.
+ * Requires super admin access.
  *
  * @returns Success status and count of dismissed prompts
  */
@@ -68,6 +77,9 @@ export async function bulkDismissFailedAnalyses(): Promise<{
   error?: string;
 }> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     // Get count of failed prompts
@@ -99,6 +111,9 @@ export async function bulkDismissFailedAnalyses(): Promise<{
 
     return { success: true, count };
   } catch (error) {
+    if (error instanceof SuperAdminError) {
+      return { success: false, count: 0, error: error.message };
+    }
     console.error('[Admin] Unexpected error bulk dismissing analyses:', error);
     return { success: false, count: 0, error: 'An unexpected error occurred' };
   }

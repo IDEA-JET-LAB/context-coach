@@ -7,15 +7,23 @@ ALTER TABLE prompt_analyses REPLICA IDENTITY FULL;
 
 -- Add tables to the supabase_realtime publication
 -- This enables Postgres logical replication for these tables
-BEGIN;
-  -- Drop existing publication membership if any (idempotent)
-  ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS prompts;
-  ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS prompt_analyses;
+-- Note: Tables may already be in publication, so we use DO block to handle errors gracefully
+DO $$
+BEGIN
+  -- Try to add prompts table (will fail silently if already exists)
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE prompts;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL; -- Table already in publication
+  END;
 
-  -- Add tables to publication
-  ALTER PUBLICATION supabase_realtime ADD TABLE prompts;
-  ALTER PUBLICATION supabase_realtime ADD TABLE prompt_analyses;
-COMMIT;
+  -- Try to add prompt_analyses table
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE prompt_analyses;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL; -- Table already in publication
+  END;
+END $$;
 
 -- Add comments for documentation
 COMMENT ON TABLE prompts IS 'Captured prompts from CLI with realtime updates enabled';

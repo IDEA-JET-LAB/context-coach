@@ -49,7 +49,15 @@ export async function validateApiKey(
       return { valid: false };
     }
 
-    // Constant-time comparison to prevent timing attacks
+    // Note: The timing-safe comparison below is defense-in-depth.
+    // The database query already performs an exact match on api_key_hash,
+    // so this comparison will always pass if we reach this point.
+    // However, we keep it for two reasons:
+    // 1. Defense-in-depth: If the database behavior changes or is misconfigured
+    // 2. Explicit verification: Makes it clear that we're comparing hashes securely
+    //
+    // The main security comes from hashing the API key before comparison,
+    // which prevents timing attacks on the raw key value.
     const storedHash = Buffer.from(project.api_key_hash, "hex");
     const providedHash = Buffer.from(keyHash, "hex");
 

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import { escapeSqlLikePattern } from '@/lib/utils/sql-sanitize';
 import type { PromptWithAnalysis } from '@/lib/types/prompt';
 import type { FeedFilters } from '@/lib/types/filters';
 
@@ -28,8 +29,10 @@ export function usePrompts(teamId: string | undefined, filters: FeedFilters = {}
         .order('created_at', { ascending: false });
 
       // Apply search filter (text content)
+      // Escape SQL pattern characters to prevent pattern injection attacks
       if (filters.search) {
-        query = query.ilike('text', `%${filters.search}%`);
+        const escapedSearch = escapeSqlLikePattern(filters.search);
+        query = query.ilike('text', `%${escapedSearch}%`);
       }
 
       // Apply user filter (team leads only)

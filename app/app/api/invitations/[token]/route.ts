@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { invitationRateLimit, checkRateLimit, getClientIp, calculateRetryAfter } from '@/lib/rate-limit';
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -8,6 +9,25 @@ interface RouteParams {
 // GET - Validate invitation token and get invitation details
 export async function GET(request: Request, { params }: RouteParams) {
   try {
+    // Rate limit by IP to prevent brute force token guessing
+    const clientIp = getClientIp(request);
+    const rateLimitResult = await checkRateLimit(invitationRateLimit, clientIp);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': calculateRetryAfter(rateLimitResult.reset),
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
+      );
+    }
+
     const { token } = await params;
     const supabase = await createClient();
 

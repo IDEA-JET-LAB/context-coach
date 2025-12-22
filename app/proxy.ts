@@ -1,3 +1,20 @@
+/**
+ * Next.js Middleware - Session Management and Auth Redirects
+ *
+ * This file serves as the Next.js middleware (using the `proxy` function name
+ * for consistency with Supabase documentation). It handles:
+ *
+ * 1. Supabase session refresh on every request
+ * 2. Protected route authentication checks
+ * 3. Admin route authorization
+ * 4. Auth page redirects for logged-in users
+ * 5. OAuth callback parameter routing
+ *
+ * The actual session logic is in lib/supabase/proxy.ts (updateSession function).
+ *
+ * @see lib/supabase/proxy.ts for session management implementation
+ */
+
 import { updateSession } from "@/lib/supabase/proxy";
 import { type NextRequest, NextResponse } from "next/server";
 

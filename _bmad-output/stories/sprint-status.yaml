@@ -166,3 +166,17 @@ development_status:
   9-7-monitoring-health-checks: done  # Health endpoint working, Cloud Run health checks configured
   9-8-npm-package-publishing: done  # @contextor/cli@1.0.0 published to npm, NPM_TOKEN in GitHub secrets
   epic-9-retrospective: optional
+
+  # =============================================================================
+  # Epic 10: Development Environment & Database Branching
+  # Supabase branching with developer prompt mirroring for safe testing.
+  # Consolidated from previous Epic 10 (Staging) + Epic 11 (Developer Mirroring).
+  # =============================================================================
+  epic-10: backlog
+  10-1-supabase-branch-creation: backlog
+  10-2-developer-flag-on-users-table: backlog
+  10-3-prompt-replication-to-dev-branch: backlog
+  10-4-admin-ui-developer-management: backlog
+  10-5-local-development-configuration: backlog
+  10-6-branch-merge-deployment-workflow: backlog
+  epic-10-retrospective: optional

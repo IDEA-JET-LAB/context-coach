@@ -5,6 +5,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/**
+ * NOTE: Admin components use hardcoded dark colors (#0f0f0f, #1a1a1a, #2a2a2a)
+ * instead of CSS variables for a consistent darker admin theme.
+ * This is intentional to differentiate admin UI from user-facing pages.
+ */
+
 export interface TrendInfo {
   percentChange: number;
   direction: 'up' | 'down' | 'neutral';

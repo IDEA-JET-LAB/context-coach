@@ -4,40 +4,25 @@
  *
  * GET /api/admin/health - Get system health metrics
  * Protected by admin authentication.
+ *
+ * M41 Fix: Uses consistent admin authorization pattern.
+ *
+ * Rate Limiting: Not rate-limited by design.
+ * - Docker/Cloud Run health checks call this endpoint every 30s
+ * - Admin authentication provides sufficient protection
+ * - System health queries are lightweight (cached in database views)
+ * - False positives from rate limiting could cause container restarts
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireSuperAdminApi } from "@/lib/auth/admin";
 import { getSystemHealthWithStatus } from "@/lib/db/queries/system-health";
 
 export async function GET() {
   try {
-    // Verify admin authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is super admin
-    const { data: userData } = await supabase
-      .from("users")
-      .select("is_super_admin")
-      .eq("id", user.id)
-      .single();
-
-    if (!userData?.is_super_admin) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Admin access required" } },
-        { status: 403 }
-      );
-    }
+    // M41 Fix: Use consistent admin authorization guard
+    const auth = await requireSuperAdminApi();
+    if (!auth.authorized) return auth.response;
 
     // Fetch system health data
     const data = await getSystemHealthWithStatus();
@@ -49,9 +34,14 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("[API] admin/health: Error", error);
+    // M39 Fix: Log full error details server-side only, return generic message to client
+    console.error("[API] admin/health: Error", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Failed to fetch health metrics" } },
+      { error: { code: "INTERNAL_ERROR", message: "An error occurred while processing your request" } },
       { status: 500 }
     );
   }

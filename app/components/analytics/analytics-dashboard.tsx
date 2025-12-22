@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { usePersonalAnalytics, TimeRange } from '@/lib/hooks/use-personal-analytics';
 import { ScoreTrendChart } from './score-trend-chart';
 import { SummaryStats } from './summary-stats';
@@ -10,6 +11,20 @@ import { AnalyticsEmptyState } from './analytics-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const STORAGE_KEY = 'contextor-analytics-time-range';
+const VALID_TIME_RANGES: readonly TimeRange[] = ['7d', '30d', '90d', 'all'] as const;
+
+/**
+ * Validates time range value from localStorage (M33)
+ * Returns validated TimeRange or null if invalid
+ */
+function validateTimeRange(value: unknown): TimeRange | null {
+  if (typeof value !== 'string') return null;
+  // Type-safe check against valid values
+  if ((VALID_TIME_RANGES as readonly string[]).includes(value)) {
+    return value as TimeRange;
+  }
+  return null;
+}
 
 interface AnalyticsDashboardProps {
   userId: string;
@@ -22,9 +37,14 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
   // Restore time range from localStorage on mount
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && ['7d', '30d', '90d', 'all'].includes(stored)) {
-      setTimeRange(stored as TimeRange);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const validated = validateTimeRange(stored);
+      if (validated) {
+        setTimeRange(validated);
+      }
+    } catch {
+      // localStorage unavailable, use default
     }
   }, []);
 
@@ -35,6 +55,15 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
   };
 
   const { data, isPending, error } = usePersonalAnalytics(userId, timeRange);
+
+  // Show error toast notification
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load analytics', {
+        description: 'Please try refreshing the page.',
+      });
+    }
+  }, [error]);
 
   // Show loading state before mount to avoid hydration mismatch
   if (!mounted || isPending) {

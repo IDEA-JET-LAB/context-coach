@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { inviteEmailSchema } from '@/lib/validations/invitation';
 import { parseInvitationError, generateInviteUrl } from '@/lib/utils/invitation';
 import { sendInvitationEmail } from '@/lib/services/email';
+import { isValidUuid } from '@/lib/utils/uuid';
 import { ZodError } from 'zod';
 
 interface RouteParams {
@@ -13,6 +14,15 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { teamId } = await params;
+
+    // Validate UUID format
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     const {
@@ -57,16 +67,14 @@ export async function GET(request: Request, { params }: RouteParams) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[API] teams/invitations GET: error fetching invitations', error);
       return NextResponse.json(
-        { error: { code: 'FETCH_FAILED', message: error.message } },
+        { error: { code: 'FETCH_FAILED', message: 'Failed to fetch invitations' } },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ data: { invitations } });
   } catch (error) {
-    console.error('[API] teams/invitations GET: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -78,6 +86,15 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { teamId } = await params;
+
+    // Validate UUID format
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     const {
@@ -108,6 +125,17 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
+    // Get inviter's display name (prefer name from users table, fall back to email username)
+    const { data: inviterProfile } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', user.id)
+      .single();
+
+    // Use display name if available, otherwise use email prefix
+    // This avoids exposing the full email address to invitees
+    const inviterDisplayName = inviterProfile?.name || user.email?.split('@')[0] || 'A team admin';
+
     // Create invitation using RPC function
     const { data: invitation, error } = await supabase.rpc('invite_team_member', {
       p_team_id: teamId,
@@ -116,7 +144,6 @@ export async function POST(request: Request, { params }: RouteParams) {
     });
 
     if (error) {
-      console.error('[API] teams/invitations POST: error creating invitation', error);
       const parsedError = parseInvitationError(error.message);
       return NextResponse.json(
         { error: { code: parsedError.code, message: parsedError.message } },
@@ -130,13 +157,8 @@ export async function POST(request: Request, { params }: RouteParams) {
       email: validated.email,
       inviteLink,
       teamName: team.name,
-      inviterName: user.email?.split('@')[0] || 'A team admin',
+      inviterName: inviterDisplayName,
     });
-
-    if (!emailResult.success) {
-      console.error('[API] teams/invitations POST: failed to send email', emailResult.error);
-      // Continue anyway - invitation was created, email delivery is secondary
-    }
 
     // Return invitation without token (security)
     const { token: _token, ...safeInvitation } = invitation;
@@ -153,7 +175,6 @@ export async function POST(request: Request, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    console.error('[API] teams/invitations POST: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -165,6 +186,15 @@ export async function POST(request: Request, { params }: RouteParams) {
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const { teamId } = await params;
+
+    // Validate UUID format
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     const {
@@ -184,6 +214,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     if (!invitationId) {
       return NextResponse.json(
         { error: { code: 'VALIDATION_ERROR', message: 'Invitation ID is required' } },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format
+    if (!isValidUuid(invitationId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid invitation ID format' } },
         { status: 400 }
       );
     }
@@ -208,7 +246,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     });
 
     if (error) {
-      console.error('[API] teams/invitations PATCH: error revoking invitation', error);
       const parsedError = parseInvitationError(error.message);
       return NextResponse.json(
         { error: { code: parsedError.code, message: parsedError.message } },
@@ -221,7 +258,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ data: { invitation: safeInvitation } });
   } catch (error) {
-    console.error('[API] teams/invitations PATCH: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

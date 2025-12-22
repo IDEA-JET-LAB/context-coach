@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, extractApiKey } from "@/lib/api/validate-api-key";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  cliRateLimit,
+  ipRateLimit,
+  checkRateLimit,
+  getClientIp,
+  calculateRetryAfter,
+} from "@/lib/rate-limit";
 
 /**
  * POST /api/cli/validate-token
@@ -19,9 +26,33 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * - 200: { valid: true }
  * - 401: { error: { code: 'INVALID_API_KEY' | 'TOKEN_EXPIRED', message } }
  * - 403: { error: { code: 'FORBIDDEN', message } }
+ * - 429: { error: { code: 'RATE_LIMITED', message } } - Rate limit exceeded
  */
 export async function POST(request: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const clientIp = getClientIp(request);
+
+    // Check IP rate limit first (protects against brute force before auth)
+    const ipLimit = await checkRateLimit(ipRateLimit, clientIp);
+    if (!ipLimit.success) {
+      console.warn("[API] cli/validate-token: IP rate limit exceeded", { clientIp });
+      return NextResponse.json(
+        {
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many requests",
+          },
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": calculateRetryAfter(ipLimit.reset),
+          },
+        }
+      );
+    }
+
     // Extract API key from Authorization header
     const authHeader = request.headers.get("Authorization");
     const apiKey = extractApiKey(authHeader);
@@ -49,6 +80,28 @@ export async function POST(request: NextRequest) {
           },
         },
         { status: 401 }
+      );
+    }
+
+    // Check CLI rate limit (30 requests per minute per API key/project)
+    const cliLimit = await checkRateLimit(cliRateLimit, keyResult.project_id!);
+    if (!cliLimit.success) {
+      console.warn("[API] cli/validate-token: CLI rate limit exceeded", {
+        projectId: keyResult.project_id,
+      });
+      return NextResponse.json(
+        {
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many requests",
+          },
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": calculateRetryAfter(cliLimit.reset),
+          },
+        }
       );
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -9,11 +9,11 @@ export function useRealtimePrompts(teamId: string | undefined) {
   const queryClient = useQueryClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
+  // Memoize Supabase client to prevent recreation on every render (M36)
+  const supabase = useMemo(() => createClient(), []);
+
   useEffect(() => {
     if (!teamId) return;
-
-    // Create client inside effect to avoid dependency issues
-    const supabase = createClient();
 
     // Clean up any existing channel before creating a new one
     if (channelRef.current) {
@@ -30,8 +30,7 @@ export function useRealtimePrompts(teamId: string | undefined) {
           table: 'prompts',
           filter: `team_id=eq.${teamId}`,
         },
-        (payload) => {
-          console.log('[Realtime] New prompt received:', payload.new);
+        () => {
           // Invalidate cache to refetch with new data
           queryClient.invalidateQueries({ queryKey: ['prompts', teamId] });
         }
@@ -44,8 +43,7 @@ export function useRealtimePrompts(teamId: string | undefined) {
           table: 'prompts',
           filter: `team_id=eq.${teamId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Prompt updated:', payload.new);
+        () => {
           // Update specific prompt in cache when status changes
           queryClient.invalidateQueries({ queryKey: ['prompts', teamId] });
         }
@@ -57,15 +55,12 @@ export function useRealtimePrompts(teamId: string | undefined) {
           schema: 'public',
           table: 'prompt_analyses',
         },
-        (payload) => {
-          console.log('[Realtime] Analysis completed:', payload.new);
+        () => {
           // Refetch when analysis completes
           queryClient.invalidateQueries({ queryKey: ['prompts', teamId] });
         }
       )
-      .subscribe((status) => {
-        console.log('[Realtime] Subscription status:', status);
-      });
+      .subscribe();
 
     channelRef.current = channel;
 
@@ -76,5 +71,5 @@ export function useRealtimePrompts(teamId: string | undefined) {
         channelRef.current = null;
       }
     };
-  }, [teamId, queryClient]);
+  }, [teamId, queryClient, supabase]);
 }

@@ -67,7 +67,12 @@ export function PromptFeed() {
 
   if (error) {
     return (
-      <div className="text-center py-8" data-testid="prompt-feed-error">
+      <div
+        className="text-center py-8"
+        data-testid="prompt-feed-error"
+        role="alert"
+        aria-live="assertive"
+      >
         <p className="text-red-400">Failed to load prompts</p>
         <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
       </div>
@@ -100,7 +105,13 @@ export function PromptFeed() {
           <EmptyPromptFeed hasProjects={(projects?.projects?.length ?? 0) > 0} />
         )
       ) : (
-        <div className="space-y-3" data-testid="prompt-feed">
+        <div
+          className="space-y-3"
+          data-testid="prompt-feed"
+          role="feed"
+          aria-live="polite"
+          aria-label="Prompt feed with real-time updates"
+        >
           {prompts.map((prompt) => (
             <PromptRow
               key={prompt.id}

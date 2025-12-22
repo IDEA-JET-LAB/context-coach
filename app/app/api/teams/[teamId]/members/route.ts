@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isValidUuid } from '@/lib/utils/uuid';
 
 interface RouteParams {
   params: Promise<{ teamId: string }>;
@@ -9,6 +10,15 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { teamId } = await params;
+
+    // Validate UUID format
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     const {
@@ -52,9 +62,8 @@ export async function GET(request: Request, { params }: RouteParams) {
       .order('joined_at', { ascending: true });
 
     if (error) {
-      console.error('[API] teams/members GET: error fetching members', error);
       return NextResponse.json(
-        { error: { code: 'FETCH_FAILED', message: error.message } },
+        { error: { code: 'FETCH_FAILED', message: 'Failed to fetch team members' } },
         { status: 400 }
       );
     }
@@ -81,7 +90,6 @@ export async function GET(request: Request, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error('[API] teams/members GET: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

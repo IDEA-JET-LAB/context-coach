@@ -1,6 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { verifySuperAdmin, SuperAdminError } from '@/lib/auth/admin';
 import { revalidatePath } from 'next/cache';
 import {
   analysisConfigSchema,
@@ -16,10 +17,25 @@ export type ActionResult<T> =
   | { success: false; error: { code: string; message: string } };
 
 /**
- * Get all analysis configs with dimension counts
+ * Helper to handle SuperAdminError in action results
+ */
+function handleError(error: unknown): ActionResult<never> {
+  if (error instanceof SuperAdminError) {
+    return { success: false, error: { code: error.code, message: error.message } };
+  }
+  console.error('[Admin] Unexpected error:', error);
+  return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+}
+
+/**
+ * Get all analysis configs with dimension counts.
+ * Requires super admin access.
  */
 export async function getAnalysisConfigs(): Promise<ActionResult<(AnalysisConfig & { dimension_count: number })[]>> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
@@ -56,16 +72,19 @@ export async function getAnalysisConfigs(): Promise<ActionResult<(AnalysisConfig
 
     return { success: true, data: configs };
   } catch (err) {
-    console.error('[Admin] Unexpected error fetching configs:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }
 
 /**
- * Get a single analysis config with all dimensions
+ * Get a single analysis config with all dimensions.
+ * Requires super admin access.
  */
 export async function getAnalysisConfig(id: string): Promise<ActionResult<AnalysisConfigWithDimensions>> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
@@ -110,16 +129,19 @@ export async function getAnalysisConfig(id: string): Promise<ActionResult<Analys
 
     return { success: true, data: configWithSortedDimensions };
   } catch (err) {
-    console.error('[Admin] Unexpected error fetching config:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }
 
 /**
- * Create a new analysis config with dimensions
+ * Create a new analysis config with dimensions.
+ * Requires super admin access.
  */
 export async function createAnalysisConfig(input: AnalysisConfigInput): Promise<ActionResult<{ id: string }>> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     // Validate input
     const validated = analysisConfigSchema.safeParse(input);
     if (!validated.success) {
@@ -184,19 +206,22 @@ export async function createAnalysisConfig(input: AnalysisConfigInput): Promise<
     revalidatePath('/admin/config');
     return { success: true, data: { id: config.id } };
   } catch (err) {
-    console.error('[Admin] Unexpected error creating config:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }
 
 /**
- * Update an existing analysis config (only if inactive)
+ * Update an existing analysis config (only if inactive).
+ * Requires super admin access.
  */
 export async function updateAnalysisConfig(
   id: string,
   input: Partial<AnalysisConfigInput>
 ): Promise<ActionResult<{ id: string }>> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     // Check if config is active
@@ -261,16 +286,19 @@ export async function updateAnalysisConfig(
     revalidatePath(`/admin/config/${id}`);
     return { success: true, data: { id } };
   } catch (err) {
-    console.error('[Admin] Unexpected error updating config:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }
 
 /**
- * Activate an analysis config (deactivates the current active one)
+ * Activate an analysis config (deactivates the current active one).
+ * Requires super admin access.
  */
 export async function activateConfig(configId: string): Promise<ActionResult<{ success: boolean }>> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     // Check if config exists and has valid weights
@@ -329,19 +357,21 @@ export async function activateConfig(configId: string): Promise<ActionResult<{ s
     revalidatePath(`/admin/config/${configId}`);
     return { success: true, data: { success: true } };
   } catch (err) {
-    console.error('[Admin] Unexpected error activating config:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }
 
 /**
- * Duplicate an analysis config
+ * Duplicate an analysis config.
+ * Requires super admin access.
  */
 export async function duplicateConfig(configId: string): Promise<ActionResult<{ id: string }>> {
   try {
-    const supabase = createAdminClient();
+    // Verify super admin access before any operations
+    // Note: getAnalysisConfig also verifies, but we verify first for consistency
+    await verifySuperAdmin();
 
-    // Get existing config with dimensions
+    // Get existing config with dimensions (this also verifies admin)
     const result = await getAnalysisConfig(configId);
     if (!result.success) {
       return result;
@@ -374,16 +404,19 @@ export async function duplicateConfig(configId: string): Promise<ActionResult<{ 
     console.log(`[Admin] Analysis config ${configId} duplicated to ${createResult.data.id}`);
     return createResult;
   } catch (err) {
-    console.error('[Admin] Unexpected error duplicating config:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }
 
 /**
- * Delete an analysis config (only if inactive)
+ * Delete an analysis config (only if inactive).
+ * Requires super admin access.
  */
 export async function deleteConfig(configId: string): Promise<ActionResult<{ success: boolean }>> {
   try {
+    // Verify super admin access before any operations
+    await verifySuperAdmin();
+
     const supabase = createAdminClient();
 
     // Check if config is active
@@ -416,7 +449,6 @@ export async function deleteConfig(configId: string): Promise<ActionResult<{ suc
     revalidatePath('/admin/config');
     return { success: true, data: { success: true } };
   } catch (err) {
-    console.error('[Admin] Unexpected error deleting config:', err);
-    return { success: false, error: { code: 'UNEXPECTED_ERROR', message: 'An unexpected error occurred' } };
+    return handleError(err);
   }
 }

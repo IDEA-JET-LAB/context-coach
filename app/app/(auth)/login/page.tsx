@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/login-form";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage, getInfoMessage } from "@/lib/utils/auth-messages";
 
 async function LoginContent({
   searchParams,
@@ -21,11 +22,15 @@ async function LoginContent({
 
   const params = await searchParams;
 
+  // Use whitelisted messages to prevent phishing via crafted URLs
+  const safeError = getErrorMessage(params.error);
+  const safeMessage = getInfoMessage(params.message);
+
   return (
     <LoginForm
       sessionExpired={params.expired === "true"}
-      message={params.message}
-      error={params.error}
+      message={safeMessage ?? undefined}
+      error={safeError ?? undefined}
     />
   );
 }

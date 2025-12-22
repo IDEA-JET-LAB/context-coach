@@ -1,4 +1,5 @@
 import type { InstallToken } from './token.js';
+import { TIMEOUTS } from './constants.js';
 
 export interface TokenValidationResult {
   valid: boolean;
@@ -16,8 +17,6 @@ export interface TestResult {
   error?: TestError;
 }
 
-const VALIDATION_TIMEOUT_MS = 10000;
-
 /**
  * Validate install token with the Contextor API
  */
@@ -25,7 +24,7 @@ export async function validateToken(
   token: InstallToken
 ): Promise<TokenValidationResult> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.API_REQUEST_MS);
 
   try {
     const response = await fetch(`${token.api_endpoint}/cli/validate-token`, {
@@ -95,7 +94,7 @@ export async function testCapture(
   cliVersion: string
 ): Promise<TestResult> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), TIMEOUTS.API_REQUEST_MS);
 
   try {
     const response = await fetch(
@@ -143,7 +142,7 @@ export async function getLastCapture(
   sharedConfig: { api_endpoint: string; project_id: string }
 ): Promise<Date | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.API_REQUEST_MS);
 
   try {
     const response = await fetch(

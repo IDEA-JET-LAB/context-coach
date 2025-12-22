@@ -81,6 +81,7 @@ Epic 9 (Production Deployment) is COMPLETE. All infrastructure is deployed:
 | Prompt Capture | ✅ WORKS | Prompts appearing in database |
 | **Prompt Analysis** | ✅ FIXED | OpenAI key added - 3 pending prompts analyzed |
 | Analytics Display | ⏳ UNTESTED | Can now test with analyzed data |
+| **Real-time Updates** | ✅ DEPLOYED | v1.1.0 - Auto-refresh on new prompts |
 
 ---
 
@@ -99,6 +100,25 @@ supabase secrets set OPENAI_API_KEY="sk-proj-..." --project-ref ddskanjiobrjphsc
 - Processing time: ~10 seconds per prompt
 
 **Remaining:** Test that NEW captures trigger analysis automatically (trigger fires on INSERT)
+
+---
+
+## DEPLOYED: Real-time Updates (2025-12-22)
+
+**Version:** v1.1.0
+
+**Changes:**
+1. Enabled Supabase Realtime on `prompts` and `prompt_analyses` tables
+2. Set `REPLICA IDENTITY FULL` for proper change tracking
+3. Added tables to `supabase_realtime` publication
+4. Fixed `useRealtimePrompts` hook to avoid subscription issues
+
+**How it works:**
+- When a new prompt is captured, the feed auto-refreshes
+- When analysis completes, the feed updates with scores
+- Console logs `[Realtime]` messages for debugging
+
+**Database migration:** `20251222000000_enable_realtime_prompts.sql`
 
 ### How to Run
 

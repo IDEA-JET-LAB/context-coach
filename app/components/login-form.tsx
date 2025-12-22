@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,23 @@ export function LoginForm({
 }: LoginFormProps) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const passwordTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastLoginAttemptRef = useRef<number>(0);
+  const loginAttemptsRef = useRef<number>(0);
+
+  // Auto-hide password after 5 seconds when revealed
+  useEffect(() => {
+    if (showPassword) {
+      passwordTimeoutRef.current = setTimeout(() => {
+        setShowPassword(false);
+      }, 5000);
+    }
+    return () => {
+      if (passwordTimeoutRef.current) {
+        clearTimeout(passwordTimeoutRef.current);
+      }
+    };
+  }, [showPassword]);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -56,6 +73,27 @@ export function LoginForm({
   const { isSubmitting } = form.formState;
 
   async function onSubmit(data: LoginInput) {
+    // Client-side rate limiting: max 5 attempts per minute
+    const now = Date.now();
+    const timeSinceLastAttempt = now - lastLoginAttemptRef.current;
+
+    // Reset counter if more than 60 seconds have passed
+    if (timeSinceLastAttempt > 60000) {
+      loginAttemptsRef.current = 0;
+    }
+
+    // Check if user has exceeded rate limit
+    if (loginAttemptsRef.current >= 5 && timeSinceLastAttempt < 60000) {
+      const remainingTime = Math.ceil((60000 - timeSinceLastAttempt) / 1000);
+      form.setError("root", {
+        message: `Too many login attempts. Please wait ${remainingTime} seconds.`,
+      });
+      return;
+    }
+
+    loginAttemptsRef.current++;
+    lastLoginAttemptRef.current = now;
+
     const supabase = createClient();
 
     try {

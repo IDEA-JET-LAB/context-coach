@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { updateProjectSchema } from '@/lib/validations/project';
+import { isValidUuid } from '@/lib/utils/uuid';
 import { ZodError } from 'zod';
 
 interface RouteContext {
@@ -10,6 +11,15 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params;
+
+    // Validate UUID format
+    if (!isValidUuid(projectId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid project ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -30,7 +40,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error('[API] project GET: error fetching project', error);
       return NextResponse.json(
         { error: { code: 'NOT_FOUND', message: 'Project not found' } },
         { status: 404 }
@@ -39,7 +48,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ data: { project } });
   } catch (error) {
-    console.error('[API] project GET: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -50,6 +58,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params;
+
+    // Validate UUID format
+    if (!isValidUuid(projectId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid project ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -94,21 +111,20 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Update project
+    // Update project (validation schema already sanitizes inputs)
     const { data: updated, error: updateError } = await supabase
       .from('projects')
       .update({
-        name: validated.name.trim(),
-        description: validated.description?.trim() || null,
+        name: validated.name,
+        description: validated.description,
       })
       .eq('id', projectId)
       .select('id, team_id, name, description, api_key_prefix, created_at, created_by, is_archived')
       .single();
 
     if (updateError) {
-      console.error('[API] project PATCH: error updating project', updateError);
       return NextResponse.json(
-        { error: { code: 'UPDATE_FAILED', message: updateError.message } },
+        { error: { code: 'UPDATE_FAILED', message: 'Failed to update project' } },
         { status: 400 }
       );
     }
@@ -122,7 +138,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         { status: 400 }
       );
     }
-    console.error('[API] project PATCH: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

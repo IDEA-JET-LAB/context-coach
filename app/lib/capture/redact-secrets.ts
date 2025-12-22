@@ -31,7 +31,17 @@ interface PatternConfig {
  * to avoid double-matching.
  */
 const SECRET_PATTERNS: PatternConfig[] = [
+  // SSH private keys - must come before other patterns
+  // Matches PEM-format private keys (RSA, DSA, EC, OPENSSH, etc.)
+  {
+    name: "ssh_private_key",
+    pattern:
+      /-----BEGIN\s+(?:RSA\s+|DSA\s+|EC\s+|OPENSSH\s+|ENCRYPTED\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(?:RSA\s+|DSA\s+|EC\s+|OPENSSH\s+|ENCRYPTED\s+)?PRIVATE\s+KEY-----/g,
+    replacer: () => "[REDACTED SSH PRIVATE KEY]",
+  },
+
   // JWT tokens - must come before other patterns that might match base64
+  // Note: Supabase anon keys are JWTs and will be caught by this pattern
   {
     name: "jwt",
     pattern: /\beyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*/g,
@@ -47,6 +57,46 @@ const SECRET_PATTERNS: PatternConfig[] = [
   {
     name: "openai_key",
     pattern: /\bsk-[a-zA-Z0-9_-]{45,}\b/g,
+  },
+
+  // GitHub Personal Access Tokens (classic) - ghp_ prefix with 36 alphanumeric chars
+  {
+    name: "github_pat",
+    pattern: /\bghp_[a-zA-Z0-9]{36}\b/g,
+  },
+
+  // GitHub fine-grained Personal Access Tokens - github_pat_ prefix
+  // Format: github_pat_{prefix}_{random} - variable length
+  {
+    name: "github_fine_grained_pat",
+    pattern: /\bgithub_pat_[a-zA-Z0-9_]{20,}\b/g,
+  },
+
+  // GitLab Personal Access Tokens - glpat- prefix with 20 alphanumeric chars
+  {
+    name: "gitlab_pat",
+    pattern: /\bglpat-[a-zA-Z0-9_-]{20,}\b/g,
+  },
+
+  // Google API keys - AIza prefix with 35 characters total
+  {
+    name: "google_api_key",
+    pattern: /\bAIza[a-zA-Z0-9_-]{35}\b/g,
+  },
+
+  // Azure Storage Account keys (base64, typically 88 chars ending with ==)
+  // Must come before env_var to be detected properly
+  // Uses word boundary at start to avoid matching within longer base64 strings
+  {
+    name: "azure_storage_key",
+    pattern: /\b[a-zA-Z0-9+/]{86}==/g,
+  },
+
+  // Slack tokens - xoxb (bot), xoxp (user), xoxa (app-level), xoxs (session)
+  // Format: xox[type]-[numbers]-[numbers]-[alphanumeric] with optional extra segments
+  {
+    name: "slack_token",
+    pattern: /\bxox[abps]-[0-9]+-[0-9]+-[a-zA-Z0-9-]+\b/g,
   },
 
   // AWS Access Key IDs (AKIA prefix, 20 characters total)
@@ -95,10 +145,11 @@ const SECRET_PATTERNS: PatternConfig[] = [
   // Environment variable assignments with sensitive key names
   // Matches: SECRET_KEY=value, export API_TOKEN="value", DATABASE_PASSWORD=...
   // Excludes api_key/apikey patterns (handled above)
+  // Requires at least 2 chars after = to avoid false positives like "KEY=x"
   {
     name: "env_var",
     pattern:
-      /\b(?!api[_-]?key)([A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|CREDENTIALS)[A-Z0-9_]*)\s*=\s*["']?[^"'\s\n]+["']?/gi,
+      /\b(?!api[_-]?key)([A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|CREDENTIALS)[A-Z0-9_]*)\s*=\s*["']?([^"'\s\n]{2,})["']?/gi,
     replacer: (_match: string, varName: string) => {
       return `${varName}=[REDACTED]`;
     },

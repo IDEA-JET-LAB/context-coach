@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, X } from 'lucide-react';
 import { UserFilter } from './filters/user-filter';
@@ -21,19 +21,27 @@ export function FilterBar({ filters, onFiltersChange, isTeamLead, teamId }: Filt
   const [searchInput, setSearchInput] = useState(filters.search ?? '');
   const debouncedSearch = useDebounce(searchInput, 500);
 
+  // Use refs to track previous values without causing re-renders (M34)
+  const prevFiltersSearchRef = useRef(filters.search);
+  const prevDebouncedSearchRef = useRef(debouncedSearch);
+
   // Sync local search input when filters are cleared from outside
   useEffect(() => {
-    if (filters.search !== searchInput && filters.search === undefined) {
+    // Only reset if search was cleared externally (changed from a value to undefined)
+    if (prevFiltersSearchRef.current !== undefined && filters.search === undefined) {
       setSearchInput('');
     }
-  }, [filters.search]); // eslint-disable-line react-hooks/exhaustive-deps
+    prevFiltersSearchRef.current = filters.search;
+  }, [filters.search]);
 
   // Update filters when debounced search changes
   useEffect(() => {
-    if (debouncedSearch !== filters.search) {
+    // Only update if debounced value actually changed
+    if (prevDebouncedSearchRef.current !== debouncedSearch) {
+      prevDebouncedSearchRef.current = debouncedSearch;
       onFiltersChange({ ...filters, search: debouncedSearch || undefined });
     }
-  }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, filters, onFiltersChange]);
 
   // Handle immediate search on Enter key
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {

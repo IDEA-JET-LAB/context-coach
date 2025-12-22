@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { updateTeamSchema } from '@/lib/validations/team';
+import { isValidUuid } from '@/lib/utils/uuid';
 import { ZodError } from 'zod';
 
 interface RouteParams {
@@ -11,6 +12,15 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { teamId } = await params;
+
+    // Validate UUID format
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     const {
@@ -55,7 +65,6 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ data: { team, role: membership.role } });
   } catch (error) {
-    console.error('[API] teams/[teamId] GET: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -67,6 +76,15 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const { teamId } = await params;
+
+    // Validate UUID format
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     const {
@@ -98,21 +116,20 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const body = await request.json();
     const validated = updateTeamSchema.parse(body);
 
-    // Update team
+    // Update team (validation schema already sanitizes inputs)
     const { data: team, error } = await supabase
       .from('teams')
       .update({
-        name: validated.name.trim(),
-        description: validated.description?.trim() || null,
+        name: validated.name,
+        description: validated.description,
       })
       .eq('id', teamId)
       .select('id, name, description, created_at')
       .single();
 
     if (error) {
-      console.error('[API] teams/[teamId] PATCH: error updating team', error);
       return NextResponse.json(
-        { error: { code: 'UPDATE_FAILED', message: error.message } },
+        { error: { code: 'UPDATE_FAILED', message: 'Failed to update team' } },
         { status: 400 }
       );
     }
@@ -126,7 +143,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    console.error('[API] teams/[teamId] PATCH: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

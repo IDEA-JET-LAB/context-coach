@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import type { TestError } from './api-client.js';
 import type { SharedConfig, UserConfig } from './config.js';
+import { getDashboardProjectUrl } from './constants.js';
 
 /**
  * Troubleshooting steps for each error type
@@ -51,7 +52,7 @@ export function formatSuccessMessage(
   sharedConfig: SharedConfig,
   userConfig: UserConfig
 ): string {
-  const dashboardUrl = `https://app.contextor.co/projects/${sharedConfig.project_id}`;
+  const dashboardUrl = getDashboardProjectUrl(sharedConfig.project_id);
 
   return `
 ${chalk.green.bold('Success! Contextor is ready.')}

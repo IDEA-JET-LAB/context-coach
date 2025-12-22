@@ -1,6 +1,35 @@
 import { z } from 'zod';
 
 /**
+ * Allowed API endpoint domains for security validation
+ * Only these domains are accepted in install tokens
+ */
+export const ALLOWED_API_DOMAINS = [
+  'contextor.co',
+  'api.contextor.co',
+  '127.0.0.1',
+  'localhost',
+] as const;
+
+/**
+ * Custom Zod refinement to validate API endpoint domain
+ */
+const apiEndpointSchema = z.string().url().refine((url) => {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname;
+    // Check if hostname matches allowed domains
+    return ALLOWED_API_DOMAINS.some(domain =>
+      hostname === domain || hostname.endsWith(`.${domain}`)
+    );
+  } catch {
+    return false;
+  }
+}, {
+  message: 'API endpoint must be from an allowed Contextor domain'
+});
+
+/**
  * Zod schema for validating install token payload
  */
 export const installTokenSchema = z.object({
@@ -11,7 +40,7 @@ export const installTokenSchema = z.object({
   user_id: z.string().uuid(),
   user_name: z.string().min(1),
   api_key: z.string().min(1),
-  api_endpoint: z.string().url(),
+  api_endpoint: apiEndpointSchema,
   expires_at: z.string().datetime().optional(),
 });
 
@@ -21,7 +50,10 @@ export type InstallToken = z.infer<typeof installTokenSchema>;
  * Custom error for token parsing failures
  */
 export class TokenParseError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly debugInfo?: string
+  ) {
     super(message);
     this.name = 'TokenParseError';
   }
@@ -31,13 +63,33 @@ const GENERIC_ERROR = 'Invalid install token. Please copy it again from the dash
 const TOKEN_PREFIX = 'ctx_';
 
 /**
+ * Enable debug mode for detailed error messages
+ * Set via CONTEXTOR_DEBUG=1 environment variable
+ */
+export function isDebugMode(): boolean {
+  return process.env.CONTEXTOR_DEBUG === '1';
+}
+
+/**
+ * Helper to create error with optional debug info
+ */
+function createTokenError(debugMessage: string): TokenParseError {
+  if (isDebugMode()) {
+    return new TokenParseError(`${GENERIC_ERROR}\n\nDebug info: ${debugMessage}`, debugMessage);
+  }
+  return new TokenParseError(GENERIC_ERROR, debugMessage);
+}
+
+/**
  * Parse and validate an install token string
  * Token format: ctx_<base64-encoded-JSON-payload>
+ *
+ * Set CONTEXTOR_DEBUG=1 environment variable for detailed error messages
  */
 export function parseToken(tokenString: string): InstallToken {
   // Validate prefix
   if (!tokenString.startsWith(TOKEN_PREFIX)) {
-    throw new TokenParseError(GENERIC_ERROR);
+    throw createTokenError(`Token must start with '${TOKEN_PREFIX}' prefix`);
   }
 
   // Extract base64 payload
@@ -47,22 +99,23 @@ export function parseToken(tokenString: string): InstallToken {
   let jsonString: string;
   try {
     jsonString = Buffer.from(base64Payload, 'base64').toString('utf-8');
-  } catch {
-    throw new TokenParseError(GENERIC_ERROR);
+  } catch (e) {
+    throw createTokenError(`Base64 decode failed: ${e instanceof Error ? e.message : 'unknown error'}`);
   }
 
   // Parse JSON
   let payload: unknown;
   try {
     payload = JSON.parse(jsonString);
-  } catch {
-    throw new TokenParseError(GENERIC_ERROR);
+  } catch (e) {
+    throw createTokenError(`JSON parse failed: ${e instanceof Error ? e.message : 'unknown error'}`);
   }
 
   // Validate with Zod schema
   const result = installTokenSchema.safeParse(payload);
   if (!result.success) {
-    throw new TokenParseError(GENERIC_ERROR);
+    const issues = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ');
+    throw createTokenError(`Schema validation failed: ${issues}`);
   }
 
   return result.data;
@@ -70,10 +123,15 @@ export function parseToken(tokenString: string): InstallToken {
 
 /**
  * Check if token is expired based on expires_at field
+ *
+ * SECURITY: Tokens without an expiration date are treated as expired.
+ * All valid tokens MUST have a mandatory expiration to prevent indefinite
+ * use of potentially compromised tokens.
  */
 export function isTokenExpired(token: InstallToken): boolean {
   if (!token.expires_at) {
-    return false;
+    // Treat missing expiration as expired for security - all tokens should have mandatory expiration
+    return true;
   }
   const expiryDate = new Date(token.expires_at);
   return expiryDate < new Date();
@@ -81,6 +139,7 @@ export function isTokenExpired(token: InstallToken): boolean {
 
 /**
  * Test helper for creating valid/invalid test tokens
+ * @internal - Only exported for test files
  */
 export function createTestToken(overrides: Partial<InstallToken> = {}): string {
   const payload: InstallToken = {

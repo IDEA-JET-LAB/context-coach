@@ -8,7 +8,7 @@ async function SettingsContent() {
   const profile = await getUserProfile();
 
   if (!profile) {
-    redirect("/login?message=Your session has expired. Please log in again.");
+    redirect("/login?message=session-expired");
   }
 
   return (

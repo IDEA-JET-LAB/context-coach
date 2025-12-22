@@ -11,6 +11,21 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
+/**
+ * M43 Fix: Configurable max retries via environment variable.
+ * Default is 3 retries if not configured.
+ */
+function getMaxRetries(): number {
+  const envValue = process.env.ANALYSIS_MAX_RETRIES;
+  if (envValue) {
+    const parsed = parseInt(envValue, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return 3; // Default value
+}
+
 export interface SystemHealth {
   successRate: number;
   errorRate: number;
@@ -156,17 +171,20 @@ export function getHealthStatus(
 /**
  * Get dead letter queue count (prompts that have exhausted retries).
  *
+ * M43 Fix: Uses configurable max retries from environment variable.
+ *
  * @returns Count of prompts in dead letter state
  */
 export async function getDeadLetterCount(): Promise<number> {
   const supabase = createAdminClient();
+  const maxRetries = getMaxRetries();
 
   try {
     const { count, error } = await supabase
       .from("prompts")
       .select("id", { count: "exact", head: true })
       .eq("analysis_status", "failed")
-      .gte("analysis_attempts", 3); // Assuming 3 is max retries
+      .gte("analysis_attempts", maxRetries); // M43 Fix: Use configurable max retries
 
     if (error) {
       console.error("[ADMIN] getDeadLetterCount failed:", error);

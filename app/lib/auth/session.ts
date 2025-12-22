@@ -36,7 +36,7 @@ export async function requireSession(): Promise<Session> {
   const session = await getSession();
 
   if (!session) {
-    redirect("/login?message=Your session has expired. Please log in again.");
+    redirect("/login?message=session-expired");
   }
 
   return session;
@@ -100,7 +100,7 @@ export async function requireSuperAdmin(): Promise<UserProfile> {
   const profile = await getUserProfile();
 
   if (!profile) {
-    redirect("/login?message=Your session has expired. Please log in again.");
+    redirect("/login?message=session-expired");
   }
 
   if (!profile.is_super_admin) {
@@ -108,7 +108,7 @@ export async function requireSuperAdmin(): Promise<UserProfile> {
       "[AUTH] non-admin attempted admin access: user_id=%s",
       profile.id
     );
-    redirect("/prompts?message=You do not have access to this area.");
+    redirect("/prompts?message=no-access");
   }
 
   return profile;

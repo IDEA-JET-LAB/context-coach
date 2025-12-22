@@ -49,6 +49,34 @@ context-coach/
 
 The nested `app/app/` is standard Next.js 13+ structure (outer `app` is project root, inner `app` is App Router).
 
+## CRITICAL: Supabase API Key is Case-Sensitive
+
+**This bug has broken production authentication MULTIPLE times. NEVER type the API key manually.**
+
+The Supabase publishable key contains mixed-case characters. A single wrong character (e.g., `x` vs `X`) causes:
+- `[AUTH] Code exchange error: Invalid API key`
+- Google OAuth login completely broken
+- All authentication fails
+
+### The Solution: Use the Deploy Script
+
+**ALWAYS use the deploy script instead of manual docker build commands:**
+
+```bash
+cd app && ./scripts/deploy.sh v1.2.3
+```
+
+The script contains the correct API key as a single source of truth. Never copy/paste the key manually.
+
+### If You Must Build Manually
+
+Copy the EXACT key from this file (triple-check the case):
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkc2thbmppb2JyanBoc2Nza29nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTMzNTIsImV4cCI6MjA4MTg4OTM1Mn0.lB5CtFZunXFR6QbE2OvKRaMWVhZ-zOEb1GmAVqdtKTA
+```
+
+Note the `unXFR` portion - that `X` is uppercase!
+
 ## Development Server
 
 **Port:** Use `3050` for this project (port 3000 is used by other projects)
@@ -349,6 +377,65 @@ All team and project management features implemented and tested:
 - Project archiving
 - 114 E2E tests passing
 
+## CRITICAL: Deployment Workflow
+
+### Rule: ALWAYS Ask Before Production Deployment
+
+**Agents MUST ask user confirmation before deploying to production.** Never auto-deploy.
+
+```
+❌ WRONG: "I've deployed the changes to production"
+✅ RIGHT: "Changes are ready. Should I deploy to production?"
+```
+
+### Development Workflow
+
+```
+Local Development → Test Locally → User Confirms → Production Deploy
+        ↓                ↓                              ↓
+   npm run dev       npm test                    docker build + gcloud deploy
+   port 3050         Playwright E2E
+```
+
+**Current Status (2025-12-22):**
+- ✅ Local Development: Fully functional
+- ❌ Staging Environment: **NOT SET UP** (TODO: Create staging Supabase project + Cloud Run service)
+- ✅ Production: https://contextor.co
+
+### Database Migrations - Automation IS Possible!
+
+**Why it seemed manual:** Earlier sessions ran SQL directly via API instead of using proper migration flow.
+
+**Correct automated approach:**
+
+```bash
+# LOCAL - Apply to local Supabase (no auth needed)
+cd app && npx supabase db push
+
+# PRODUCTION - Apply to remote (needs access token)
+cd app && SUPABASE_ACCESS_TOKEN=<token> npx supabase db push
+```
+
+The `SUPABASE_ACCESS_TOKEN` is stored in root `.env` file.
+
+**Key insight:** The project is already linked (`supabase link` was run), so migrations CAN be pushed automatically without `--project-ref`.
+
+### Pre-Deployment Checklist
+
+Before asking user about production deployment:
+
+1. **Build succeeds locally:** `cd app && npm run build`
+2. **Tests pass:** `cd app && npm test`
+3. **Migrations applied to production:** `SUPABASE_ACCESS_TOKEN=... npx supabase db push`
+4. **Edge Functions deployed (if changed):** `SUPABASE_ACCESS_TOKEN=... npx supabase functions deploy <function-name>`
+
+### Why Staging Matters (TODO)
+
+Currently skipped, but should be set up:
+- Separate Supabase project: `contextor-staging`
+- Separate Cloud Run service: `contextor-web-staging`
+- Test production-like environment without affecting real users
+
 ## Epic 9 Status: COMPLETED - PRODUCTION DEPLOYED
 
 ### Production URLs
@@ -376,7 +463,19 @@ All team and project management features implemented and tested:
 | Platform | `linux/amd64` | Cloud Run requires AMD64, Mac builds ARM by default |
 | Region | `us-central1` | Where service is deployed |
 
-### Manual Deployment Steps
+### Recommended: Use Deploy Script
+
+**ALWAYS use the deploy script to avoid API key typos:**
+
+```bash
+cd app && ./scripts/deploy.sh v1.2.3
+```
+
+The script handles all build args correctly and prevents the case-sensitive API key bug.
+
+### Manual Deployment Steps (NOT RECOMMENDED)
+
+If you must deploy manually, use the script as reference for correct values.
 
 ```bash
 cd app
@@ -385,10 +484,11 @@ cd app
 gcloud config set project ideajetlab-website
 
 # Step 2: Build for AMD64 (CRITICAL - Mac builds ARM by default which Cloud Run rejects)
+# WARNING: Copy the API key from scripts/deploy.sh - DO NOT TYPE IT MANUALLY
 docker build \
   --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ddskanjiobrjphscskog.supabase.co \
-  --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkc2thbmppb2JyanBoc2Nza29nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTMzNTIsImV4cCI6MjA4MTg4OTM1Mn0.lB5CtFZunXFR6QbE2OvKRaMWVhZ-zOEb1GmAVqdtKTA \
+  --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<COPY FROM scripts/deploy.sh> \
   --build-arg NEXT_PUBLIC_APP_URL=https://contextor.co \
   -t gcr.io/ideajetlab-website/contextor:vX.X.X \
   .
@@ -406,6 +506,7 @@ gcloud run deploy contextor-web \
 
 | Error | Cause | Fix |
 |-------|-------|-----|
+| `[AUTH] Invalid API key` | **Wrong case in API key (x vs X)** | **Use `./scripts/deploy.sh` instead of manual build** |
 | "Artifact Registry API not enabled" | Wrong GCP project | Run `gcloud config set project ideajetlab-website` |
 | "must support amd64/linux" | Built for ARM (Mac default) | Add `--platform linux/amd64` to build |
 | Email redirects to 0.0.0.0 | Missing NEXT_PUBLIC_APP_URL | Add `--build-arg NEXT_PUBLIC_APP_URL=https://contextor.co` |
@@ -473,3 +574,50 @@ npm publish --access public
 ```
 
 Requires `NPM_TOKEN` in `~/.npmrc` or environment. Token stored in project `.env`.
+
+## Security Improvements (December 2025)
+
+A comprehensive code review identified and fixed 125 issues across all severity levels.
+
+### Critical Security Fixes Applied
+
+| Issue | Fix | Files |
+|-------|-----|-------|
+| Missing super admin verification | Added `verifySuperAdmin()` to all admin server actions | `lib/api/admin/*.ts`, `lib/services/admin-config.ts` |
+| Hardcoded service role key | Removed via migration, fails if not configured | `migrations/20251222100000_*.sql` |
+| Prompt injection in AI | Added `sanitizeUserPrompt()` with pattern filtering | `supabase/functions/analyze-prompt/lib/prompts.ts` |
+| Rate limit bypass when Redis down | Added `failClosed` config option | `lib/rate-limit/index.ts` |
+| Weak admin secret fallback | Now fails if `ADMIN_SECRET` not set | `api/admin/make-super-admin/route.ts` |
+
+### New Security Utilities
+
+| File | Purpose |
+|------|---------|
+| `lib/utils/uuid.ts` | UUID validation with `isValidUuid()` |
+| `lib/utils/sql-sanitize.ts` | SQL LIKE pattern escaping |
+| `lib/utils/auth-messages.ts` | Error message whitelist (prevents XSS) |
+| `lib/utils/request-context.ts` | Safe IP/User-Agent extraction |
+
+### Secret Redaction Improvements
+
+Added patterns for: GitHub PATs (`ghp_`, `github_pat_`), GitLab PATs (`glpat-`), Google API keys (`AIza`), SSH private keys
+
+### Rate Limiting
+
+- CLI endpoints now rate limited (`cliRateLimit`)
+- Invitation tokens rate limited
+- Admin bulk operations rate limited
+- `RATE_LIMIT_FAIL_CLOSED=true` recommended for production
+
+### Password Requirements (Updated)
+
+- Minimum 12 characters (was 8)
+- Must contain: lowercase, uppercase, number
+
+### CSP Header Added
+
+Content-Security-Policy now configured in `next.config.ts` with appropriate directives.
+
+### GitHub Actions Security
+
+All actions pinned to commit SHAs to prevent supply-chain attacks.

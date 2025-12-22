@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { isValidUuid } from '@/lib/utils/uuid';
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
@@ -8,6 +9,15 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params;
+
+    // Validate UUID format
+    if (!isValidUuid(projectId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid project ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -66,16 +76,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .eq('id', projectId);
 
     if (updateError) {
-      console.error('[API] archive: error archiving project', updateError);
       return NextResponse.json(
-        { error: { code: 'ARCHIVE_FAILED', message: updateError.message } },
+        { error: { code: 'ARCHIVE_FAILED', message: 'Failed to archive project' } },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ data: { success: true } });
   } catch (error) {
-    console.error('[API] archive: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

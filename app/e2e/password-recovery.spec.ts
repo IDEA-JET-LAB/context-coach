@@ -50,8 +50,12 @@ async function deleteEmail(id: string): Promise<void> {
 test.describe("Password Recovery Flow", () => {
   test.beforeAll(async ({ request }) => {
     // Create a test account first
-    const supabaseUrl = "http://127.0.0.1:54321";
-    const supabaseKey = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH";
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!supabaseKey) {
+      throw new Error("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variable is required for E2E tests");
+    }
 
     await request.post(`${supabaseUrl}/auth/v1/signup`, {
       headers: {
@@ -86,7 +90,6 @@ test.describe("Password Recovery Flow", () => {
 
     const resetLink = extractResetLink(email!.html);
     expect(resetLink).not.toBeNull();
-    console.log("Reset link:", resetLink);
 
     // Step 3: Click the reset link (goes through Supabase auth server)
     await page.goto(resetLink!);

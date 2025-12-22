@@ -16,11 +16,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # SECURITY: Pin actions to commit SHAs to prevent supply-chain attacks
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
@@ -51,6 +52,17 @@ jobs:
 
       - name: Verify publication
         run: |
-          sleep 10  # Wait for npm to index the package
-          npm view @contextor/cli version
-          echo "Successfully published @contextor/cli to npm!"
+          # Poll npm registry until package is indexed (max 30s)
+          for i in {1..6}; do
+            echo "Verification attempt $i/6..."
+            if npm view @contextor/cli version 2>/dev/null; then
+              echo "Successfully published @contextor/cli to npm!"
+              exit 0
+            fi
+            if [ $i -lt 6 ]; then
+              sleep 5  # Wait 5s between attempts
+            fi
+          done
+
+          echo "Package not found in npm registry after 30s"
+          exit 1

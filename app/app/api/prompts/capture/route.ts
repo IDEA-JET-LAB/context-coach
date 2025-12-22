@@ -13,13 +13,56 @@ import {
   calculateRetryAfter,
 } from "@/lib/rate-limit";
 import { redactSecrets } from "@/lib/capture/redact-secrets";
-import { storePrompt, StorageError } from "@/lib/capture/store-prompt";
+import { storePrompt, StorageError, FilteredError } from "@/lib/capture/store-prompt";
 import { withRetry, RetryError } from "@/lib/capture/retry";
 import { isTransientError, classifyError } from "@/lib/capture/errors";
 import { createScopedLogger } from "@/lib/utils/logger";
 
 // Create a scoped logger for capture operations
 const logger = createScopedLogger("CAPTURE");
+
+/**
+ * Triggers the analyze-prompt Edge Function asynchronously.
+ * This is a fire-and-forget call - we don't wait for analysis to complete.
+ *
+ * Security note: Uses SUPABASE_SERVICE_ROLE_KEY because:
+ * 1. Edge Functions require authentication to invoke
+ * 2. The service role allows the Edge Function to read/write prompts via admin access
+ * 3. This key is server-side only (stored in GCP Secret Manager in production)
+ * 4. Never exposed to client - only used in this Route Handler
+ */
+async function triggerAnalysis(promptId: string): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    logger.warn("Cannot trigger analysis: missing environment variables");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/analyze-prompt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({ prompt_id: promptId }),
+    });
+
+    if (!response.ok) {
+      logger.warn("Analysis trigger failed", {
+        status: response.status,
+        promptId,
+      });
+    } else {
+      logger.log("Analysis triggered", { promptId });
+    }
+  } catch (error) {
+    // Don't fail the capture if analysis trigger fails
+    logger.warn("Analysis trigger error", { promptId, error });
+  }
+}
 
 /**
  * Creates a rate limit exceeded response.
@@ -135,7 +178,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user rate limit if user_id is provided
-    // This runs BEFORE validation to ensure rate limiting happens first
+    // Rate limiting strategy:
+    // 1. IP limit (line ~107): First defense against brute force - runs before auth
+    // 2. Project limit (line ~146): Runs after auth to prevent per-project abuse
+    // 3. User limit (here): Runs after body parse to prevent per-user abuse
+    //
+    // This runs BEFORE schema validation to ensure rate limiting happens early.
+    // We must parse JSON first to extract user_id, but JSON parsing is cheap
+    // compared to database operations that follow.
     const bodyObj = body as Record<string, unknown>;
     if (typeof bodyObj?.user_id === "string" && bodyObj.user_id.length > 0) {
       const userLimit = await checkRateLimit(userRateLimit, bodyObj.user_id);
@@ -192,9 +242,17 @@ export async function POST(request: NextRequest) {
       logger.log("Prompt stored successfully", {
         projectId: keyResult.project_id,
         promptId: result.id,
+        promptType: result.prompt_type,
         attempts,
         durationMs: totalDurationMs,
       });
+
+      // Trigger analysis for prompts that need it (not commands)
+      // This is async/non-blocking - we don't wait for analysis
+      if (result.analysis_status === "pending") {
+        // Use void to explicitly ignore the promise
+        void triggerAnalysis(result.id);
+      }
 
       // Return success with the database-generated ID
       return NextResponse.json(
@@ -202,6 +260,17 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (error) {
+      // Handle filtered prompts (garbage/system data) - return 200 OK but don't store
+      if (error instanceof FilteredError) {
+        logger.log("Prompt filtered (system message)", {
+          projectId: keyResult.project_id,
+        });
+        return NextResponse.json(
+          { data: { id: null, status: "filtered", reason: "System message filtered" } },
+          { status: 200 }
+        );
+      }
+
       // Handle retry exhaustion - return 503 with Retry-After header
       if (error instanceof RetryError) {
         logger.error("All retries exhausted", error, {

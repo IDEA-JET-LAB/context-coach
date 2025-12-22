@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,35 @@ export function UpdatePasswordForm({
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const confirmPasswordTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-hide password after 5 seconds when revealed
+  useEffect(() => {
+    if (showPassword) {
+      passwordTimeoutRef.current = setTimeout(() => {
+        setShowPassword(false);
+      }, 5000);
+    }
+    return () => {
+      if (passwordTimeoutRef.current) {
+        clearTimeout(passwordTimeoutRef.current);
+      }
+    };
+  }, [showPassword]);
+
+  useEffect(() => {
+    if (showConfirmPassword) {
+      confirmPasswordTimeoutRef.current = setTimeout(() => {
+        setShowConfirmPassword(false);
+      }, 5000);
+    }
+    return () => {
+      if (confirmPasswordTimeoutRef.current) {
+        clearTimeout(confirmPasswordTimeoutRef.current);
+      }
+    };
+  }, [showConfirmPassword]);
 
   const form = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),

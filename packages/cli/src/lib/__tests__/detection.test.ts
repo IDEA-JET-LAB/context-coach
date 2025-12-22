@@ -10,8 +10,8 @@ import {
   CONTEXTOR_DIR,
   CONFIG_FILE,
   USER_FILE,
-  type ProjectConfig,
 } from '../detection.js';
+import type { SharedConfig } from '../config.js';
 
 describe('detection', () => {
   let testDir: string;
@@ -29,7 +29,7 @@ describe('detection', () => {
     }
   });
 
-  const validConfig: ProjectConfig = {
+  const validConfig: SharedConfig = {
     project_id: '550e8400-e29b-41d4-a716-446655440000',
     project_name: 'Test Project',
     team_id: '550e8400-e29b-41d4-a716-446655440001',

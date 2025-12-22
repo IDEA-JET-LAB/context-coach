@@ -13,15 +13,11 @@ export interface DimensionScoreResponse {
 }
 
 /**
- * Complete AI analysis response with all 5 dimensions
+ * Complete AI analysis response - now a generic record type
+ * to support configurable dimensions from the database.
+ * Key = dimension name (lowercase), Value = score response
  */
-export interface AIAnalysisResponse {
-  clarity: DimensionScoreResponse;
-  context: DimensionScoreResponse;
-  specificity: DimensionScoreResponse;
-  goal: DimensionScoreResponse;
-  constraints: DimensionScoreResponse;
-}
+export type AIAnalysisResponse = Record<string, DimensionScoreResponse>;
 
 /**
  * Dimension score with weight for calculation
@@ -59,10 +55,10 @@ export class AIResponseParseError extends Error {
 }
 
 /**
- * Valid dimension names in the response
+ * Dimension names are now configurable via the database.
+ * The parseAIResponse function accepts expectedDimensions parameter
+ * to validate the AI response against the configured dimensions.
  */
-const VALID_DIMENSIONS = ['clarity', 'context', 'specificity', 'goal', 'constraints'] as const;
-type DimensionName = typeof VALID_DIMENSIONS[number];
 
 /**
  * Validates that a score is an integer between 1 and 10
@@ -136,12 +132,33 @@ function validateDimensionScore(
 }
 
 /**
- * Parses and validates the raw AI response
+ * Parses and validates the raw AI response against expected dimension names
  * @param rawResponse The raw JSON string from the AI
- * @returns Validated AIAnalysisResponse
+ * @param expectedDimensions Array of expected dimension names (lowercase) from the database
+ * @returns Record of dimension name to validated score response
  * @throws AIResponseParseError if response is invalid
  */
-export function parseAIResponse(rawResponse: string): AIAnalysisResponse {
+export function parseAIResponse(
+  rawResponse: string,
+  expectedDimensions: string[]
+): Record<string, DimensionScoreResponse> {
+  // Validate inputs
+  if (!rawResponse || typeof rawResponse !== 'string') {
+    throw new AIResponseParseError(
+      'Invalid AI response: response must be a non-empty string',
+      String(rawResponse),
+      { receivedType: typeof rawResponse }
+    );
+  }
+
+  if (!expectedDimensions || expectedDimensions.length === 0) {
+    throw new AIResponseParseError(
+      'Invalid expected dimensions: must be a non-empty array',
+      rawResponse,
+      { receivedDimensions: expectedDimensions }
+    );
+  }
+
   // Parse JSON
   let parsed: unknown;
   try {
@@ -164,26 +181,26 @@ export function parseAIResponse(rawResponse: string): AIAnalysisResponse {
 
   const response = parsed as Record<string, unknown>;
 
-  // Validate all required dimensions are present
-  const missingDimensions = VALID_DIMENSIONS.filter(
+  // Validate all expected dimensions are present (using lowercase names)
+  const normalizedExpected = expectedDimensions.map(d => d.toLowerCase());
+  const missingDimensions = normalizedExpected.filter(
     (dim) => !(dim in response)
   );
   if (missingDimensions.length > 0) {
     throw new AIResponseParseError(
       `Missing dimensions in AI response: ${missingDimensions.join(', ')}`,
       rawResponse,
-      { missingDimensions }
+      { missingDimensions, expectedDimensions: normalizedExpected }
     );
   }
 
-  // Validate each dimension
-  return {
-    clarity: validateDimensionScore('clarity', response.clarity, rawResponse),
-    context: validateDimensionScore('context', response.context, rawResponse),
-    specificity: validateDimensionScore('specificity', response.specificity, rawResponse),
-    goal: validateDimensionScore('goal', response.goal, rawResponse),
-    constraints: validateDimensionScore('constraints', response.constraints, rawResponse),
-  };
+  // Validate each dimension and build response object
+  const result: Record<string, DimensionScoreResponse> = {};
+  for (const dim of normalizedExpected) {
+    result[dim] = validateDimensionScore(dim, response[dim], rawResponse);
+  }
+
+  return result;
 }
 
 /**
@@ -216,21 +233,28 @@ export function calculateOverallScore(scores: DimensionScoreResponse[], weights:
 
 /**
  * Maps AI analysis response to dimension scores with weights
- * @param analysis The parsed AI analysis response
- * @param dimensionWeights Map of dimension name to weight (e.g., { clarity: 25, context: 25, ... })
+ * @param analysis The parsed AI analysis response (Record of dimension name to score)
+ * @param dimensionWeights Map of dimension name (lowercase) to weight (e.g., { clarity: 25, context: 25, ... })
+ * @param rawResponse The raw AI response string for debugging
  * @returns Array of dimension scores with weights and overall score
  */
 export function mapToScoringResult(
-  analysis: AIAnalysisResponse,
+  analysis: Record<string, DimensionScoreResponse>,
   dimensionWeights: Record<string, number>,
   rawResponse: string
 ): ScoringResult {
-  const dimensionScores: DimensionScore[] = VALID_DIMENSIONS.map((name) => {
+  // Use the dimension names from the weights (which come from the database)
+  const dimensionNames = Object.keys(dimensionWeights);
+
+  const dimensionScores: DimensionScore[] = dimensionNames.map((name) => {
     const weight = dimensionWeights[name];
     if (typeof weight !== 'number') {
       throw new Error(`Missing weight for dimension: ${name}`);
     }
     const dimensionData = analysis[name];
+    if (!dimensionData) {
+      throw new Error(`Missing analysis data for dimension: ${name}`);
+    }
     return {
       name,
       score: dimensionData.score,

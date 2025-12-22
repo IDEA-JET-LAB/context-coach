@@ -54,6 +54,13 @@ ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 
 -- Team members can view their team's prompts
 -- Uses team_members lookup for proper multi-tenancy
+--
+-- Note on service_role access:
+-- The service_role clause allows backend Edge Functions (analyze-prompt) to
+-- read prompts for analysis. This is intentional and secure because:
+-- 1. service_role key is server-side only (stored in GCP Secret Manager)
+-- 2. Edge Functions need to read prompts to generate analysis
+-- 3. The key is never exposed to clients - only used in secure server contexts
 CREATE POLICY "Team members can view prompts" ON prompts
 FOR SELECT USING (
   team_id IN (SELECT tm.team_id FROM team_members tm WHERE tm.user_id = auth.uid())

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { createProjectSchema } from '@/lib/validations/project';
 import { generateApiKey, hashApiKey, getApiKeyPrefix } from '@/lib/utils/api-key';
-import { generateInstallToken, getApiEndpoint } from '@/lib/utils/install-token';
+import { generateInstallToken, getApiEndpoint, TOKEN_EXPIRATION_HOURS } from '@/lib/utils/install-token';
 import { ZodError } from 'zod';
 
 export async function POST(request: Request) {
@@ -92,14 +92,14 @@ export async function POST(request: Request) {
       .single();
 
     if (createError) {
-      console.error('[API] projects POST: error creating project', createError);
       return NextResponse.json(
-        { error: { code: 'CREATE_FAILED', message: createError.message } },
+        { error: { code: 'CREATE_FAILED', message: 'Failed to create project' } },
         { status: 400 }
       );
     }
 
     // Generate install token with all required fields
+    // SECURITY: Token expiration is intentionally short to minimize exposure window
     const installToken = generateInstallToken({
       project_id: project.id,
       project_name: project.name,
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       user_name: user.email?.split('@')[0] || 'User',
       api_key: apiKey,
       api_endpoint: getApiEndpoint(),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      expires_at: new Date(Date.now() + TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000).toISOString(),
     });
 
     return NextResponse.json(
@@ -118,6 +118,8 @@ export async function POST(request: Request) {
           project,
           apiKey, // Only time this is returned!
           installToken,
+          // Security warning for clients to display
+          warning: 'This API key will only be shown once. Store it securely - it cannot be recovered. If lost, you must regenerate a new key which will invalidate the old one.',
         },
       },
       { status: 201 }
@@ -130,7 +132,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    console.error('[API] projects POST: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -174,16 +175,14 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[API] projects GET: error fetching projects', error);
       return NextResponse.json(
-        { error: { code: 'FETCH_FAILED', message: error.message } },
+        { error: { code: 'FETCH_FAILED', message: 'Failed to fetch projects' } },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ data: { projects } });
   } catch (error) {
-    console.error('[API] projects GET: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

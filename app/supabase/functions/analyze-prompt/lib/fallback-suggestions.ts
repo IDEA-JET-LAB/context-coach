@@ -39,6 +39,12 @@ const FALLBACK_NEXT_LEVEL: Record<string, string> = {
 };
 
 /**
+ * Score thresholds for fallback suggestions
+ */
+const SCORE_THRESHOLD_REINFORCEMENT = 10; // Perfect score
+const SCORE_THRESHOLD_ADVANCED = 8; // Good, room for advanced tips
+
+/**
  * Gets the appropriate fallback suggestion based on dimension and score
  * @param dimension The dimension name (lowercase)
  * @param score The dimension score (1-10)
@@ -47,11 +53,11 @@ const FALLBACK_NEXT_LEVEL: Record<string, string> = {
 export function getFallbackSuggestion(dimension: string, score: number): string {
   const normalizedDimension = dimension.toLowerCase();
 
-  if (score >= 10) {
+  if (score >= SCORE_THRESHOLD_REINFORCEMENT) {
     return FALLBACK_REINFORCEMENTS[normalizedDimension] || "Great job on this dimension!";
   }
 
-  if (score >= 8) {
+  if (score >= SCORE_THRESHOLD_ADVANCED) {
     return FALLBACK_NEXT_LEVEL[normalizedDimension] || "Good work! Consider adding more detail for even better results.";
   }
 
@@ -59,12 +65,20 @@ export function getFallbackSuggestion(dimension: string, score: number): string 
 }
 
 /**
+ * Score thresholds for suggestion types
+ * Magic numbers replaced with named constants for clarity and maintainability
+ */
+const SCORE_THRESHOLD_IMPROVEMENT = 7; // Scores 1-7: Need improvement
+const SCORE_THRESHOLD_NEXT_LEVEL = 9; // Scores 8-9: Good but can be enhanced
+// Scores 10: Excellent, deserves reinforcement
+
+/**
  * Gets the suggestion type based on score
  * @param score The dimension score (1-10)
  * @returns The suggestion type
  */
 export function getSuggestionType(score: number): 'improvement' | 'next_level' | 'reinforcement' {
-  if (score <= 7) return 'improvement';
-  if (score <= 9) return 'next_level';
+  if (score <= SCORE_THRESHOLD_IMPROVEMENT) return 'improvement';
+  if (score <= SCORE_THRESHOLD_NEXT_LEVEL) return 'next_level';
   return 'reinforcement';
 }

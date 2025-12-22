@@ -11,6 +11,7 @@ import {
   Cell,
 } from 'recharts';
 import type { DistributionData } from '@/lib/hooks/use-team-analytics';
+import { CHART_HEIGHT } from '@/lib/constants/analytics';
 
 const COLORS: Record<string, string> = {
   '1-3': '#f87171',  // Coral - needs improvement
@@ -26,7 +27,7 @@ export function TeamDistributionChart({ data }: TeamDistributionChartProps) {
   if (data.every(d => d.count === 0)) {
     return (
       <div
-        className="flex h-[250px] items-center justify-center text-muted-foreground"
+        className={`flex h-[${CHART_HEIGHT.DISTRIBUTION}px] items-center justify-center text-muted-foreground`}
         data-testid="distribution-chart-empty"
       >
         No score data available
@@ -35,7 +36,7 @@ export function TeamDistributionChart({ data }: TeamDistributionChartProps) {
   }
 
   return (
-    <div className="h-[250px] w-full" data-testid="team-distribution-chart">
+    <div className={`h-[${CHART_HEIGHT.DISTRIBUTION}px] w-full`} data-testid="team-distribution-chart">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
@@ -59,8 +60,8 @@ export function TeamDistributionChart({ data }: TeamDistributionChartProps) {
             formatter={(value) => [`${value} prompts`, 'Count']}
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.range] || '#a1a1aa'} />
+            {data.map((entry) => (
+              <Cell key={`cell-${entry.range}`} fill={COLORS[entry.range] || '#a1a1aa'} />
             ))}
           </Bar>
         </BarChart>

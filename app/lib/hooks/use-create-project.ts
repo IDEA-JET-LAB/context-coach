@@ -33,7 +33,12 @@ export function useCreateProject() {
       toast.success(`Project "${data.project.name}" created successfully!`);
 
       // Redirect to project success page with sensitive data
-      // Store in sessionStorage (will be cleared when tab closes)
+      // SECURITY NOTE: Using sessionStorage for one-time secret transfer
+      // - sessionStorage is isolated per-origin and cleared on tab close
+      // - Data is immediately deleted after reading (see project-success-content.tsx)
+      // - This is more secure than URL params (which leak in referrer/history)
+      // - Alternative would be state management, but route refresh would lose data
+      // - Consider using Web Crypto API encryption if XSS is a concern
       sessionStorage.setItem(
         `project-created-${data.project.id}`,
         JSON.stringify({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isValidUuid } from '@/lib/utils/uuid';
 
 /**
  * API endpoint to make a user a super admin.
@@ -18,8 +19,17 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, secret } = await request.json();
 
-    // Basic secret check for test environments
-    const expectedSecret = process.env.ADMIN_SECRET || 'test-admin-secret';
+    // SECURITY: Require ADMIN_SECRET to be explicitly configured
+    // No fallback - fail if not set
+    const expectedSecret = process.env.ADMIN_SECRET;
+    if (!expectedSecret) {
+      console.error('[Admin] ADMIN_SECRET environment variable is not configured');
+      return NextResponse.json(
+        { error: { code: 'NOT_CONFIGURED', message: 'Admin secret not configured' } },
+        { status: 500 }
+      );
+    }
+
     if (secret !== expectedSecret) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Invalid secret' } },
@@ -30,6 +40,13 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { error: { code: 'INVALID_INPUT', message: 'User ID required' } },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidUuid(userId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_INPUT', message: 'User ID must be a valid UUID' } },
         { status: 400 }
       );
     }

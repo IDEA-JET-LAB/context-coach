@@ -3,6 +3,14 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { getOriginFromRequest } from "@/lib/utils/get-origin";
 
+const isDev = process.env.NODE_ENV === "development";
+
+// Validate invite token format (UUID)
+function isValidUUID(token: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(token);
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const { searchParams } = requestUrl;
@@ -22,12 +30,14 @@ export async function GET(request: NextRequest) {
   const error_description = searchParams.get("error_description");
 
   if (error) {
-    console.error("[AUTH] OAuth error:", error, error_description);
-    const message = error === "access_denied"
-      ? "Sign-in was cancelled"
-      : "Authentication failed";
+    // Only log details in development to avoid leaking info in production logs
+    if (isDev) {
+      console.error("[AUTH] OAuth error:", error, error_description);
+    }
+    // Use error codes instead of raw messages - the login page will translate to user-friendly messages
+    const errorCode = error === "access_denied" ? "oauth-cancelled" : "oauth-failed";
     return NextResponse.redirect(
-      `${normalizedOrigin}/login?error=${encodeURIComponent(message)}`
+      `${normalizedOrigin}/login?error=${errorCode}`
     );
   }
 
@@ -58,7 +68,10 @@ export async function GET(request: NextRequest) {
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
-      console.error("[AUTH] Code exchange error:", exchangeError.message, exchangeError.code);
+      // Only log details in development to avoid leaking info in production logs
+      if (isDev) {
+        console.error("[AUTH] Code exchange error:", exchangeError.message, exchangeError.code);
+      }
 
       // Handle recovery type - redirect to password update page
       if (type === "recovery") {
@@ -68,7 +81,7 @@ export async function GET(request: NextRequest) {
       }
 
       return NextResponse.redirect(
-        `${normalizedOrigin}/login?error=${encodeURIComponent("Authentication failed")}`
+        `${normalizedOrigin}/login?error=authentication-failed`
       );
     }
 
@@ -83,28 +96,40 @@ export async function GET(request: NextRequest) {
     if (isRecovery) {
       redirectUrl = `${normalizedOrigin}/reset-password/update`;
     } else if (inviteToken) {
-      // Handle invitation token - try to accept the invitation
-      try {
-        const acceptResponse = await supabase.rpc('accept_team_invitation', {
-          p_token: inviteToken,
-          p_user_id: data.user?.id,
-        });
+      // Validate invite token format before using
+      if (!isValidUUID(inviteToken)) {
+        // Invalid token format - redirect to home without exposing details
+        redirectUrl = `${normalizedOrigin}${next}`;
+      } else {
+        // Handle invitation token - try to accept the invitation
+        try {
+          const acceptResponse = await supabase.rpc('accept_team_invitation', {
+            p_token: inviteToken,
+            p_user_id: data.user?.id,
+          });
 
-        if (acceptResponse.data) {
-          // Set team claim and redirect to dashboard
-          await supabase.rpc('set_team_claim', { team_id: acceptResponse.data.id });
-          console.log("[AUTH] Successfully accepted invitation for team:", acceptResponse.data.name);
-          redirectUrl = `${normalizedOrigin}/prompts`;
-        } else if (acceptResponse.error) {
-          console.error("[AUTH] Failed to accept invitation:", acceptResponse.error.message);
-          // Redirect to invitation page to show error
+          if (acceptResponse.data) {
+            // Set team claim and redirect to dashboard
+            await supabase.rpc('set_team_claim', { team_id: acceptResponse.data.id });
+            if (isDev) {
+              console.log("[AUTH] Successfully accepted invitation for team:", acceptResponse.data.name);
+            }
+            redirectUrl = `${normalizedOrigin}/prompts`;
+          } else if (acceptResponse.error) {
+            if (isDev) {
+              console.error("[AUTH] Failed to accept invitation:", acceptResponse.error.message);
+            }
+            // Redirect to invitation page to show error
+            redirectUrl = `${normalizedOrigin}/invite/${inviteToken}`;
+          } else {
+            redirectUrl = `${normalizedOrigin}${next}`;
+          }
+        } catch (err) {
+          if (isDev) {
+            console.error("[AUTH] Error accepting invitation:", err);
+          }
           redirectUrl = `${normalizedOrigin}/invite/${inviteToken}`;
-        } else {
-          redirectUrl = `${normalizedOrigin}${next}`;
         }
-      } catch (err) {
-        console.error("[AUTH] Error accepting invitation:", err);
-        redirectUrl = `${normalizedOrigin}/invite/${inviteToken}`;
       }
     } else {
       redirectUrl = `${normalizedOrigin}${next}`;
@@ -166,15 +191,20 @@ export async function GET(request: NextRequest) {
       });
       return redirectResponse;
     } else {
-      console.error("[AUTH] OTP verification error:", otpError.message);
+      // Only log details in development to avoid leaking info in production logs
+      if (isDev) {
+        console.error("[AUTH] OTP verification error:", otpError.message);
+      }
+      // Use generic error code - don't reveal whether token was expired vs invalid
+      // This prevents attackers from learning about token timing
       return NextResponse.redirect(
-        `${normalizedOrigin}/error?error=${encodeURIComponent(otpError.message)}`
+        `${normalizedOrigin}/error?error=verification-failed`
       );
     }
   }
 
   // No valid auth parameters
   return NextResponse.redirect(
-    `${normalizedOrigin}/error?error=${encodeURIComponent("Invalid authentication request")}`
+    `${normalizedOrigin}/error?error=invalid-request`
   );
 }

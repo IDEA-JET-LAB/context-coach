@@ -13,6 +13,7 @@ import {
 import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { TrendDataPoint, TrendDirection } from '@/lib/hooks/use-personal-analytics';
+import { CHART_HEIGHT, SCORE_DECIMAL_PLACES } from '@/lib/constants/analytics';
 
 interface CustomTooltipProps {
   active?: boolean;
@@ -40,7 +41,7 @@ export function ScoreTrendChart({ data, trend }: ScoreTrendChartProps) {
   if (data.length === 0) {
     return (
       <div
-        className="flex h-[300px] items-center justify-center text-muted-foreground"
+        className={`flex h-[${CHART_HEIGHT.TREND}px] items-center justify-center text-muted-foreground`}
         data-testid="chart-empty"
       >
         No data available for this time range
@@ -53,7 +54,7 @@ export function ScoreTrendChart({ data, trend }: ScoreTrendChartProps) {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <TrendIndicator direction={trend} />
       </div>
-      <div className="h-[300px] w-full" data-testid="chart-container">
+      <div className={`h-[${CHART_HEIGHT.TREND}px] w-full`} data-testid="chart-container">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
@@ -125,7 +126,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
         {format(new Date(label as string), 'MMMM d, yyyy')}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
-        Average Score: <span className="font-bold text-teal-500">{data.avgScore.toFixed(1)}</span>
+        Average Score: <span className="font-bold text-teal-500">{data.avgScore.toFixed(SCORE_DECIMAL_PLACES)}</span>
       </p>
       <p className="text-sm text-muted-foreground">
         Prompts: {data.promptCount}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,9 +15,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Loader2, Mail, CheckCircle } from "lucide-react";
 
+// Validate email format to prevent XSS via URL parameters
+function isValidEmail(email: string): boolean {
+  // Simple email regex that validates format without being overly permissive
+  const emailRegex = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+}
+
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
-  const email = searchParams.get("email");
+  const rawEmail = searchParams.get("email");
+  // Only use email if it passes validation - prevents XSS via malicious email parameter
+  const email = useMemo(() => {
+    if (!rawEmail) return null;
+    return isValidEmail(rawEmail) ? rawEmail : null;
+  }, [rawEmail]);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);

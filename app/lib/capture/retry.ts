@@ -5,6 +5,11 @@
  * for handling transient errors in database operations.
  */
 
+import { createScopedLogger } from "@/lib/utils/logger";
+
+// Create a scoped logger for retry operations
+const logger = createScopedLogger("RETRY");
+
 /**
  * Configuration for retry behavior.
  */
@@ -129,9 +134,12 @@ export async function withRetry<T>(
       const delay = baseDelay + jitter;
 
       // Log retry attempt (no PII - never log error message which might contain sensitive data)
-      console.log(
-        `[API] prompts/capture: retry attempt ${attempt}/${config.maxRetries} after ${Math.round(delay)}ms`
-      );
+      logger.log("Retry attempt", {
+        attempt,
+        maxRetries: config.maxRetries,
+        delayMs: Math.round(delay),
+        errorType: lastError.name,
+      });
 
       // Wait before next attempt
       await sleep(delay);

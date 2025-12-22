@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { parseToken, TokenParseError, isTokenExpired, createTestToken, type InstallToken } from '../token.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { parseToken, TokenParseError, isTokenExpired, createTestToken, isDebugMode, ALLOWED_API_DOMAINS, type InstallToken } from '../token.js';
 
 describe('parseToken', () => {
   it('parses valid token correctly', () => {
@@ -85,7 +85,7 @@ describe('parseToken', () => {
 });
 
 describe('isTokenExpired', () => {
-  it('returns false when no expires_at', () => {
+  it('returns true when no expires_at (security: missing expiration treated as expired)', () => {
     const token: InstallToken = {
       project_id: '550e8400-e29b-41d4-a716-446655440000',
       project_name: 'Test',
@@ -96,7 +96,8 @@ describe('isTokenExpired', () => {
       api_key: 'sk_test',
       api_endpoint: 'https://api.contextor.co',
     };
-    expect(isTokenExpired(token)).toBe(false);
+    // SECURITY: Tokens without expiration are treated as expired to enforce mandatory expiration
+    expect(isTokenExpired(token)).toBe(true);
   });
 
   it('returns true for past date', () => {
@@ -143,5 +144,123 @@ describe('createTestToken', () => {
     const token = createTestToken({ project_name: 'Override Project' });
     const parsed = parseToken(token);
     expect(parsed.project_name).toBe('Override Project');
+  });
+});
+
+describe('URL allowlist validation', () => {
+  const validPayload = {
+    project_id: '550e8400-e29b-41d4-a716-446655440000',
+    project_name: 'Test',
+    team_id: '550e8400-e29b-41d4-a716-446655440001',
+    team_name: 'Test',
+    user_id: '550e8400-e29b-41d4-a716-446655440002',
+    user_name: 'Test',
+    api_key: 'sk_test',
+  };
+
+  it('exports allowed domains list', () => {
+    expect(ALLOWED_API_DOMAINS).toContain('contextor.co');
+    expect(ALLOWED_API_DOMAINS).toContain('api.contextor.co');
+    expect(ALLOWED_API_DOMAINS).toContain('127.0.0.1');
+    expect(ALLOWED_API_DOMAINS).toContain('localhost');
+  });
+
+  it('accepts valid contextor.co domain', () => {
+    const token = 'ctx_' + Buffer.from(JSON.stringify({
+      ...validPayload,
+      api_endpoint: 'https://contextor.co/api'
+    })).toString('base64');
+    expect(() => parseToken(token)).not.toThrow();
+  });
+
+  it('accepts valid api.contextor.co domain', () => {
+    const token = 'ctx_' + Buffer.from(JSON.stringify({
+      ...validPayload,
+      api_endpoint: 'https://api.contextor.co'
+    })).toString('base64');
+    expect(() => parseToken(token)).not.toThrow();
+  });
+
+  it('accepts localhost for development', () => {
+    const token = 'ctx_' + Buffer.from(JSON.stringify({
+      ...validPayload,
+      api_endpoint: 'http://localhost:3050/api'
+    })).toString('base64');
+    expect(() => parseToken(token)).not.toThrow();
+  });
+
+  it('accepts 127.0.0.1 for development', () => {
+    const token = 'ctx_' + Buffer.from(JSON.stringify({
+      ...validPayload,
+      api_endpoint: 'http://127.0.0.1:3050/api'
+    })).toString('base64');
+    expect(() => parseToken(token)).not.toThrow();
+  });
+
+  it('rejects unknown domains', () => {
+    const token = 'ctx_' + Buffer.from(JSON.stringify({
+      ...validPayload,
+      api_endpoint: 'https://malicious-site.com/api'
+    })).toString('base64');
+    expect(() => parseToken(token)).toThrow(TokenParseError);
+  });
+
+  it('rejects domains that look similar but are not allowed', () => {
+    const token = 'ctx_' + Buffer.from(JSON.stringify({
+      ...validPayload,
+      api_endpoint: 'https://fake-contextor.co/api'
+    })).toString('base64');
+    expect(() => parseToken(token)).toThrow(TokenParseError);
+  });
+});
+
+describe('debug mode', () => {
+  const originalEnv = process.env.CONTEXTOR_DEBUG;
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env.CONTEXTOR_DEBUG;
+    } else {
+      process.env.CONTEXTOR_DEBUG = originalEnv;
+    }
+  });
+
+  it('isDebugMode returns false when not set', () => {
+    delete process.env.CONTEXTOR_DEBUG;
+    expect(isDebugMode()).toBe(false);
+  });
+
+  it('isDebugMode returns false for non-1 values', () => {
+    process.env.CONTEXTOR_DEBUG = 'true';
+    expect(isDebugMode()).toBe(false);
+  });
+
+  it('isDebugMode returns true when set to 1', () => {
+    process.env.CONTEXTOR_DEBUG = '1';
+    expect(isDebugMode()).toBe(true);
+  });
+
+  it('shows detailed errors in debug mode', () => {
+    process.env.CONTEXTOR_DEBUG = '1';
+    try {
+      parseToken('ctx_invalid');
+    } catch (e) {
+      expect(e).toBeInstanceOf(TokenParseError);
+      const error = e as TokenParseError;
+      expect(error.message).toContain('Debug info:');
+      expect(error.debugInfo).toBeDefined();
+    }
+  });
+
+  it('hides detailed errors when debug mode is off', () => {
+    delete process.env.CONTEXTOR_DEBUG;
+    try {
+      parseToken('ctx_invalid');
+    } catch (e) {
+      expect(e).toBeInstanceOf(TokenParseError);
+      const error = e as TokenParseError;
+      expect(error.message).not.toContain('Debug info:');
+      expect(error.message).toBe('Invalid install token. Please copy it again from the dashboard.');
+    }
   });
 });

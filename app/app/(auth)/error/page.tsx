@@ -1,5 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
+import { getErrorMessage } from "@/lib/utils/auth-messages";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 async function ErrorContent({
   searchParams,
@@ -8,18 +11,18 @@ async function ErrorContent({
 }) {
   const params = await searchParams;
 
+  // Use whitelisted error messages to prevent phishing via crafted URLs
+  const errorMessage = getErrorMessage(params?.error);
+
   return (
-    <>
-      {params?.error ? (
-        <p className="text-sm text-muted-foreground">
-          Code error: {params.error}
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          An unspecified error occurred.
-        </p>
-      )}
-    </>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {errorMessage || "An unexpected error occurred."}
+      </p>
+      <Button variant="outline" className="w-full" asChild>
+        <Link href="/login">Back to login</Link>
+      </Button>
+    </div>
   );
 }
 

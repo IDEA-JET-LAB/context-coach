@@ -2,22 +2,18 @@
 
 import { DimensionBar } from '@/components/prompt-detail/dimension-bar';
 import type { DimensionAverage } from '@/lib/hooks/use-personal-analytics';
+import {
+  DIMENSION_SUGGESTIONS,
+  DEFAULT_DIMENSION_SUGGESTION,
+  FOCUS_AREA_COUNT,
+} from '@/lib/constants/analytics';
 
 interface DimensionBreakdownProps {
   dimensions: DimensionAverage[];
 }
 
-// Default suggestions for weak dimensions
-const DIMENSION_SUGGESTIONS: Record<string, string> = {
-  clarity: 'Try using more specific language and avoid ambiguous terms.',
-  context: 'Include more background information about your situation or codebase.',
-  specificity: 'Add concrete examples and specific requirements.',
-  goal: 'Clearly state what you want to achieve or the expected outcome.',
-  constraints: 'Mention any limitations, requirements, or boundaries.',
-};
-
 export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
-  if (dimensions.length === 0) {
+  if (!dimensions || dimensions.length === 0) {
     return (
       <div
         className="flex h-full items-center justify-center text-muted-foreground"
@@ -29,15 +25,15 @@ export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
   }
 
   // Sort by score ascending (weakest first)
-  const sorted = [...dimensions].sort((a, b) => a.avgScore - b.avgScore);
-  const weakest = sorted.slice(0, 2);
+  const sorted = [...dimensions].sort((a, b) => (a.avgScore ?? 0) - (b.avgScore ?? 0));
+  const weakest = sorted.slice(0, FOCUS_AREA_COUNT);
 
   // Add suggestions to weak dimensions
   const weakestWithSuggestions = weakest.map((dim) => ({
     ...dim,
     suggestion:
-      DIMENSION_SUGGESTIONS[dim.dimension.toLowerCase()] ||
-      `Focus on improving your ${dim.dimension.toLowerCase()} scores.`,
+      DIMENSION_SUGGESTIONS[dim.dimension?.toLowerCase() ?? ''] ||
+      DEFAULT_DIMENSION_SUGGESTION(dim.dimension ?? 'dimension'),
   }));
 
   return (
@@ -50,12 +46,12 @@ export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
         <h3 className="mb-3 font-medium text-amber-500">Focus Areas</h3>
         <div className="space-y-3">
           {weakestWithSuggestions.map((dim) => (
-            <div key={dim.dimension} className="space-y-1" data-testid={`focus-area-${dim.dimension}`}>
+            <div key={dim.dimension ?? 'unknown'} className="space-y-1" data-testid={`focus-area-${dim.dimension}`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#fafafa]">{dim.dimension}</span>
-                <span className="text-sm text-muted-foreground">{dim.avgScore.toFixed(1)}</span>
+                <span className="text-sm font-medium text-[#fafafa]">{dim.dimension ?? 'Unknown'}</span>
+                <span className="text-sm text-muted-foreground">{(dim.avgScore ?? 0).toFixed(1)}</span>
               </div>
-              <DimensionBar score={dim.avgScore} />
+              <DimensionBar score={dim.avgScore ?? 0} />
               <p className="text-xs text-muted-foreground pl-1">{dim.suggestion}</p>
             </div>
           ))}
@@ -67,12 +63,12 @@ export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
         <h3 className="mb-3 font-medium text-[#fafafa]">All Dimensions</h3>
         <div className="space-y-3">
           {dimensions.map((dim) => (
-            <div key={dim.dimension} className="space-y-1" data-testid={`dimension-${dim.dimension}`}>
+            <div key={dim.dimension ?? 'unknown'} className="space-y-1" data-testid={`dimension-${dim.dimension}`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#fafafa]">{dim.dimension}</span>
-                <span className="text-sm text-muted-foreground">{dim.avgScore.toFixed(1)}</span>
+                <span className="text-sm font-medium text-[#fafafa]">{dim.dimension ?? 'Unknown'}</span>
+                <span className="text-sm text-muted-foreground">{(dim.avgScore ?? 0).toFixed(1)}</span>
               </div>
-              <DimensionBar score={dim.avgScore} />
+              <DimensionBar score={dim.avgScore ?? 0} />
             </div>
           ))}
         </div>

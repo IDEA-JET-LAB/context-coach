@@ -6,6 +6,7 @@ import { ScoreBadge } from './score-badge';
 import { AnalysisStatus } from './analysis-status';
 import { HighlightText } from '@/lib/utils/highlight-text';
 import type { PromptWithAnalysis } from '@/lib/types/prompt';
+import { TEXT_TRUNCATION } from '@/lib/constants/analytics';
 
 interface PromptRowProps {
   prompt: PromptWithAnalysis;
@@ -27,7 +28,9 @@ export function PromptRow({ prompt, onClick, searchTerm }: PromptRowProps) {
   const command = (isCommand || isCommandWithPrompt) ? extractCommand(prompt.text) : null;
 
   const truncatedText =
-    prompt.text.length > 150 ? prompt.text.slice(0, 150) + '...' : prompt.text;
+    prompt.text.length > TEXT_TRUNCATION.PROMPT_ROW
+      ? prompt.text.slice(0, TEXT_TRUNCATION.PROMPT_ROW) + '...'
+      : prompt.text;
 
   return (
     <div

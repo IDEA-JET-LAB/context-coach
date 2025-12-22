@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { useTeamAnalytics } from '@/lib/hooks/use-team-analytics';
 import { TeamDistributionChart } from './team-distribution-chart';
 import { TeamTrendChart } from './team-trend-chart';
@@ -12,6 +14,15 @@ interface TeamAdminAnalyticsProps {
 
 export function TeamAdminAnalytics({ teamId }: TeamAdminAnalyticsProps) {
   const { data, isPending, error } = useTeamAnalytics(teamId);
+
+  // Show error toast notification
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load team analytics', {
+        description: 'Please try refreshing the page.',
+      });
+    }
+  }, [error]);
 
   if (isPending) {
     return (

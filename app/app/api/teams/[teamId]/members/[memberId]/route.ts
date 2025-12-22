@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isValidUuid } from '@/lib/utils/uuid';
 import { z } from 'zod';
 
 interface RouteParams {
@@ -14,6 +15,21 @@ const updateRoleSchema = z.object({
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const { teamId, memberId } = await params;
+
+    // Validate UUID formats
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+    if (!isValidUuid(memberId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid member ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const body = await request.json();
     const {
@@ -83,9 +99,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       .single();
 
     if (error) {
-      console.error('[API] teams/members PATCH: error updating role', error);
       return NextResponse.json(
-        { error: { code: 'UPDATE_FAILED', message: error.message } },
+        { error: { code: 'UPDATE_FAILED', message: 'Failed to update member role' } },
         { status: 400 }
       );
     }
@@ -99,7 +114,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    console.error('[API] teams/members PATCH: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }
@@ -111,6 +125,21 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { teamId, memberId } = await params;
+
+    // Validate UUID formats
+    if (!isValidUuid(teamId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid team ID format' } },
+        { status: 400 }
+      );
+    }
+    if (!isValidUuid(memberId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid member ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -175,16 +204,14 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       .eq('id', memberId);
 
     if (error) {
-      console.error('[API] teams/members DELETE: error removing member', error);
       return NextResponse.json(
-        { error: { code: 'DELETE_FAILED', message: error.message } },
+        { error: { code: 'DELETE_FAILED', message: 'Failed to remove team member' } },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ data: { success: true } });
   } catch (error) {
-    console.error('[API] teams/members DELETE: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

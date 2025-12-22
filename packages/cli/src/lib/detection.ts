@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import type { SharedConfig } from './config.js';
 
 export const CONTEXTOR_DIR = '.contextor';
 export const CONFIG_FILE = 'config.json';
@@ -20,24 +21,11 @@ export enum InstallState {
 }
 
 /**
- * Shared project configuration stored in .contextor/config.json
- */
-export interface ProjectConfig {
-  project_id: string;
-  project_name: string;
-  team_id: string;
-  team_name: string;
-  api_endpoint: string;
-  created_at: string;
-  created_by: string;
-}
-
-/**
  * Result of install state detection
  */
 export interface DetectionResult {
   state: InstallState;
-  existingConfig?: ProjectConfig;
+  existingConfig?: SharedConfig;
   warning?: string;
 }
 
@@ -45,14 +33,14 @@ export interface DetectionResult {
  * Read and parse the shared config file
  * Returns null if file doesn't exist or is invalid
  */
-export function readConfigFile(path: string): ProjectConfig | null {
+export function readConfigFile(path: string): SharedConfig | null {
   if (!existsSync(path)) {
     return null;
   }
 
   try {
     const content = readFileSync(path, 'utf-8');
-    const parsed = JSON.parse(content) as ProjectConfig;
+    const parsed = JSON.parse(content) as SharedConfig;
 
     // Validate required fields
     if (!parsed.project_id || !parsed.team_id) {

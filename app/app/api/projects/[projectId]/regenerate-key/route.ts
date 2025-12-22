@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { generateApiKey, hashApiKey, getApiKeyPrefix } from '@/lib/utils/api-key';
-import { generateInstallToken, getApiEndpoint } from '@/lib/utils/install-token';
+import { generateInstallToken, getApiEndpoint, TOKEN_EXPIRATION_HOURS } from '@/lib/utils/install-token';
+import { isValidUuid } from '@/lib/utils/uuid';
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
@@ -10,6 +11,15 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params;
+
+    // Validate UUID format
+    if (!isValidUuid(projectId)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_ID', message: 'Invalid project ID format' } },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -83,14 +93,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .single();
 
     if (updateError) {
-      console.error('[API] regenerate-key: error updating project', updateError);
       return NextResponse.json(
-        { error: { code: 'REGENERATE_FAILED', message: updateError.message } },
+        { error: { code: 'REGENERATE_FAILED', message: 'Failed to regenerate API key' } },
         { status: 400 }
       );
     }
 
     // Generate new Install Token with all required fields
+    // SECURITY: Token expiration is intentionally short to minimize exposure window
     const installToken = generateInstallToken({
       project_id: projectId,
       project_name: project.name,
@@ -100,7 +110,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       user_name: user.email?.split('@')[0] || 'User',
       api_key: apiKey,
       api_endpoint: getApiEndpoint(),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      expires_at: new Date(Date.now() + TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000).toISOString(),
     });
 
     return NextResponse.json({
@@ -108,10 +118,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
         project: updated,
         apiKey, // Only returned once
         installToken,
+        // Security warning for clients to display
+        warning: 'This API key will only be shown once. Store it securely - it cannot be recovered. The previous key has been invalidated immediately.',
       },
     });
   } catch (error) {
-    console.error('[API] regenerate-key: unexpected error', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
       { status: 500 }

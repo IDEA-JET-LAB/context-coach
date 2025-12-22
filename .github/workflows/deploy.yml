@@ -18,11 +18,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      # SECURITY: Pin actions to commit SHAs to prevent supply-chain attacks
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: 20
           cache: 'npm'
@@ -40,21 +41,26 @@ jobs:
         working-directory: app
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        working-directory: app
+        run: npm run test:unit:run
+
   deploy:
     needs: test
     runs-on: ubuntu-latest
 
     steps:
+      # SECURITY: Pin actions to commit SHAs to prevent supply-chain attacks
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.7
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # v2.1.2
 
       - name: Configure Docker
         run: gcloud auth configure-docker
@@ -63,8 +69,10 @@ jobs:
         working-directory: app
         run: |
           docker build \
+            --platform linux/amd64 \
             --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
             --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }} \
+            --build-arg NEXT_PUBLIC_APP_URL=https://contextor.co \
             -t gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} \
             -t gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
             .
@@ -93,6 +101,18 @@ jobs:
         run: |
           SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
           echo "Deployed to: $SERVICE_URL"
-          sleep 10  # Wait for service to stabilize
-          curl -f "$SERVICE_URL/api/health" || exit 1
-          echo "Deployment verified successfully!"
+
+          # Poll health endpoint with exponential backoff (max 60s)
+          for i in {1..6}; do
+            echo "Health check attempt $i/6..."
+            if curl -f "$SERVICE_URL/api/health" 2>/dev/null; then
+              echo "Deployment verified successfully!"
+              exit 0
+            fi
+            if [ $i -lt 6 ]; then
+              sleep $((2 ** i))  # Exponential backoff: 2s, 4s, 8s, 16s, 32s
+            fi
+          done
+
+          echo "Health check failed after 6 attempts"
+          exit 1

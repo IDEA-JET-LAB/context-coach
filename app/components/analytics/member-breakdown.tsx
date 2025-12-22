@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { MemberDetail } from './member-detail';
 import type { MemberStats } from '@/lib/hooks/use-team-analytics';
+import { SCORE_THRESHOLDS } from '@/lib/constants/analytics';
 
 interface MemberBreakdownProps {
   members: MemberStats[];
@@ -126,8 +127,8 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
                   <span
                     className={cn(
                       'font-medium',
-                      member.avgScore >= 7 ? 'text-teal-500' :
-                      member.avgScore >= 4 ? 'text-amber-500' : 'text-red-400'
+                      member.avgScore >= SCORE_THRESHOLDS.GOOD ? 'text-teal-500' :
+                      member.avgScore >= SCORE_THRESHOLDS.MODERATE ? 'text-amber-500' : 'text-red-400'
                     )}
                   >
                     {member.avgScore.toFixed(1)}

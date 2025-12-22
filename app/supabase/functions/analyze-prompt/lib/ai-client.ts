@@ -59,6 +59,21 @@ const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 /**
+ * Gets the configured OpenAI timeout from environment or uses default
+ * @returns Timeout in milliseconds
+ */
+function getConfiguredTimeout(): number {
+  const envTimeout = Deno.env.get('OPENAI_TIMEOUT_MS');
+  if (envTimeout) {
+    const parsed = parseInt(envTimeout, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return DEFAULT_TIMEOUT_MS;
+}
+
+/**
  * Gets the OpenAI API key from environment
  * @throws AIClientError if key is not configured
  */
@@ -79,7 +94,7 @@ function getAPIKey(): string {
  * @param systemPrompt The system prompt for the AI
  * @param userPrompt The user prompt to analyze
  * @param model The model to use (defaults to gpt-4o-mini)
- * @param timeoutMs Timeout in milliseconds (defaults to 30000)
+ * @param timeoutMs Timeout in milliseconds (defaults to configured timeout or 30000ms)
  * @returns The AI response content string
  * @throws AIClientError on API errors or timeout
  */
@@ -87,9 +102,10 @@ export async function callOpenAI(
   systemPrompt: string,
   userPrompt: string,
   model: string = DEFAULT_MODEL,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS
+  timeoutMs?: number
 ): Promise<string> {
   const apiKey = getAPIKey();
+  const effectiveTimeout = timeoutMs ?? getConfiguredTimeout();
 
   const messages: OpenAIMessage[] = [
     { role: 'system', content: systemPrompt },
@@ -106,7 +122,7 @@ export async function callOpenAI(
 
   // Create abort controller for timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
 
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -144,6 +160,7 @@ export async function callOpenAI(
     // Parse successful response
     const data = (await response.json()) as OpenAIResponse;
 
+    // Enhanced validation for edge cases
     if (!data.choices || data.choices.length === 0) {
       throw new AIClientError(
         'OpenAI API returned empty choices array',
@@ -152,10 +169,27 @@ export async function callOpenAI(
       );
     }
 
-    const content = data.choices[0].message?.content;
-    if (!content) {
+    const firstChoice = data.choices[0];
+    if (!firstChoice) {
       throw new AIClientError(
-        'OpenAI API returned empty content',
+        'OpenAI API returned undefined first choice',
+        500,
+        'invalid_response'
+      );
+    }
+
+    const content = firstChoice.message?.content;
+    if (!content || typeof content !== 'string') {
+      throw new AIClientError(
+        'OpenAI API returned invalid or empty content',
+        500,
+        'invalid_response'
+      );
+    }
+
+    if (content.trim().length === 0) {
+      throw new AIClientError(
+        'OpenAI API returned empty content after trimming',
         500,
         'invalid_response'
       );
@@ -168,7 +202,7 @@ export async function callOpenAI(
     // Handle abort (timeout)
     if (error instanceof Error && error.name === 'AbortError') {
       throw new AIClientError(
-        `OpenAI API call timed out after ${timeoutMs}ms`,
+        `OpenAI API call timed out after ${effectiveTimeout}ms`,
         504,
         'timeout'
       );
