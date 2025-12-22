@@ -11,7 +11,7 @@ import { AnalyticsEmptyState } from './analytics-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const STORAGE_KEY = 'contextor-analytics-time-range';
-const VALID_TIME_RANGES: readonly TimeRange[] = ['7d', '30d', '90d', 'all'] as const;
+const VALID_TIME_RANGES: readonly TimeRange[] = ['today', '7d', '30d', '90d', 'all'] as const;
 
 /**
  * Validates time range value from localStorage (M33)
@@ -31,7 +31,7 @@ interface AnalyticsDashboardProps {
 }
 
 export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
   const [mounted, setMounted] = useState(false);
 
   // Restore time range from localStorage on mount
@@ -94,6 +94,7 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
 
       <SummaryStats
         totalPrompts={data.totalPrompts}
+        analyzedPrompts={data.analyzedPrompts}
         avgScore={data.avgScore}
         improvement={data.improvement}
         trend={data.trend}

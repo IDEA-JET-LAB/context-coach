@@ -54,10 +54,10 @@ interface PromptData {
   char_count: number;
   word_count: number;
   analysis_status: 'pending' | 'processing' | 'complete' | 'failed';
-  prompt_analyses: Array<{
+  prompt_analyses: {
     overall_score: number | null;
     dimension_scores: Record<string, DimensionScoreValue | number> | null;
-  }> | null;
+  } | null;
 }
 
 interface ProfileData {
@@ -74,9 +74,9 @@ export function useMemberAnalytics(memberId: string | null, teamId: string) {
     queryFn: async (): Promise<MemberAnalyticsData | null> => {
       if (!memberId) return null;
 
-      // Fetch member info from profiles
+      // Fetch member info from users table
       const { data: member, error: memberError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, name, avatar_url')
         .eq('id', memberId)
         .single();
@@ -113,7 +113,7 @@ export function useMemberAnalytics(memberId: string | null, teamId: string) {
 
       // Calculate averages
       const scores = typedPrompts
-        .map(p => p.prompt_analyses?.[0]?.overall_score)
+        .map(p => p.prompt_analyses?.overall_score)
         .filter((s): s is number => s !== undefined && s !== null);
 
       const avgScore = scores.length > 0
@@ -124,7 +124,7 @@ export function useMemberAnalytics(memberId: string | null, teamId: string) {
       const dimensionTotals: Record<string, { sum: number; count: number }> = {};
 
       typedPrompts.forEach(p => {
-        const dimScores = p.prompt_analyses?.[0]?.dimension_scores;
+        const dimScores = p.prompt_analyses?.dimension_scores;
         if (dimScores && typeof dimScores === 'object') {
           Object.entries(dimScores).forEach(([name, value]) => {
             // Handle both { score: number } format and raw number format
@@ -170,7 +170,7 @@ export function useMemberAnalytics(memberId: string | null, teamId: string) {
       // Format recent prompts for display
       const recentPrompts: MemberPrompt[] = typedPrompts
         .slice(0, 10)
-        .filter(p => p.prompt_analyses?.[0]?.overall_score !== null)
+        .filter(p => p.prompt_analyses?.overall_score !== null)
         .map(p => ({
           id: p.id,
           text: p.text,
@@ -181,9 +181,9 @@ export function useMemberAnalytics(memberId: string | null, teamId: string) {
           char_count: p.char_count,
           word_count: p.word_count,
           analysis_status: p.analysis_status,
-          analysis: p.prompt_analyses?.[0] && p.prompt_analyses[0].overall_score !== null ? {
-            overall_score: p.prompt_analyses[0].overall_score,
-            dimension_scores: p.prompt_analyses[0].dimension_scores as Record<string, DimensionScoreValue> | null,
+          analysis: p.prompt_analyses && p.prompt_analyses.overall_score !== null ? {
+            overall_score: p.prompt_analyses.overall_score,
+            dimension_scores: p.prompt_analyses.dimension_scores as Record<string, DimensionScoreValue> | null,
           } : null,
         }));
 

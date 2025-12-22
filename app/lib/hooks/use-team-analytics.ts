@@ -35,15 +35,15 @@ interface PromptData {
   id: string;
   user_id: string;
   created_at: string;
-  profiles: {
+  user: {
     id: string;
     name: string | null;
     avatar_url: string | null;
   } | null;
-  prompt_analyses: Array<{
+  analysis: {
     overall_score: number | null;
     dimension_scores: Record<string, DimensionScoreValue | number> | null;
-  }> | null;
+  } | null;
 }
 
 export function useTeamAnalytics(teamId: string, timeRange: string = '30d') {
@@ -61,8 +61,8 @@ export function useTeamAnalytics(teamId: string, timeRange: string = '30d') {
           id,
           user_id,
           created_at,
-          profiles!prompts_user_id_fkey(id, name, avatar_url),
-          prompt_analyses(overall_score, dimension_scores)
+          user:users(id, name, avatar_url),
+          analysis:prompt_analyses(overall_score, dimension_scores)
         `)
         .eq('team_id', teamId)
         .eq('analysis_status', 'complete')
@@ -93,13 +93,13 @@ function processTeamData(data: PromptData[]): TeamAnalyticsData {
     const userId = prompt.user_id;
     const existing = memberMap.get(userId) || {
       userId,
-      name: prompt.profiles?.name || 'Unknown',
-      avatar: prompt.profiles?.avatar_url ?? undefined,
+      name: prompt.user?.name || 'Unknown',
+      avatar: prompt.user?.avatar_url ?? undefined,
       scores: [],
       prompts: [],
     };
 
-    const score = prompt.prompt_analyses?.[0]?.overall_score;
+    const score = prompt.analysis?.overall_score;
     if (score !== undefined && score !== null) {
       existing.scores.push(score);
     }
@@ -121,7 +121,7 @@ function processTeamData(data: PromptData[]): TeamAnalyticsData {
 
   // Calculate distribution
   const allScores = data
-    .map(p => p.prompt_analyses?.[0]?.overall_score)
+    .map(p => p.analysis?.overall_score)
     .filter((s): s is number => s !== undefined && s !== null);
 
   const distribution: DistributionData[] = [

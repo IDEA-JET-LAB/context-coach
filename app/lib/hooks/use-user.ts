@@ -24,15 +24,15 @@ export function useUser() {
 
       // Check if there's a profile with name/avatar
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name, avatar_url')
+        .from('users')
+        .select('name, avatar_url')
         .eq('id', user.id)
         .single();
 
       return {
         id: user.id,
         email: user.email ?? '',
-        name: profile?.display_name ?? user.user_metadata?.name ?? null,
+        name: profile?.name ?? user.user_metadata?.name ?? null,
         avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
       };
     },

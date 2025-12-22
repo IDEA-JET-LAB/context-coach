@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { subDays, eachDayOfInterval, format } from 'date-fns';
 
-export type TimeRange = '7d' | '30d' | '90d' | 'all';
+export type TimeRange = 'today' | '7d' | '30d' | '90d' | 'all';
 export type TrendDirection = 'up' | 'down' | 'stable';
 
 export interface TrendDataPoint {
@@ -21,13 +21,14 @@ export interface DimensionAverage {
 export interface PersonalAnalyticsData {
   trendData: TrendDataPoint[];
   totalPrompts: number;
-  avgScore: number;
-  improvement: number;
+  analyzedPrompts: number;  // Count of prompts that have analysis scores
+  avgScore: number | null;  // null when no analyzed prompts
+  improvement: number | null;  // null when not enough data to calculate
   dimensions: DimensionAverage[];
   trend: TrendDirection;
 }
 
-export function usePersonalAnalytics(userId: string, timeRange: TimeRange = '30d') {
+export function usePersonalAnalytics(userId: string, timeRange: TimeRange = 'today') {
   const supabase = createClient();
 
   return useQuery<PersonalAnalyticsData>({
@@ -63,7 +64,8 @@ export function usePersonalAnalytics(userId: string, timeRange: TimeRange = '30d
       const { data, error } = await query;
       if (error) throw error;
 
-      return processAnalyticsData(data ?? [], startDate, endDate);
+      // Cast data to our expected type (PostgREST returns object, not array, for single relations)
+      return processAnalyticsData((data as unknown as PromptWithAnalysis[]) ?? [], startDate, endDate);
     },
     enabled: Boolean(userId),
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -73,6 +75,11 @@ export function usePersonalAnalytics(userId: string, timeRange: TimeRange = '30d
 function getStartDate(range: TimeRange): Date | null {
   const now = new Date();
   switch (range) {
+    case 'today':
+      // Start of today (midnight)
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+      return today;
     case '7d':
       return subDays(now, 7);
     case '30d':
@@ -92,10 +99,10 @@ interface DimensionScoreValue {
 interface PromptWithAnalysis {
   id: string;
   created_at: string;
-  analysis: Array<{
+  analysis: {
     overall_score: number | null;
     dimension_scores: Record<string, DimensionScoreValue> | null;
-  }> | null;
+  } | null;
 }
 
 function processAnalyticsData(
@@ -118,7 +125,7 @@ function processAnalyticsData(
   // Aggregate scores by day
   data.forEach((prompt) => {
     const day = format(new Date(prompt.created_at), 'yyyy-MM-dd');
-    const score = prompt.analysis?.[0]?.overall_score;
+    const score = prompt.analysis?.overall_score;
 
     if (score !== undefined && score !== null) {
       const existing = dailyData.get(day) || { scores: [], count: 0 };
@@ -142,41 +149,49 @@ function processAnalyticsData(
 
   // Calculate summary stats
   const allScores = data
-    .map((p) => p.analysis?.[0]?.overall_score)
+    .map((p) => p.analysis?.overall_score)
     .filter((s): s is number => s !== undefined && s !== null);
 
   const totalPrompts = data.length;
+  const analyzedPrompts = allScores.length;
+
+  // Return null for avgScore when no analyses exist (shows "N/A" in UI)
   const avgScore =
     allScores.length > 0
       ? allScores.reduce((a, b) => a + b, 0) / allScores.length
-      : 0;
+      : null;
 
   // Calculate improvement (compare first half to second half)
-  const midpoint = Math.floor(allScores.length / 2);
-  const firstHalf = allScores.slice(0, midpoint);
-  const secondHalf = allScores.slice(midpoint);
+  // Need at least 2 data points to calculate meaningful improvement
+  let improvement: number | null = null;
+  let trend: TrendDirection = 'stable';
 
-  const firstAvg =
-    firstHalf.length > 0
-      ? firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-      : 0;
-  const secondAvg =
-    secondHalf.length > 0
-      ? secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
-      : 0;
+  if (allScores.length >= 2) {
+    const midpoint = Math.floor(allScores.length / 2);
+    const firstHalf = allScores.slice(0, midpoint);
+    const secondHalf = allScores.slice(midpoint);
 
-  // Safe division - handle edge case where firstAvg is 0
-  const improvement =
-    firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
+    const firstAvg =
+      firstHalf.length > 0
+        ? firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
+        : 0;
+    const secondAvg =
+      secondHalf.length > 0
+        ? secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+        : 0;
 
-  // Determine trend direction: >5% up, <-5% down, else stable
-  const trend: TrendDirection =
-    improvement > 5 ? 'up' : improvement < -5 ? 'down' : 'stable';
+    // Safe division - handle edge case where firstAvg is 0
+    improvement =
+      firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
+
+    // Determine trend direction: >5% up, <-5% down, else stable
+    trend = improvement > 5 ? 'up' : improvement < -5 ? 'down' : 'stable';
+  }
 
   // Calculate dimension averages
   const dimensionScoresMap = new Map<string, number[]>();
   data.forEach((prompt) => {
-    const dims = prompt.analysis?.[0]?.dimension_scores;
+    const dims = prompt.analysis?.dimension_scores;
     if (dims && typeof dims === 'object') {
       Object.entries(dims).forEach(([dimension, value]) => {
         // Handle both { score: number } format and raw number format
@@ -205,6 +220,7 @@ function processAnalyticsData(
   return {
     trendData,
     totalPrompts,
+    analyzedPrompts,
     avgScore,
     improvement,
     dimensions,
