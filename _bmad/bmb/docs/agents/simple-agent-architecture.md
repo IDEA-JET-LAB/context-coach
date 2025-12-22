@@ -238,6 +238,21 @@ The installer:
 4. Creates IDE slash commands
 5. Saves source for reinstallation
 
+## Global Agent Rules
+
+All agents MUST load and follow the global rules file during activation:
+
+```xml
+<step n="3">Load and follow {project-root}/_bmad/core/global-agent-rules.md - these are MANDATORY rules for all agents</step>
+```
+
+This file contains rules that apply to ALL BMAD agents, including:
+
+- **Parallel Execution with Subagents** - When tasks can be executed independently, agents should spin up parallel subagents for improved quality and speed
+- **Model Selection Protocol** - Ask users which model to use (Opus 4.5, Sonnet, Haiku) before spawning subagents, defaulting to Opus 4.5
+
+The global rules file is located at `_bmad/core/global-agent-rules.md` and should be loaded after config but before agent-specific steps.
+
 ## Best Practices
 
 1. **Use first-person voice** in all persona elements
@@ -246,6 +261,7 @@ The installer:
 4. **Provide sensible defaults** in install_config
 5. **Use semantic XML tags** in prompt content for clarity
 6. **Test all conditional paths** before distribution
+7. **Load global rules** - Ensure step 3 loads `global-agent-rules.md`
 
 ## Validation Checklist
 

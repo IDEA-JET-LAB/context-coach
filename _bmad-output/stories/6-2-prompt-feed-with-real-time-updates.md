@@ -1,6 +1,6 @@
 # Story 6.2: Prompt Feed with Real-time Updates
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

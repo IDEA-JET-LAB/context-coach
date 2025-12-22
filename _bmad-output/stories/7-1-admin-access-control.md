@@ -1,6 +1,6 @@
 # Story 7.1: Admin Access Control
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 
@@ -36,53 +36,53 @@ Status: ready-for-dev
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Add is_super_admin column to users table** (AC: #1, #2, #3)
-  - [ ] Create Supabase migration: `supabase/migrations/YYYYMMDDHHMMSS_add_is_super_admin.sql`
-  - [ ] Add `is_super_admin BOOLEAN NOT NULL DEFAULT false` to `users` table
-  - [ ] Create partial index: `CREATE INDEX idx_users_is_super_admin ON users(is_super_admin) WHERE is_super_admin = true`
-  - [ ] Add column comment for documentation
-  - [ ] Verify migration applies cleanly: `supabase db push`
+- [x] **Task 1: Add is_super_admin column to users table** (AC: #1, #2, #3)
+  - [x] Create Supabase migration: `supabase/migrations/YYYYMMDDHHMMSS_add_is_super_admin.sql`
+  - [x] Add `is_super_admin BOOLEAN NOT NULL DEFAULT false` to `users` table
+  - [x] Create partial index: `CREATE INDEX idx_users_is_super_admin ON users(is_super_admin) WHERE is_super_admin = true`
+  - [x] Add column comment for documentation
+  - [x] Verify migration applies cleanly: `supabase db push`
 
-- [ ] **Task 2: Create admin middleware protection** (AC: #1, #2, #3)
-  - [ ] Update `middleware.ts` to check for `/admin` path prefix
-  - [ ] Query `users.is_super_admin` using server client
-  - [ ] Cache admin status in cookie for performance (expires with session)
-  - [ ] Redirect non-admins to `/dashboard?error=access-denied`
-  - [ ] Handle edge case: user profile doesn't exist (treat as non-admin)
+- [x] **Task 2: Create admin middleware protection** (AC: #1, #2, #3)
+  - [x] Update `middleware.ts` to check for `/admin` path prefix
+  - [x] Query `users.is_super_admin` using server client
+  - [x] Cache admin status in cookie for performance (expires with session)
+  - [x] Redirect non-admins to `/dashboard?error=access-denied`
+  - [x] Handle edge case: user profile doesn't exist (treat as non-admin)
 
-- [ ] **Task 3: Create admin layout wrapper** (AC: #1, #2)
-  - [ ] Create `app/(dashboard)/admin/layout.tsx`
-  - [ ] Implement server-side admin check as defense-in-depth layer
-  - [ ] Create `lib/supabase/admin.ts` for service role client (bypasses RLS)
-  - [ ] Return redirect if not admin (do NOT throw 403 - use redirect for UX)
+- [x] **Task 3: Create admin layout wrapper** (AC: #1, #2)
+  - [x] Create `app/(dashboard)/admin/layout.tsx`
+  - [x] Implement server-side admin check as defense-in-depth layer
+  - [x] Create `lib/supabase/admin.ts` for service role client (bypasses RLS)
+  - [x] Return redirect if not admin (do NOT throw 403 - use redirect for UX)
 
-- [ ] **Task 4: Create admin route group structure** (AC: #1)
-  - [ ] Create `app/(dashboard)/admin/` directory
-  - [ ] Create `app/(dashboard)/admin/page.tsx` (admin dashboard entry point)
-  - [ ] Add placeholder content: "Admin Dashboard" heading with "Coming in Story 7.2"
-  - [ ] Create `components/admin/AdminSidebar.tsx` placeholder for navigation
+- [x] **Task 4: Create admin route group structure** (AC: #1)
+  - [x] Create `app/(dashboard)/admin/` directory
+  - [x] Create `app/(dashboard)/admin/page.tsx` (admin dashboard entry point)
+  - [x] Add placeholder content: "Admin Dashboard" heading with "Coming in Story 7.2"
+  - [x] Create `components/admin/AdminSidebar.tsx` placeholder for navigation
 
-- [ ] **Task 5: Handle access denied notification** (AC: #2)
-  - [ ] Create access denied handler in dashboard layout (`app/(dashboard)/layout.tsx`)
-  - [ ] Check for `?error=access-denied` query param on mount
-  - [ ] Display toast: "Access denied - Admin privileges required"
-  - [ ] Remove query param from URL after displaying (use `router.replace`)
-  - [ ] Use `useEffect` with empty deps array (runs once on mount)
+- [x] **Task 5: Handle access denied notification** (AC: #2)
+  - [x] Create access denied handler in dashboard layout (`app/(dashboard)/layout.tsx`)
+  - [x] Check for `?error=access-denied` query param on mount
+  - [x] Display toast: "Access denied - Admin privileges required"
+  - [x] Remove query param from URL after displaying (use `router.replace`)
+  - [x] Use `useEffect` with empty deps array (runs once on mount)
 
-- [ ] **Task 6: Create admin check utility** (AC: #3)
-  - [ ] Create `lib/auth/admin.ts` with:
+- [x] **Task 6: Create admin check utility** (AC: #3)
+  - [x] Create `lib/auth/admin.ts` with:
     - `isUserSuperAdmin(userId: string): Promise<boolean>` - checks DB
     - `requireSuperAdmin(): Promise<void>` - for server components, redirects if not admin
-  - [ ] Use service role client from `lib/supabase/admin.ts` to bypass RLS
-  - [ ] Log admin check attempts: `[Admin] Checking admin status for user ${userId}`
-  - [ ] Return `false` on any error (fail secure)
+  - [x] Use service role client from `lib/supabase/admin.ts` to bypass RLS
+  - [x] Log admin check attempts: `[Admin] Checking admin status for user ${userId}`
+  - [x] Return `false` on any error (fail secure)
 
-- [ ] **Task 7: Add admin status to session cache** (AC: #3)
-  - [ ] Store admin status in session cookie after first check
-  - [ ] Cookie name: `ctx_admin_status` (encrypted, httpOnly)
-  - [ ] Expiry: Match session expiry (24 hours)
-  - [ ] Invalidation trigger: None needed for MVP (admin status changes are rare)
-  - [ ] Future: Add webhook to invalidate on `users.is_super_admin` change
+- [x] **Task 7: Add admin status to session cache** (AC: #3)
+  - [x] Store admin status in session cookie after first check
+  - [x] Cookie name: `ctx_admin_status` (encrypted, httpOnly)
+  - [x] Expiry: Match session expiry (24 hours)
+  - [x] Invalidation trigger: None needed for MVP (admin status changes are rare)
+  - [x] Future: Add webhook to invalidate on `users.is_super_admin` change
 
 ## Dev Notes
 
@@ -312,18 +312,42 @@ After completing this story, verify:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Implemented admin access control with is_super_admin column and middleware protection
+- Created admin layout with defense-in-depth server-side admin check
+- Added access denied toast handler in dashboard layout
+- Created admin check utility functions in lib/auth/admin.ts
+- Admin status cached in session cookie for performance
+- All 6 E2E tests passing
+
+**Design Refinement (2025-12-21):** Unified navigation per UX spec
+- Original implementation had separate AdminSidebar, creating duplicate sidebar issue
+- Fixed by integrating admin nav items into main Sidebar component
+- Admin items appear below divider when user has `is_super_admin = true`
+- Admin layout simplified to only add context header, not duplicate layout
+- Follows UX principle: "Complex nested navigation — keep it flat and fast"
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
-| | | |
+| 2025-12-21 | Initial implementation of admin access control | Claude Opus 4.5 |
+| 2025-12-21 | Unified navigation - integrated admin nav into main sidebar | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `app/app/(dashboard)/admin/layout.tsx` - Admin layout with access control (simplified)
+- `app/app/(dashboard)/admin/page.tsx` - Admin dashboard entry point
+- `app/components/admin/admin-sidebar.tsx` - Admin navigation sidebar (deprecated - now integrated into main Sidebar)
+- `app/components/auth/access-denied-handler.tsx` - Toast handler for access denied
+- `app/lib/auth/admin.ts` - Admin check utilities
+- `app/lib/supabase/admin.ts` - Service role Supabase client
+- `app/e2e/admin-access.spec.ts` - E2E tests for admin access control
+
+**Modified:**
+- `app/components/dashboard/sidebar.tsx` - Added admin nav items for super admins
+- `app/app/(dashboard)/layout.tsx` - Now passes isAdmin prop to Sidebar

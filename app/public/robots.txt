@@ -1,0 +1,6 @@
+# Contextor robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://contextor.co/sitemap.xml

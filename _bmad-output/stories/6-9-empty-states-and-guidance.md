@@ -1,7 +1,7 @@
 # Story 6.9: Empty States & Guidance
 
 Epic: 6 - Dashboard, Feed & Analytics
-Status: ready-for-dev
+Status: ✅ Done
 FRs: FR67, FR68, FR74
 
 ## Story

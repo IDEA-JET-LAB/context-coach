@@ -1,6 +1,6 @@
 # Story 5.1: Analysis Edge Function
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 **As a** system,

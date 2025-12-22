@@ -1,0 +1,53 @@
+# BMAD Custom Agents Bundle Manifest
+# Generated: 2025-12-21
+
+bundle:
+  name: "IdeaJetLab Custom Agents"
+  version: "1.0.0"
+  created: "2025-12-21"
+  source_project: "IdeaJetLab"
+  bmad_version: "6.0.0-alpha.16"
+
+agents:
+  - id: "pixel"
+    name: "Pixel"
+    icon: "🎨"
+    description: "AI Image Artist & Visual Asset Generator using Google Gemini"
+    activation: "/bmad:custom:agents:pixel"
+    has_sidecar: true
+    files:
+      - "pixel.agent.yaml"
+      - "pixel-sidecar/"
+    dependencies:
+      - "Google Gemini API access"
+
+  - id: "marketing-strategist"
+    name: "Marketing Strategist"
+    icon: "📊"
+    description: "Digital Marketing & AI Content Expert for SaaS and Startups"
+    activation: "/bmad:custom:agents:marketing-strategist"
+    has_sidecar: true
+    files:
+      - "marketing-strategist.agent.yaml"
+      - "info-and-installation-guide.md"
+      - "marketing-strategist-sidecar/"
+    dependencies:
+      - "Firecrawl MCP (recommended)"
+
+  - id: "seo-specialist"
+    name: "SEO Specialist"
+    icon: "🔍"
+    description: "SEO, AEO & GEO Expert for traditional and AI search optimization"
+    activation: "/bmad:custom:agents:seo-specialist"
+    has_sidecar: false
+    files:
+      - "seo-specialist.agent.yaml"
+    dependencies: []
+
+installation:
+  method: "script"
+  script: "import.sh"
+  target_path: ".bmad/custom/agents/"
+
+requirements:
+  bmad_version: ">=6.0.0"

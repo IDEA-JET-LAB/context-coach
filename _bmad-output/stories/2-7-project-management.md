@@ -1,6 +1,6 @@
 # Story 2.7: Project Management
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

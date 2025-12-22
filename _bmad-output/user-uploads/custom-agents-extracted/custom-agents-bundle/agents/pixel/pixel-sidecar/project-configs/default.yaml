@@ -1,0 +1,37 @@
+# Default Project Configuration Template
+# Copy and customize for each project
+
+project_name: "Default"
+description: "Default configuration template"
+
+# Output Settings
+output:
+  folder: "./public/images/generated"
+  create_if_missing: true
+
+# Naming Convention
+# Available variables: {name}, {section}, {version}, {date}, {id}
+naming:
+  pattern: "{name}-{section}-v{version}"
+  lowercase: true
+  separator: "-"
+
+# Default Generation Settings
+defaults:
+  format: "png"           # png | jpeg
+  resolution: "1K"        # 1K | 2K | 4K
+  aspect_ratio: "1:1"     # 1:1 | 16:9 | 9:16 | 4:3 | 3:4 | 3:2 | 2:3 | 21:9
+  model: "gemini-3-pro-image-preview"
+
+# Style Overrides (optional)
+# These override auto-detected project style if set
+style_overrides:
+  # primary_color: "#6366f1"
+  # secondary_color: "#8b5cf6"
+  # background_style: "dark"
+  # mood: "modern, professional"
+
+# Staging Settings
+staging:
+  auto_cleanup: false     # Delete staging files after acceptance
+  backup_accepted: true   # Keep copy in staging after deployment

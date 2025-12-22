@@ -14,6 +14,7 @@ export const CAPTURE_SCRIPT = 'contextor-capture.sh';
 export interface HookAction {
   type: 'command';
   command: string;
+  timeout?: number;
 }
 
 /**
@@ -73,10 +74,11 @@ export async function writeClaudeSettings(
  * Uses the new Claude Code format with matchers
  */
 export function configureContextorHook(settings: ClaudeSettings): ClaudeSettings {
-  const hookCommand = `./${CLAUDE_DIR}/${HOOKS_DIR}/${CAPTURE_SCRIPT}`;
+  // Use $CLAUDE_PROJECT_DIR for reliable path resolution
+  const hookCommand = `bash "$CLAUDE_PROJECT_DIR"/${CLAUDE_DIR}/${HOOKS_DIR}/${CAPTURE_SCRIPT}`;
   const newHookEntry: HookEntry = {
     matcher: '.*',
-    hooks: [{ type: 'command', command: hookCommand }],
+    hooks: [{ type: 'command', command: hookCommand, timeout: 5000 }],
   };
 
   // Initialize hooks structure if needed

@@ -1,5 +1,5 @@
 ---
-status: RESOLVED
+status: ✅ RESOLVED
 resolved_date: 2025-12-20
 resolved_by: Opus 4.5 agent
 ---

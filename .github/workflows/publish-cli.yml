@@ -1,0 +1,56 @@
+# =============================================================================
+# Publish CLI to npm
+# Triggered when a release is created with a tag starting with 'cli-v'
+# =============================================================================
+
+name: Publish CLI to npm
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    # Only run for CLI releases (tags like cli-v1.0.0)
+    if: startsWith(github.event.release.tag_name, 'cli-v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: packages/cli/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/cli
+        run: npm ci
+
+      - name: Build
+        working-directory: packages/cli
+        run: npm run build
+
+      - name: Run tests
+        working-directory: packages/cli
+        run: npm test
+
+      - name: Verify package contents
+        working-directory: packages/cli
+        run: npm pack --dry-run
+
+      - name: Publish to npm
+        working-directory: packages/cli
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify publication
+        run: |
+          sleep 10  # Wait for npm to index the package
+          npm view @contextor/cli version
+          echo "Successfully published @contextor/cli to npm!"

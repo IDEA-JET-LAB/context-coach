@@ -3,7 +3,7 @@
 **Epic:** 6 - Dashboard, Feed & Analytics
 **FRs:** FR43 (Personal score trends over time), FR44 (Team analytics - dimension level view)
 **Depends On:** Story 6.5 (Score Display & Team Comparison - provides StatCard, DimensionBar components)
-**Status:** ready-for-dev
+**Status:** done
 
 ## Story
 

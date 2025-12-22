@@ -1,22 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { getOriginFromRequest } from "@/lib/utils/get-origin";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
-  const { searchParams, origin } = requestUrl;
+  const { searchParams } = requestUrl;
 
-  // Normalize origin to use 127.0.0.1 for local development (cookie consistency)
-  // This ensures cookies set on 127.0.0.1 are accessible after redirects
-  let normalizedOrigin = origin;
-  if (origin.includes('localhost')) {
-    normalizedOrigin = origin.replace('localhost', '127.0.0.1');
-  }
+  // Get the correct origin, handling reverse proxy scenarios (Cloud Run)
+  // This prevents redirecting to internal container addresses like 0.0.0.0:3000
+  const normalizedOrigin = getOriginFromRequest(request);
 
   // Handle OAuth and email verification via code exchange
   const code = searchParams.get("code");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/home";
+  const inviteToken = searchParams.get("invite_token");
 
   // Handle OAuth error (user cancelled)
   const error = searchParams.get("error");
@@ -75,13 +74,38 @@ export async function GET(request: NextRequest) {
 
     // Check if this is a password recovery session by looking at AMR claims
     // Password recovery sessions have "recovery" in the authentication method reference
+    const amr = (data.session?.user as { amr?: Array<{ method: string }> })?.amr;
     const isRecovery = type === "recovery" ||
-      data.session?.user?.amr?.some((method) => method.method === "recovery");
+      amr?.some((method) => method.method === "recovery");
 
     // Create redirect response with cookies from the code exchange
     let redirectUrl: string;
     if (isRecovery) {
       redirectUrl = `${normalizedOrigin}/reset-password/update`;
+    } else if (inviteToken) {
+      // Handle invitation token - try to accept the invitation
+      try {
+        const acceptResponse = await supabase.rpc('accept_team_invitation', {
+          p_token: inviteToken,
+          p_user_id: data.user?.id,
+        });
+
+        if (acceptResponse.data) {
+          // Set team claim and redirect to dashboard
+          await supabase.rpc('set_team_claim', { team_id: acceptResponse.data.id });
+          console.log("[AUTH] Successfully accepted invitation for team:", acceptResponse.data.name);
+          redirectUrl = `${normalizedOrigin}/prompts`;
+        } else if (acceptResponse.error) {
+          console.error("[AUTH] Failed to accept invitation:", acceptResponse.error.message);
+          // Redirect to invitation page to show error
+          redirectUrl = `${normalizedOrigin}/invite/${inviteToken}`;
+        } else {
+          redirectUrl = `${normalizedOrigin}${next}`;
+        }
+      } catch (err) {
+        console.error("[AUTH] Error accepting invitation:", err);
+        redirectUrl = `${normalizedOrigin}/invite/${inviteToken}`;
+      }
     } else {
       redirectUrl = `${normalizedOrigin}${next}`;
     }

@@ -1,6 +1,6 @@
 # Story 1.5: Password Reset Flow
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 3.6: Connection Testing & Success
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

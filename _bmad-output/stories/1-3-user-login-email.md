@@ -1,6 +1,6 @@
 # Story 1.3: User Login with Email
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

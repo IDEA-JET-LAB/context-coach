@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const isProduction = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
+  // Enable standalone output for Docker deployment
+  output: "standalone",
+  // cacheComponents disabled - requires all async data to be inside Suspense boundaries
+  // cacheComponents: true,
   async headers() {
     return [
       {

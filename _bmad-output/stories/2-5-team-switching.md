@@ -1,6 +1,6 @@
 # Story 2.5: Team Switching
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

@@ -10,6 +10,45 @@ Contextor is a prompt journaling system for AI-assisted development teams. It ca
 1. **Claude Code Hook** - Automatic capture via `UserPromptSubmit` hook (captures ALL prompts)
 2. **BMAD Native** - Agent-embedded capture that overwrites hook entries with richer metadata
 
+## CRITICAL: API Endpoint Convention
+
+**This is a common source of bugs. All agents MUST understand this.**
+
+The `API_ENDPOINT` stored in project config INCLUDES the `/api` prefix:
+```
+API_ENDPOINT = "http://127.0.0.1:3050/api"  ← INCLUDES /api
+```
+
+When building URLs in capture hooks or CLI code, append ONLY the route path:
+```bash
+# CORRECT:
+curl "${API_ENDPOINT}/prompts/capture"
+# Result: http://127.0.0.1:3050/api/prompts/capture
+
+# WRONG - DO NOT DO THIS:
+curl "${API_ENDPOINT}/api/prompts/capture"
+# Result: http://127.0.0.1:3050/api/api/prompts/capture (404!)
+```
+
+### Why This Matters
+- The CLI templates at `packages/cli/src/lib/hooks.ts` define the capture hook
+- The hook is deployed to target projects at `.claude/hooks/contextor-capture.sh`
+- If the URL construction is wrong, prompts fail silently (no errors shown to user)
+
+### Project Structure Context
+```
+context-coach/
+├── app/                    ← Next.js app (the "web" part)
+│   └── app/                ← Next.js App Router directory
+│       └── api/            ← API routes start here
+│           └── prompts/
+│               └── capture/route.ts  ← POST /api/prompts/capture
+├── packages/
+│   └── cli/                ← CLI package (generates hooks)
+```
+
+The nested `app/app/` is standard Next.js 13+ structure (outer `app` is project root, inner `app` is App Router).
+
 ## Development Server
 
 **Port:** Use `3050` for this project (port 3000 is used by other projects)
@@ -20,6 +59,54 @@ cd app && npm run dev -- -p 3050
 ```
 
 **Important for agents:** Always check if a port is available before starting a dev server. If not available, use an uncommon port (3050, 3051, etc.) to avoid conflicts.
+
+## Local Development Test User
+
+A persistent test user is seeded into the local Supabase database. **Use this for all local testing and development:**
+
+| Field | Value |
+|-------|-------|
+| **Email** | `edgars@test.com` |
+| **Password** | `password123` |
+| **Team** | Test Team |
+| **Project** | Test Project |
+| **User ID** | `11111111-1111-1111-1111-111111111111` |
+| **Team ID** | `22222222-2222-2222-2222-222222222222` |
+| **Project ID** | `44444444-4444-4444-4444-444444444444` |
+
+This data is created by `app/supabase/seed.sql` and persists across `supabase stop/start`.
+
+## CRITICAL: Database Operations - DO NOT WIPE DATA
+
+**NEVER use `supabase db reset` unless explicitly requested by the user.** It wipes ALL data including test prompts, user-created teams, and any manual testing data.
+
+### Applying New Migrations (Non-Destructive)
+
+When you create a new migration file, use these commands to apply it WITHOUT wiping data:
+
+```bash
+# PREFERRED: Apply pending migrations without data loss
+cd app && npx supabase db push
+
+# Alternative: Apply migrations to running local instance
+cd app && npx supabase migration up
+```
+
+### Database Commands Reference
+
+| Command | Effect | When to Use |
+|---------|--------|-------------|
+| `supabase db push` | Applies new migrations, preserves data | **Default choice for new migrations** |
+| `supabase migration up` | Same as push, applies pending migrations | Alternative to push |
+| `supabase stop` / `start` | Preserves all data | Restarting Supabase |
+| `supabase db reset` | **WIPES EVERYTHING**, re-runs migrations + seed | Only when explicitly asked |
+
+### Why This Matters
+
+- The user may have test data, captured prompts, or manual configurations
+- `db reset` destroys hours of testing work
+- The seed recreates only the base test user/team/project, not user-generated data
+- Always ask before running destructive database operations
 
 ## Testing
 
@@ -50,6 +137,20 @@ cd app && npm test -- --grep "Login"
 - Mailpit URL: http://127.0.0.1:54324
 - API: http://127.0.0.1:54324/api/v1/messages
 - Use this to fetch emails and extract verification/reset links in tests
+
+### Production Smoke Tests
+
+Run E2E tests against production (https://contextor.co):
+
+```bash
+# Run all production smoke tests
+cd app && npm run test:production
+
+# Run in headed mode (see browser)
+cd app && npm run test:production:headed
+```
+
+Production tests verify: landing page, auth pages, API responses, protected route redirects, and performance.
 
 ## Key Commands
 
@@ -182,6 +283,50 @@ The Supabase browser client reads session cookies via JavaScript (`document.cook
 
 After successful password update, the user is already authenticated - redirect to `/` not `/login`. The proxy will redirect authenticated users away from auth pages anyway.
 
+## Production OAuth Learnings (December 2025)
+
+### Origin Detection Behind Reverse Proxy
+
+Cloud Run terminates SSL and proxies to containers. The `request.url` origin returns internal container address (e.g., `http://0.0.0.0:3000`), not the public domain.
+
+**Solution:** Use `lib/utils/get-origin.ts` which checks in order:
+1. `NEXT_PUBLIC_APP_URL` environment variable (most reliable)
+2. `X-Forwarded-Host` header from reverse proxy
+3. `Host` header
+4. Falls back to `request.url` origin
+
+```typescript
+import { getOriginFromRequest } from "@/lib/utils/get-origin";
+
+// In callback/route.ts
+const normalizedOrigin = getOriginFromRequest(request);
+```
+
+### Supabase API Key is Case-Sensitive
+
+The Supabase publishable key is case-sensitive. A single character mismatch (e.g., `x` vs `X`) causes "Invalid API key" errors during OAuth code exchange.
+
+**Debugging:** Check Cloud Run logs:
+```bash
+gcloud run logs read contextor-web --region us-central1 --limit 50 | grep -i auth
+```
+
+Look for: `[AUTH] Code exchange error: Invalid API key`
+
+### Google OAuth Flow in Production
+
+1. User clicks "Continue with Google" on `/login`
+2. Redirected to Google consent screen
+3. Google redirects to `https://ddskanjiobrjphscskog.supabase.co/auth/v1/callback`
+4. Supabase exchanges code for session, redirects to app callback
+5. App `/callback` route exchanges code for session cookies
+6. User redirected to dashboard
+
+**Key configuration:**
+- Redirect URI in Google Cloud Console: `https://ddskanjiobrjphscskog.supabase.co/auth/v1/callback`
+- Google provider enabled in Supabase Dashboard with Client ID and Secret
+- `NEXT_PUBLIC_APP_URL` set in Docker build for correct final redirect
+
 ## Epic 1 Status: COMPLETED
 
 All authentication features implemented and tested:
@@ -191,3 +336,140 @@ All authentication features implemented and tested:
 - Session management
 - Protected route handling
 - 21 E2E tests passing
+
+## Epic 2 Status: COMPLETED
+
+All team and project management features implemented and tested:
+- Team creation with onboarding flow
+- Team member invitations (email-based)
+- Role management (admin/member)
+- Team settings and switching
+- Project creation with API key generation
+- Project settings (name, description, regenerate key)
+- Project archiving
+- 114 E2E tests passing
+
+## Epic 9 Status: COMPLETED - PRODUCTION DEPLOYED
+
+### Production URLs
+| Service | URL |
+|---------|-----|
+| **Web App** | https://contextor.co |
+| **Health Check** | https://contextor.co/api/health |
+| **NPM Package** | `npx @contextor/cli init <token>` |
+
+### Infrastructure
+- **GCP Project:** `ideajetlab-website`
+- **Cloud Run Service:** `contextor-web` (us-central1)
+- **Supabase Project:** `ddskanjiobrjphscskog`
+- **Domain:** contextor.co (Namecheap, DNS via API)
+- **Rate Limiting:** Upstash Redis
+
+### CRITICAL: Deployment Requirements
+
+**MUST USE these exact settings - errors cause failed deployments:**
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| GCP Project | `ideajetlab-website` | Container Registry location |
+| Image Name | `gcr.io/ideajetlab-website/contextor` | Must match exactly |
+| Platform | `linux/amd64` | Cloud Run requires AMD64, Mac builds ARM by default |
+| Region | `us-central1` | Where service is deployed |
+
+### Manual Deployment Steps
+
+```bash
+cd app
+
+# Step 1: Set correct GCP project (CRITICAL - wrong project = push fails)
+gcloud config set project ideajetlab-website
+
+# Step 2: Build for AMD64 (CRITICAL - Mac builds ARM by default which Cloud Run rejects)
+docker build \
+  --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ddskanjiobrjphscskog.supabase.co \
+  --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkc2thbmppb2JyanBoc2Nza29nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTMzNTIsImV4cCI6MjA4MTg4OTM1Mn0.lB5CtFZunXFR6QbE2OvKRaMWVhZ-zOEb1GmAVqdtKTA \
+  --build-arg NEXT_PUBLIC_APP_URL=https://contextor.co \
+  -t gcr.io/ideajetlab-website/contextor:vX.X.X \
+  .
+
+# Step 3: Push to GCR
+docker push gcr.io/ideajetlab-website/contextor:vX.X.X
+
+# Step 4: Deploy to Cloud Run
+gcloud run deploy contextor-web \
+  --image gcr.io/ideajetlab-website/contextor:vX.X.X \
+  --region us-central1
+```
+
+### Common Deployment Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Artifact Registry API not enabled" | Wrong GCP project | Run `gcloud config set project ideajetlab-website` |
+| "must support amd64/linux" | Built for ARM (Mac default) | Add `--platform linux/amd64` to build |
+| Email redirects to 0.0.0.0 | Missing NEXT_PUBLIC_APP_URL | Add `--build-arg NEXT_PUBLIC_APP_URL=https://contextor.co` |
+
+### Secrets (GCP Secret Manager)
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `UPSTASH_REDIS_URL`
+- `UPSTASH_REDIS_TOKEN`
+
+### GitHub Secrets
+- `GCP_PROJECT_ID`, `GCP_SA_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `NPM_TOKEN`
+
+See `_bmad-output/DEPLOYMENT.md` for full deployment documentation.
+
+## CLI Package Learnings (December 2025)
+
+### Hook Path Must Use $CLAUDE_PROJECT_DIR
+
+**Critical bug fixed in v1.0.1:** The capture hook command must use `$CLAUDE_PROJECT_DIR` environment variable, NOT relative paths.
+
+```bash
+# CORRECT - works from any directory:
+bash "$CLAUDE_PROJECT_DIR"/.claude/hooks/contextor-capture.sh
+
+# WRONG - fails when Claude Code runs from different directory:
+./.claude/hooks/contextor-capture.sh
+```
+
+**Why:** Claude Code may execute hooks from a different working directory than the project root. The `$CLAUDE_PROJECT_DIR` variable is set by Claude Code to the project root.
+
+### Hook Configuration Format
+
+The CLI generates hooks in `.claude/settings.json` with this format:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/contextor-capture.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Publishing CLI Updates
+
+```bash
+cd packages/cli
+npm version patch  # or minor/major
+npm run build
+npm test
+npm publish --access public
+```
+
+Requires `NPM_TOKEN` in `~/.npmrc` or environment. Token stored in project `.env`.

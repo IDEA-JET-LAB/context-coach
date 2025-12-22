@@ -1,6 +1,6 @@
 # Story 4.3: Input Validation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 
@@ -32,29 +32,29 @@ Status: ready-for-dev
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create validation constants** (AC: #1, #2, #3)
-  - [ ] Create `lib/capture/constants.ts` with validation limits
-  - [ ] Export `PROMPT_MIN_LENGTH = 10` and `PROMPT_MAX_LENGTH = 100_000`
-  - [ ] Add JSDoc comments explaining the limits
+- [x] **Task 1: Create validation constants** (AC: #1, #2, #3)
+  - [x] Create `lib/capture/constants.ts` with validation limits
+  - [x] Export `PROMPT_MIN_LENGTH = 10` and `PROMPT_MAX_LENGTH = 100_000`
+  - [x] Add JSDoc comments explaining the limits
 
-- [ ] **Task 2: Create Zod validation schema** (AC: #1, #2, #3, #4, #5)
-  - [ ] Extend `lib/validations/capture.ts` with comprehensive schema
-  - [ ] Add `.min(10)` with custom error code `PROMPT_TOO_SHORT`
-  - [ ] Add `.max(100000)` with custom error code `PROMPT_TOO_LONG`
-  - [ ] Add `.refine()` for null byte detection with code `INVALID_PROMPT`
-  - [ ] Create `mapValidationError()` utility for error response formatting
+- [x] **Task 2: Create Zod validation schema** (AC: #1, #2, #3, #4, #5)
+  - [x] Extend `lib/validations/capture.ts` with comprehensive schema
+  - [x] Add `.min(10)` with custom error code `PROMPT_TOO_SHORT`
+  - [x] Add `.max(100000)` with custom error code `PROMPT_TOO_LONG`
+  - [x] Add `.refine()` for null byte detection with code `INVALID_PROMPT`
+  - [x] Create `mapValidationError()` utility for error response formatting
 
-- [ ] **Task 3: Integrate validation into capture endpoint** (AC: #1, #2, #3, #4, #5)
-  - [ ] Parse JSON body with try/catch, return `INVALID_REQUEST` on failure
-  - [ ] Call Zod validation after rate limiting, before redaction
-  - [ ] Return HTTP 400 for validation failures with proper error codes
-  - [ ] Log validation failures: `[API] prompts/capture: validation failed - CODE, length: N`
-  - [ ] Continue processing for valid prompts
+- [x] **Task 3: Integrate validation into capture endpoint** (AC: #1, #2, #3, #4, #5)
+  - [x] Parse JSON body with try/catch, return `INVALID_REQUEST` on failure
+  - [x] Call Zod validation after rate limiting, before redaction
+  - [x] Return HTTP 400 for validation failures with proper error codes
+  - [x] Log validation failures: `[API] prompts/capture: validation failed - CODE, length: N`
+  - [x] Continue processing for valid prompts
 
-- [ ] **Task 4: Validate supplementary fields** (AC: #4)
-  - [ ] Validate `user_id` is non-empty string
-  - [ ] Validate `timestamp` is valid ISO 8601 format
-  - [ ] Validate `metadata` is object if present
+- [x] **Task 4: Validate supplementary fields** (AC: #4)
+  - [x] Validate `user_id` is non-empty string
+  - [x] Validate `timestamp` is valid ISO 8601 format
+  - [x] Validate `metadata` is object if present
 
 ## Dev Notes
 
@@ -186,15 +186,15 @@ All validation errors follow the standard API error format:
 ### Verification Checklist
 
 After implementation, verify:
-- [ ] 9-char prompt returns 400 with `PROMPT_TOO_SHORT`
-- [ ] 10-char prompt passes validation
-- [ ] 100,000-char prompt passes validation
-- [ ] 100,001-char prompt returns 400 with `PROMPT_TOO_LONG`
-- [ ] Empty string returns 400 with `PROMPT_TOO_SHORT`
-- [ ] Null byte in prompt returns 400 with `INVALID_PROMPT`
-- [ ] Invalid JSON returns 400 with `INVALID_REQUEST`
-- [ ] Validation errors logged without prompt content
-- [ ] Error responses use standard format
+- [x] 9-char prompt returns 400 with `PROMPT_TOO_SHORT`
+- [x] 10-char prompt passes validation
+- [x] 100,000-char prompt passes validation
+- [x] 100,001-char prompt returns 400 with `PROMPT_TOO_LONG`
+- [x] Empty string returns 400 with `PROMPT_TOO_SHORT`
+- [x] Null byte in prompt returns 400 with `INVALID_PROMPT`
+- [x] Invalid JSON returns 400 with `INVALID_REQUEST`
+- [x] Validation errors logged without prompt content
+- [x] Error responses use standard format
 
 ### References
 
@@ -206,18 +206,31 @@ After implementation, verify:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created validation constants in `lib/capture/constants.ts` with PROMPT_MIN_LENGTH (10) and PROMPT_MAX_LENGTH (100,000)
+- Extended `lib/validations/capture.ts` with comprehensive Zod schema including length validation and null byte detection
+- Added `mapValidationError()` utility to convert Zod errors to standardized API error codes
+- Updated capture route to use the new validation with proper error codes and secure logging (length only, no content)
+- Created comprehensive E2E tests covering all boundary cases and edge cases
+- Updated existing capture-api.spec.ts tests to accommodate new validation rules
+- All 23 tests passing (13 new input validation tests + 10 existing capture API tests)
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
-| | | |
+| 2025-12-20 | Implemented Story 4.3: Input Validation | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `app/lib/capture/constants.ts` - Validation constants (PROMPT_MIN_LENGTH, PROMPT_MAX_LENGTH, ValidationErrorCodes)
+- `app/e2e/input-validation.spec.ts` - 13 E2E tests for input validation
+
+**Modified:**
+- `app/lib/validations/capture.ts` - Extended with length validation, null byte detection, and mapValidationError()
+- `app/app/api/prompts/capture/route.ts` - Updated validation logic with proper error codes and logging
+- `app/e2e/capture-api.spec.ts` - Updated tests to use prompts with minimum 10 characters

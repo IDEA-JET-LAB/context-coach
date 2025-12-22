@@ -1,6 +1,6 @@
 # Story 3.2: Install Token Parsing
 
-Status: ready-for-dev
+Status: ✅ Done
 Dependencies: Story 3.1 (CLI Package Foundation)
 
 ## Story

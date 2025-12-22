@@ -1,6 +1,6 @@
 # Story 2.1: Team Creation & Schema
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

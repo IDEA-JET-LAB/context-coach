@@ -1,6 +1,6 @@
 # Story 5.6: Analysis Configuration Management
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 **As a** platform admin,

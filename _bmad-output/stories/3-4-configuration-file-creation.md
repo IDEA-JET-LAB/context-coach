@@ -1,6 +1,6 @@
 # Story 3.4: Configuration File Creation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

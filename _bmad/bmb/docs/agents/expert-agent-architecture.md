@@ -309,14 +309,30 @@ critical_actions:
   - 'Write ONLY to ./sessions/'
 ```
 
+## Global Agent Rules
+
+All agents MUST load and follow the global rules file during activation:
+
+```xml
+<step n="3">Load and follow {project-root}/_bmad/core/global-agent-rules.md - these are MANDATORY rules for all agents</step>
+```
+
+This file contains rules that apply to ALL BMAD agents, including:
+
+- **Parallel Execution with Subagents** - When tasks can be executed independently, agents should spin up parallel subagents for improved quality and speed
+- **Model Selection Protocol** - Ask users which model to use (Opus 4.5, Sonnet, Haiku) before spawning subagents, defaulting to Opus 4.5
+
+The global rules file is located at `_bmad/core/global-agent-rules.md` and should be loaded after config but before agent-specific steps.
+
 ## Best Practices
 
 1. **Load sidecar files in critical_actions** - Must be explicit and MANDATORY
-2. **Enforce domain restrictions** - Clear boundaries prevent scope creep=
+2. **Enforce domain restrictions** - Clear boundaries prevent scope creep
 3. **Design for memory growth** - Structure sidecar files for accumulation
 4. **Reference past naturally** - Don't dump memory, weave it into conversation
 5. **Separate concerns** - Memories, instructions, knowledge in distinct files
 6. **Include privacy features** - Users trust expert agents with personal data
+7. **Load global rules** - Ensure step 3 loads `global-agent-rules.md`
 
 ## Common Patterns
 

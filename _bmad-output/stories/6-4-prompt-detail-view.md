@@ -1,6 +1,6 @@
 # Story 6.4: Prompt Detail View
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

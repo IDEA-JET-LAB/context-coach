@@ -1,6 +1,6 @@
 # Story 3.1: CLI Package Foundation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

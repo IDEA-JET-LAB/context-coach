@@ -1,6 +1,6 @@
 # Story 3.7: CLI Status & Uninstall Commands
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

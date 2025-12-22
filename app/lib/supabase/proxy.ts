@@ -57,6 +57,44 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Admin route protection
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  if (isAdminRoute && user) {
+    // Check cached admin status first
+    const cachedAdminStatus = request.cookies.get("ctx_admin_status")?.value;
+    let isAdmin = cachedAdminStatus === "true";
+
+    if (cachedAdminStatus === undefined) {
+      // Query database for admin status (using service role would be better but needs env var)
+      // For now, use the regular client - RLS allows users to read their own profile
+      const userId = user.sub as string;
+      const { data: profile } = await supabase
+        .from("users")
+        .select("is_super_admin")
+        .eq("id", userId)
+        .single();
+
+      isAdmin = profile?.is_super_admin ?? false;
+
+      // Cache the result in the response
+      supabaseResponse.cookies.set("ctx_admin_status", String(isAdmin), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24, // 24 hours
+        path: "/",
+      });
+    }
+
+    if (!isAdmin) {
+      console.log("[AUTH] non-admin accessing /admin: redirect=/prompts");
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/prompts";
+      redirectUrl.searchParams.set("error", "access-denied");
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   // Redirect authenticated users away from auth pages
   const authRoutes = ["/login", "/signup"];
   const isAuthRoute = authRoutes.some(

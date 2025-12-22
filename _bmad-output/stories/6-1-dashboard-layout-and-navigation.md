@@ -1,6 +1,6 @@
 # Story 6.1: Dashboard Layout & Navigation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

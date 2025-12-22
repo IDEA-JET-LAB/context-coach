@@ -1,6 +1,6 @@
 # Story 3.5: Claude Code Hook Configuration
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

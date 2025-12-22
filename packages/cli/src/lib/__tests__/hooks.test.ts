@@ -19,8 +19,10 @@ import {
 } from '../hooks.js';
 
 // Helper to create a hook entry in the new format
-function createHookEntry(command: string): HookEntry {
-  return { matcher: '.*', hooks: [{ type: 'command', command }] };
+function createHookEntry(command: string, timeout?: number): HookEntry {
+  const hook: { type: 'command'; command: string; timeout?: number } = { type: 'command', command };
+  if (timeout) hook.timeout = timeout;
+  return { matcher: '.*', hooks: [hook] };
 }
 
 describe('hooks', () => {
@@ -119,7 +121,7 @@ describe('hooks', () => {
       const result = configureContextorHook(settings);
 
       expect(result.hooks?.UserPromptSubmit).toHaveLength(2);
-      expect(result.hooks?.UserPromptSubmit?.[1].hooks[0].command).toBe(`./${CLAUDE_DIR}/${HOOKS_DIR}/${CAPTURE_SCRIPT}`);
+      expect(result.hooks?.UserPromptSubmit?.[1].hooks[0].command).toBe(`bash "$CLAUDE_PROJECT_DIR"/${CLAUDE_DIR}/${HOOKS_DIR}/${CAPTURE_SCRIPT}`);
     });
 
     it('preserves other hook types', () => {

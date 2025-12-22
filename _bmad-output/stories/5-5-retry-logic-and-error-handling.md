@@ -1,6 +1,6 @@
 # Story 5.5: Retry Logic and Error Handling
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 **As a** system operator,

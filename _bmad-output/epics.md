@@ -14,8 +14,8 @@ validation_results:
   architecture_compliance: 'PASS'
   story_quality: 'PASS'
   dependency_validation: 'PASS'
-total_epics: 7
-total_stories: 48
+total_epics: 9
+total_stories: 58
 ---
 
 # Contextor - Epic Breakdown
@@ -296,21 +296,29 @@ Users can create teams, invite members, set roles, and register projects for tra
 Developers can install Contextor in their projects with a single command.
 **FRs covered:** FR55-FR65, FR76
 
-### Epic 4: Prompt Capture Pipeline
+### Epic 4: Prompt Capture Pipeline ✅ COMPLETE
 System captures prompts from Claude Code securely and queues them for analysis.
 **FRs covered:** FR20-FR26, FR72
 
-### Epic 5: AI Analysis Engine
+### Epic 5: AI Analysis Engine ✅ COMPLETE
 System analyzes every prompt with 5-dimension scoring and actionable suggestions.
 **FRs covered:** FR27-FR35, FR73-FR74
 
-### Epic 6: Dashboard, Feed & Analytics
+### Epic 6: Dashboard, Feed & Analytics ✅ COMPLETE
 Users can view prompts with scores in a real-time dashboard and track improvement over time.
 **FRs covered:** FR36-FR45, FR66-FR71
 
-### Epic 7: Platform Administration
+### Epic 7: Platform Administration ✅ COMPLETE
 Super admins can manage users, teams, analysis configs, and monitor system health.
 **FRs covered:** FR46-FR50
+
+### Epic 8: Marketing Landing Page ✅ COMPLETE
+Public-facing landing page that introduces Contextor and drives signups.
+**FRs covered:** N/A (Marketing requirement, not in original FR list)
+
+### Epic 9: Production Deployment & Infrastructure
+Deploy Contextor to production with domain setup, CI/CD, npm publishing, and zero-downtime strategy.
+**INFs covered:** INF-D1 to INF-D4, INF-N1 to INF-N5, INF-C1 to INF-C5, INF-M1 to INF-M4
 
 ---
 
@@ -1255,6 +1263,33 @@ System analyzes every prompt with 5-dimension scoring and actionable suggestions
 **Then** a default analysis config exists with 5 dimensions
 **And** weights are: Clarity 25%, Context 25%, Specificity 20%, Goal 15%, Constraints 15%
 
+### Story 5.7: Command Prompt Classification
+
+**As a** system,
+**I want** to identify and classify slash command prompts,
+**So that** they are stored but not analyzed, saving AI costs and keeping analytics focused on actual prompts.
+
+**Acceptance Criteria:**
+
+**Given** a prompt starting with `/`
+**When** it is captured via the API
+**Then** it is stored with `prompt_type = 'command'`
+**And** `analysis_status` is set to `'skipped'` (not 'pending')
+
+**Given** a prompt NOT starting with `/`
+**When** it is captured
+**Then** it is stored with `prompt_type = 'prompt'`
+**And** normal analysis flow continues
+
+**Given** the prompt feed in the dashboard
+**When** displaying command prompts
+**Then** they appear with a distinct visual style (muted, command icon)
+**And** show "Command - not analyzed" instead of scores
+
+**Given** analytics calculations
+**When** computing averages and trends
+**Then** command prompts are excluded from all calculations
+
 ---
 
 ## Epic 6: Dashboard, Feed & Analytics
@@ -1503,11 +1538,19 @@ Users can view prompts with scores in a real-time dashboard and track improvemen
 
 ---
 
-## Epic 7: Platform Administration
+## Epic 7: Platform Administration ✅ COMPLETE
 
 Super admins can manage users, teams, analysis configs, and monitor system health.
 
 **FRs Covered:** FR46-FR50
+
+**Status:** Complete (2025-12-21)
+**Implementation:** `app/(dashboard)/admin/` - Admin dashboard, user management, team overview, config editor, system health
+**Tests:** 122 E2E tests (admin-access, admin-dashboard, admin-users, admin-teams, admin-config, admin-system)
+**Agent:** Claude Opus 4.5
+**Notes:** Uses service role Supabase client for cross-team queries, `is_super_admin` flag for access control
+
+**Design Refinement (2025-12-21):** Fixed navigation to use unified sidebar per UX spec. Admin items now appear below a divider in the main dashboard sidebar when user is super admin, rather than a separate AdminSidebar. This follows the UX principle "keep it flat and fast" and maintains the single 64px icon-only sidebar pattern.
 
 ---
 
@@ -1661,6 +1704,629 @@ Super admins can manage users, teams, analysis configs, and monitor system healt
 **When** thresholds are exceeded (e.g., >100 pending, >5% error rate)
 **Then** the metric is highlighted in red
 **And** details show recent error messages
+
+---
+
+## Epic 8: Marketing Landing Page ✅ COMPLETE
+
+Public-facing landing page that introduces Contextor and drives signups.
+
+**FRs Covered:** N/A (Marketing requirement added post-PRD)
+
+**Status:** Complete (2025-12-21)
+**Implementation:** `app/page.tsx` + `components/marketing/` - Navbar, Hero, Features, Footer
+**Tests:** 14 E2E tests (landing-page.spec.ts)
+**Agent:** Claude Opus 4.5
+**Notes:** Root page serves landing for unauthenticated users, redirects to /prompts for authenticated users
+
+---
+
+### Story 8.1: Public Landing Page
+
+**As a** visitor,
+**I want** to see an attractive marketing landing page,
+**So that** I understand what Contextor does and can sign up.
+
+**Acceptance Criteria:**
+
+**Given** I visit the root URL (`/`)
+**When** I am not logged in
+**Then** I see the marketing landing page with navigation, hero section, features, and footer
+
+**Given** I am on the landing page
+**When** I click "Login" or "Sign Up"
+**Then** I am navigated to `/login` or `/signup` respectively
+
+**Given** I click "Get Started Free" CTA
+**When** the click event fires
+**Then** I am navigated to `/signup`
+
+**Given** I am already logged in
+**When** I visit the root URL (`/`)
+**Then** I am redirected to `/prompts` (dashboard feed)
+
+**Given** the hero section
+**When** I view the page
+**Then** I see headline "Your Context Tutor", subheadline, CTAs, and dashboard mockup preview
+
+**Given** the features section
+**When** I scroll down
+**Then** I see 3 feature cards: Automatic Capture, AI-Powered Analysis, Team Insights
+
+**Implementation Notes:**
+- Create `app/(public)/` route group for marketing pages
+- Use existing dark theme (#0a0a0a background)
+- Use Lucide React icons (Sparkles, Zap, BrainCircuit, Users)
+- Components: `components/marketing/{navbar,hero,features,footer}.tsx`
+
+---
+
+## Epic 9: Production Deployment & Infrastructure
+
+Deploy Contextor to production with domain setup, CI/CD pipeline, and zero-downtime deployment strategy.
+
+**INFs Covered:** INF-D1 to INF-D4, INF-C1 to INF-C5, INF-M1 to INF-M4
+
+**Dependencies:** Epic 1-8 complete (all application features implemented)
+
+**Infrastructure Targets:**
+- **Hosting:** Google Cloud Run (containerized Next.js)
+- **Database:** Supabase Cloud (Production project)
+- **Domain:** contextor.co via Namecheap
+- **CI/CD:** GitHub Actions
+
+---
+
+### Story 9.1: Supabase Production Project Setup
+
+**As a** platform operator,
+**I want** to set up a production Supabase project,
+**So that** user data is stored securely in a managed cloud database.
+
+**Acceptance Criteria:**
+
+**Given** access to Supabase dashboard
+**When** I create a new project
+**Then** a new production project is created with a unique `project-ref`
+**And** the project is in a production-suitable region (e.g., `us-east-1`)
+**And** database connection strings are generated
+
+**Given** the local migrations in `supabase/migrations/`
+**When** I run `supabase link --project-ref <ref>` and `supabase db push`
+**Then** all migrations are applied to production
+**And** RLS policies are active
+**And** all tables match local schema
+
+**Given** the production database
+**When** I configure Auth providers
+**Then** Email/password auth is enabled
+**And** Google OAuth is configured with production credentials
+**And** Redirect URLs point to `https://contextor.co/*`
+
+**Given** Edge Functions in `supabase/functions/`
+**When** I run `supabase functions deploy`
+**Then** the `analyze-prompt` function is deployed
+**And** it can access production environment variables
+
+**Technical Notes:**
+- Create project at https://supabase.com/dashboard
+- Store `SUPABASE_URL` and `SUPABASE_ANON_KEY` for Next.js
+- Store `SUPABASE_SERVICE_ROLE_KEY` for admin operations (never expose to client)
+- Configure email templates in Supabase Auth settings
+
+---
+
+### Story 9.2: Google Cloud Run Setup
+
+**As a** platform operator,
+**I want** to deploy the Next.js app to Google Cloud Run,
+**So that** the application scales automatically and costs are usage-based.
+
+**Acceptance Criteria:**
+
+**Given** a Google Cloud project
+**When** I enable required APIs
+**Then** Cloud Run, Container Registry, and Cloud Build APIs are enabled
+
+**Given** the Dockerfile in the project root
+**When** I build and push the container
+**Then** the image is stored in Google Container Registry (or Artifact Registry)
+**And** the image tag follows semantic versioning
+
+**Given** a Cloud Run service
+**When** I create/deploy the service
+**Then** it runs the Next.js container
+**And** minimum instances = 0 (scale to zero for cost savings)
+**And** maximum instances = 10 (MVP limit)
+**And** memory = 512MB, CPU = 1
+
+**Given** the service is deployed
+**When** I test the default Cloud Run URL
+**Then** the application loads correctly
+**And** all API routes respond
+
+**Dockerfile Requirements:**
+```dockerfile
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+**Technical Notes:**
+- Enable `output: 'standalone'` in next.config.ts
+- Cloud Run service name: `contextor-web`
+- Region: `us-central1` (or closest to users)
+
+---
+
+### Story 9.3: Domain & DNS Configuration (Namecheap)
+
+**As a** platform operator,
+**I want** to configure contextor.co to point to Cloud Run,
+**So that** users access the app via a branded domain with SSL.
+
+**Acceptance Criteria:**
+
+**Given** the contextor.co domain in Namecheap
+**When** I configure DNS records
+**Then** the following records are set:
+- `A` record for `@` → Cloud Run IP (or CNAME to Cloud Run domain)
+- `CNAME` record for `www` → Cloud Run domain
+- `CNAME` record for `api` → Cloud Run domain (if separate service)
+
+**Given** Cloud Run domain mapping
+**When** I map `contextor.co` to the Cloud Run service
+**Then** Cloud Run provisions an SSL certificate automatically
+**And** HTTPS is enforced for all traffic
+**And** HTTP redirects to HTTPS
+
+**Given** DNS propagation
+**When** I verify the setup
+**Then** `https://contextor.co` loads the application
+**And** `https://www.contextor.co` redirects to `https://contextor.co`
+**And** SSL certificate shows valid
+
+**Namecheap API Setup (Programmatic Management):**
+
+**Given** Namecheap API credentials
+**When** I configure API access
+**Then** I have: API User, API Key, Whitelisted IP
+**And** credentials are stored securely in GitHub Secrets
+
+**Given** the need to update DNS programmatically
+**When** I use the Namecheap API
+**Then** I can create/update/delete DNS records via API
+**And** this enables automated subdomain management
+
+**Technical Notes:**
+- Namecheap API: https://www.namecheap.com/support/api/
+- Cloud Run custom domain: `gcloud run domain-mappings create`
+- SSL is automatic with Cloud Run managed certificates
+- Consider using Cloudflare as DNS for faster propagation (optional)
+
+---
+
+### Story 9.4: CI/CD Pipeline (GitHub Actions)
+
+**As a** developer,
+**I want** automated deployments on push to main,
+**So that** code changes are deployed consistently and quickly.
+
+**Acceptance Criteria:**
+
+**Given** a push to the `main` branch
+**When** the GitHub Action triggers
+**Then** the following steps run:
+1. Checkout code
+2. Run linting and type checking
+3. Run tests (unit + E2E)
+4. Build Docker image
+5. Push to Container Registry
+6. Deploy to Cloud Run
+
+**Given** a pull request
+**When** the PR is opened or updated
+**Then** only steps 1-3 run (no deployment)
+**And** status checks report pass/fail
+
+**Given** deployment to Cloud Run
+**When** the new revision is deployed
+**Then** traffic shifts gradually (canary deployment)
+**And** health checks pass before full traffic shift
+**And** old revision is kept for rollback
+
+**Given** a deployment failure
+**When** health checks fail
+**Then** the deployment is rolled back automatically
+**And** the team is notified via GitHub notification
+
+**GitHub Actions Workflow:**
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker
+      - run: docker build -t gcr.io/$PROJECT_ID/contextor:$GITHUB_SHA .
+      - run: docker push gcr.io/$PROJECT_ID/contextor:$GITHUB_SHA
+      - run: |
+          gcloud run deploy contextor-web \
+            --image gcr.io/$PROJECT_ID/contextor:$GITHUB_SHA \
+            --region us-central1 \
+            --platform managed
+```
+
+**Technical Notes:**
+- Create GCP service account with Cloud Run Admin role
+- Store service account JSON as `GCP_SA_KEY` secret
+- Add deployment status badge to README
+
+---
+
+### Story 9.5: Environment & Secrets Management
+
+**As a** platform operator,
+**I want** secure environment variable management,
+**So that** secrets are never exposed in code or logs.
+
+**Acceptance Criteria:**
+
+**Given** production secrets
+**When** they are configured
+**Then** the following are stored in Cloud Run secrets:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `UPSTASH_REDIS_URL`
+- `UPSTASH_REDIS_TOKEN`
+- `OPENAI_API_KEY` (for analysis)
+- `RESEND_API_KEY` (for emails, post-MVP)
+
+**Given** Cloud Run service
+**When** secrets are attached
+**Then** they are injected as environment variables at runtime
+**And** they are not visible in container image
+**And** they can be rotated without redeployment
+
+**Given** build-time variables
+**When** the Docker build runs
+**Then** `NEXT_PUBLIC_*` variables are set via build args
+**And** they are baked into the client bundle
+**And** they do NOT contain secrets
+
+**Given** local development
+**When** `.env.local` is used
+**Then** it contains local Supabase credentials
+**And** it is in `.gitignore`
+**And** `.env.example` documents required variables
+
+**Environment Variable Documentation:**
+```
+# .env.example
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+
+# Rate Limiting (Upstash)
+UPSTASH_REDIS_URL=https://xxx.upstash.io
+UPSTASH_REDIS_TOKEN=xxx
+
+# AI Analysis
+OPENAI_API_KEY=sk-...
+
+# Email (optional, post-MVP)
+RESEND_API_KEY=re_...
+```
+
+**Technical Notes:**
+- Use `gcloud run services update --set-secrets` for secret management
+- Never log environment variables
+- Rotate keys periodically (quarterly minimum)
+
+---
+
+### Story 9.6: Zero-Downtime Deployment Strategy
+
+**As a** platform operator,
+**I want** deployments with zero downtime,
+**So that** users aren't disrupted during updates.
+
+**Acceptance Criteria:**
+
+**Given** a new deployment
+**When** Cloud Run deploys a new revision
+**Then** traffic is gradually shifted (canary pattern)
+**And** the old revision continues serving requests
+**And** new revision must pass health checks before receiving traffic
+
+**Given** the `/api/health` endpoint
+**When** Cloud Run performs health checks
+**Then** the endpoint returns HTTP 200 with `{ status: 'ok' }`
+**And** checks include: database connectivity, basic app functionality
+
+**Given** a database migration
+**When** schema changes are needed
+**Then** migrations are applied BEFORE deployment
+**And** only additive changes are made (new columns, new tables)
+**And** destructive changes (drops, renames) are deferred
+
+**Given** a breaking migration is required
+**When** the change cannot be additive
+**Then** the multi-phase migration pattern is used:
+1. Add new structure (deploy code that writes to both)
+2. Migrate data
+3. Deploy code that reads from new structure
+4. Remove old structure (much later)
+
+**Given** a deployment failure
+**When** health checks fail for the new revision
+**Then** traffic remains on the old revision
+**And** the failed revision is marked unhealthy
+**And** rollback is automatic (no manual intervention)
+
+**Rollback Procedure:**
+```bash
+# List revisions
+gcloud run revisions list --service contextor-web
+
+# Rollback to previous revision
+gcloud run services update-traffic contextor-web \
+  --to-revisions=contextor-web-xxxxx=100
+```
+
+**Health Check Endpoint:**
+```typescript
+// app/api/health/route.ts
+export async function GET() {
+  try {
+    // Check database connectivity
+    const supabase = createClient();
+    await supabase.from('users').select('count').limit(1);
+
+    return Response.json({
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return Response.json({
+      status: 'error',
+      error: 'Database connection failed'
+    }, { status: 503 });
+  }
+}
+```
+
+**Technical Notes:**
+- Cloud Run automatically handles rolling deployments
+- Set `--min-instances=1` in production to avoid cold starts
+- Consider maintenance window for major migrations
+
+---
+
+### Story 9.7: Monitoring & Health Checks
+
+**As a** platform operator,
+**I want** visibility into production health,
+**So that** I can detect and respond to issues quickly.
+
+**Acceptance Criteria:**
+
+**Given** the production deployment
+**When** I access Google Cloud Console
+**Then** I can see Cloud Run metrics: request count, latency, error rate, CPU, memory
+
+**Given** Supabase dashboard
+**When** I access it
+**Then** I can see: database connections, query performance, auth events, realtime connections
+
+**Given** application logs
+**When** errors occur
+**Then** they are captured in Cloud Logging
+**And** logs include: request ID, user ID (if authenticated), error stack trace
+**And** logs follow the format: `[CONTEXT] action: details`
+
+**Given** the need for uptime monitoring
+**When** I configure external monitoring
+**Then** a service (e.g., UptimeRobot, Checkly) pings `/api/health` every 5 minutes
+**And** alerts are sent on failure via email/Slack
+
+**Given** post-MVP observability needs
+**When** traffic grows
+**Then** consider adding:
+- Sentry for error tracking (client + server)
+- Cloud Monitoring alerts for latency/error thresholds
+- Log-based metrics for business events
+
+**Cloud Run Logging Integration:**
+```typescript
+// lib/utils/logger.ts
+export function log(context: string, action: string, details?: object) {
+  const entry = {
+    severity: 'INFO',
+    message: `[${context}] ${action}`,
+    ...details,
+    timestamp: new Date().toISOString()
+  };
+  console.log(JSON.stringify(entry));
+}
+
+export function error(context: string, action: string, err: Error) {
+  const entry = {
+    severity: 'ERROR',
+    message: `[${context}] ${action}: ${err.message}`,
+    stack: err.stack,
+    timestamp: new Date().toISOString()
+  };
+  console.error(JSON.stringify(entry));
+}
+```
+
+**Technical Notes:**
+- Cloud Run logs are automatically sent to Cloud Logging
+- Create log-based metrics for key events (signups, captures, analyses)
+- Set up alerts for: error rate > 5%, latency P95 > 5s, 5xx responses
+
+---
+
+### Story 9.8: npm Package Publishing (@contextor/cli)
+
+**As a** solo developer,
+**I want** to publish the CLI package to npm,
+**So that** users can install Contextor with `npx @contextor/cli init`.
+
+**Acceptance Criteria:**
+
+**Given** an npm account
+**When** I set up the @contextor organization
+**Then** the organization is created
+**And** I can publish packages under @contextor scope
+
+**Given** the CLI package in `packages/cli/`
+**When** I publish to npm
+**Then** the package is available as `@contextor/cli`
+**And** users can run `npx @contextor/cli --version`
+
+**Given** a new version is ready
+**When** I create a GitHub release with a version tag
+**Then** GitHub Actions automatically publishes to npm
+**And** the version follows semantic versioning (e.g., 1.0.0)
+
+**Given** the published package
+**When** users view it on npm
+**Then** they see a README with installation instructions
+**And** the package has appropriate keywords and metadata
+
+**Technical Notes:**
+- Create npm organization: `contextor`
+- Package name: `@contextor/cli`
+- Trigger publish on GitHub release with tag `cli-vX.Y.Z`
+- Use `NPM_TOKEN` secret in GitHub Actions
+
+---
+
+### Deployment Checklist
+
+Before going live, verify:
+
+**Infrastructure:**
+- [ ] Supabase production project created and linked
+- [ ] All migrations applied to production
+- [ ] Edge Functions deployed
+- [ ] Cloud Run service deployed and healthy
+- [ ] Custom domain mapped with SSL
+- [ ] DNS propagation complete
+
+**Security:**
+- [ ] All secrets stored in Cloud Run secrets (not env vars)
+- [ ] Service account has minimal required permissions
+- [ ] RLS policies verified in production
+- [ ] No debug/development flags in production
+
+**Monitoring:**
+- [ ] Health check endpoint responding
+- [ ] External uptime monitor configured
+- [ ] Cloud Logging accessible
+- [ ] Error notification channel configured
+
+**Testing:**
+- [ ] Smoke test: signup → create team → create project → capture prompt
+- [ ] Load test: verify performance under expected traffic
+- [ ] Failover test: verify rollback procedure works
+
+**npm Package:**
+- [ ] npm organization @contextor created
+- [ ] @contextor/cli published and accessible
+- [ ] `npx @contextor/cli --version` works
+- [ ] Publish workflow tested
+
+---
+
+### Local to Production Transition Guide
+
+**Development Workflow:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    LOCAL DEVELOPMENT                        │
+│  - `supabase start` for local DB                           │
+│  - `npm run dev` for Next.js                               │
+│  - All changes made locally first                          │
+│  - Migrations created with `supabase migration new`        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    STAGING (Optional)                       │
+│  - Supabase free tier project                              │
+│  - Cloud Run with --no-traffic revision                    │
+│  - Team testing before production                          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    PRODUCTION                               │
+│  - `supabase db push --linked` for migrations              │
+│  - GitHub Actions deploys on merge to main                 │
+│  - Zero-downtime with Cloud Run revisions                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Commands:**
+
+```bash
+# Link to production Supabase
+supabase link --project-ref <your-project-ref>
+
+# Push migrations to production
+supabase db push
+
+# Deploy Edge Functions
+supabase functions deploy analyze-prompt
+
+# Check migration status
+supabase migration list
+
+# Generate types from production schema
+supabase gen types typescript --linked > types/supabase.ts
+```
 
 ---
 

@@ -1,6 +1,6 @@
 # Story 6.8: Onboarding Checklist
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

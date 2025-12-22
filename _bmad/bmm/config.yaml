@@ -12,6 +12,10 @@ project_knowledge: "{project-root}/docs"
 # Sprint/Implementation Tracking
 sprint_artifacts: "{project-root}/_bmad-output/stories"
 
+# Code Location (where the actual source code lives)
+# All paths in story files are relative to this folder
+code_root: "{project-root}/app"
+
 # Core Configuration Values
 user_name: Edgars
 communication_language: English

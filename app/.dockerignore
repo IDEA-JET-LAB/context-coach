@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+
+# Build output (we rebuild in container)
+.next
+out
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Environment files (secrets should not be in image)
+.env*
+!.env.example
+
+# Claude Code / BMAD
+.claude
+_bmad*
+
+# Testing
+e2e
+playwright-report
+test-results
+coverage
+*.spec.ts
+*.test.ts
+vitest.config.ts
+playwright.config.ts
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Supabase local dev
+supabase/.branches
+supabase/.temp
+
+# TypeScript build info
+*.tsbuildinfo

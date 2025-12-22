@@ -1,6 +1,6 @@
 # Story 6.5: Score Display & Team Comparison
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 2.2: Team Member Invitation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

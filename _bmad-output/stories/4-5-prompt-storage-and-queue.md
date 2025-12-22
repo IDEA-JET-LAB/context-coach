@@ -1,6 +1,6 @@
 # Story 4.5: Prompt Storage & Queue
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 
@@ -40,52 +40,52 @@ This story requires completion of:
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create prompts table migration** (AC: #2)
-  - [ ] Enable `pg_net` extension for async HTTP calls
-  - [ ] Create Supabase migration for `prompts` table with all columns
-  - [ ] Add columns: `id` (uuid PK), `team_id` (uuid FK), `project_id` (uuid FK), `user_id` (text)
-  - [ ] Add columns: `text` (text), `char_count` (integer), `word_count` (integer)
-  - [ ] Add columns: `created_at` (timestamptz), `analysis_status` (text default 'pending')
-  - [ ] Add column: `metadata` (jsonb nullable) for optional context
-  - [ ] Add CHECK constraint for valid `analysis_status` values
+- [x] **Task 1: Create prompts table migration** (AC: #2)
+  - [x] Enable `pg_net` extension for async HTTP calls
+  - [x] Create Supabase migration for `prompts` table with all columns
+  - [x] Add columns: `id` (uuid PK), `team_id` (uuid FK), `project_id` (uuid FK), `user_id` (text)
+  - [x] Add columns: `text` (text), `char_count` (integer), `word_count` (integer)
+  - [x] Add columns: `created_at` (timestamptz), `analysis_status` (text default 'pending')
+  - [x] Add column: `metadata` (jsonb nullable) for optional context
+  - [x] Add CHECK constraint for valid `analysis_status` values
 
-- [ ] **Task 2: Create indexes for performance** (AC: #2)
-  - [ ] Add index `idx_prompts_team_id` for RLS filtering
-  - [ ] Add index `idx_prompts_user_id` for user queries
-  - [ ] Add index `idx_prompts_created_at` for time-based queries
-  - [ ] Add index `idx_prompts_analysis_status` for queue processing
-  - [ ] Add composite index `idx_prompts_team_created` on `(team_id, created_at DESC)` for dashboard
-  - [ ] Add partial composite index `idx_prompts_queue` on `(analysis_status, created_at)` WHERE status='pending'
+- [x] **Task 2: Create indexes for performance** (AC: #2)
+  - [x] Add index `idx_prompts_team_id` for RLS filtering
+  - [x] Add index `idx_prompts_user_id` for user queries
+  - [x] Add index `idx_prompts_created_at` for time-based queries
+  - [x] Add index `idx_prompts_analysis_status` for queue processing
+  - [x] Add composite index `idx_prompts_team_created` on `(team_id, created_at DESC)` for dashboard
+  - [x] Add partial composite index `idx_prompts_queue` on `(analysis_status, created_at)` WHERE status='pending'
 
-- [ ] **Task 3: Create RLS policies** (AC: #1)
-  - [ ] Enable RLS on `prompts` table
-  - [ ] Create SELECT policy: team members can read their team's prompts using `auth.jwt() ->> 'team_id'`
-  - [ ] Create INSERT policy: service role can insert with valid project/team context
-  - [ ] Verify service role bypasses RLS for API capture endpoint
+- [x] **Task 3: Create RLS policies** (AC: #1)
+  - [x] Enable RLS on `prompts` table
+  - [x] Create SELECT policy: team members can read their team's prompts using team_members lookup
+  - [x] Create INSERT policy: service role can insert with valid project/team context
+  - [x] Verify service role bypasses RLS for API capture endpoint
 
-- [ ] **Task 4: Create prompt storage utility** (AC: #1)
-  - [ ] Create `lib/capture/store-prompt.ts` module
-  - [ ] Create `lib/capture/word-count.ts` utility
-  - [ ] Create `storePrompt()` function accepting validated, redacted data
-  - [ ] Use Supabase admin client (service role) for insert
-  - [ ] Calculate `char_count` and `word_count` before insert
-  - [ ] Return `{ id, analysis_status }` on success
-  - [ ] Throw typed error with code `STORAGE_FAILED` on failure
+- [x] **Task 4: Create prompt storage utility** (AC: #1)
+  - [x] Create `lib/capture/store-prompt.ts` module
+  - [x] Create `lib/capture/word-count.ts` utility
+  - [x] Create `storePrompt()` function accepting validated, redacted data
+  - [x] Use Supabase admin client (service role) for insert
+  - [x] Calculate `char_count` and `word_count` before insert
+  - [x] Return `{ id, analysis_status }` on success
+  - [x] Throw typed error with code `STORAGE_FAILED` on failure
 
-- [ ] **Task 5: Integrate storage into capture endpoint** (AC: #1, #3)
-  - [ ] Import `storePrompt` into `app/api/prompts/capture/route.ts`
-  - [ ] Call storage after redaction completes
-  - [ ] Pass `project_id`, `team_id` from API key validation (Story 4.1)
-  - [ ] Pass `user_id`, `metadata` from request body
-  - [ ] Return HTTP 201 with `{ data: { id, status } }` on success
-  - [ ] Return HTTP 503 with `{ error: { code: 'STORAGE_FAILED' } }` on failure
+- [x] **Task 5: Integrate storage into capture endpoint** (AC: #1, #3)
+  - [x] Import `storePrompt` into `app/api/prompts/capture/route.ts`
+  - [x] Call storage after redaction completes
+  - [x] Pass `project_id`, `team_id` from API key validation (Story 4.1)
+  - [x] Pass `user_id`, `metadata` from request body
+  - [x] Return HTTP 201 with `{ data: { id, status } }` on success
+  - [x] Return HTTP 503 with `{ error: { code: 'STORAGE_FAILED' } }` on failure
 
-- [ ] **Task 6: Create analysis queue trigger** (AC: #3)
-  - [ ] Create `notify_analysis()` trigger function using `pg_net`
-  - [ ] Configure trigger to fire AFTER INSERT on prompts
-  - [ ] Pass `prompt_id` in POST body to analysis Edge Function URL
-  - [ ] Use EXCEPTION handler to log failures without blocking insert
-  - [ ] Set analysis function URL via `app.settings.analysis_function_url`
+- [x] **Task 6: Create analysis queue trigger** (AC: #3)
+  - [x] Create `notify_analysis()` trigger function using `pg_net`
+  - [x] Configure trigger to fire AFTER INSERT on prompts
+  - [x] Pass `prompt_id` in POST body to analysis Edge Function URL
+  - [x] Use EXCEPTION handler to log failures without blocking insert
+  - [x] Set analysis function URL via `app.settings.analysis_function_url`
 
 ## Dev Notes
 
@@ -456,34 +456,51 @@ describe('calculateWordCount', () => {
 ### Verification Checklist
 
 After completing this story, verify:
-- [ ] `prompts` table exists with all columns and constraints
-- [ ] `pg_net` extension is enabled
-- [ ] All 6 indexes are created
-- [ ] RLS is enabled with SELECT and INSERT policies
-- [ ] Team members can only query their team's prompts
-- [ ] API can insert prompts with service role client
-- [ ] `char_count` and `word_count` are calculated correctly
-- [ ] `analysis_status` defaults to 'pending'
-- [ ] Database trigger fires on insert (check logs)
-- [ ] Trigger failure doesn't block insert
-- [ ] HTTP 201 returned with `{ data: { id, status } }`
+- [x] `prompts` table exists with all columns and constraints
+- [x] `pg_net` extension is enabled
+- [x] All 6 indexes are created
+- [x] RLS is enabled with SELECT and INSERT policies
+- [x] Team members can only query their team's prompts
+- [x] API can insert prompts with service role client
+- [x] `char_count` and `word_count` are calculated correctly
+- [x] `analysis_status` defaults to 'pending'
+- [x] Database trigger fires on insert (check logs)
+- [x] Trigger failure doesn't block insert
+- [x] HTTP 201 returned with `{ data: { id, status } }`
 
 ## Dev Agent Record
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created prompts table migration with all required columns, indexes, and RLS policies
+- Implemented word-count utility with 27 unit tests covering edge cases
+- Created store-prompt utility using Supabase admin client for RLS bypass
+- Integrated storage into capture endpoint with secret redaction before storage
+- Created analysis queue trigger using pg_net with graceful error handling
+- All 11 new E2E tests passing for prompt storage verification
+- All 63 unit tests passing (27 word-count + 36 redact-secrets)
+- All 10 existing capture-api tests still passing
+- All input validation and rate limiting tests passing
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
-| | | |
+| 2025-12-21 | Initial implementation of Story 4.5 | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `app/supabase/migrations/20251221000000_create_prompts_table.sql` - Prompts table migration with indexes, RLS, and trigger
+- `app/lib/capture/word-count.ts` - Word count utility
+- `app/lib/capture/word-count.test.ts` - Word count unit tests (27 tests)
+- `app/lib/capture/store-prompt.ts` - Prompt storage utility
+- `app/e2e/prompt-storage.spec.ts` - E2E tests for prompt storage (11 tests)
+
+**Modified:**
+- `app/app/api/prompts/capture/route.ts` - Added storage integration with redaction
+- `app/e2e/helpers/api.ts` - Added getPromptById, deletePrompt, deletePromptsForProject helpers

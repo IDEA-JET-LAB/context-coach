@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Vibe Contextor (Prototype)",
+  "version": "0.0.4",
+  "description": "Experimental prompt coaching for Lovable - captures prompts for review before submission",
+
+  "permissions": [
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "https://lovable.dev/*",
+    "https://*.lovable.dev/*",
+    "https://*.lovableproject.com/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://lovable.dev/*",
+        "https://*.lovable.dev/*",
+        "https://*.lovableproject.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["sidebar.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

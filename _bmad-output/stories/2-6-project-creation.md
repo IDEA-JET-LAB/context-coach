@@ -1,6 +1,6 @@
 # Story 2.6: Project Creation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

@@ -1,0 +1,127 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  MessageSquare,
+  BarChart2,
+  Users,
+  FolderOpen,
+  Settings,
+  LayoutDashboard,
+  Building2,
+  Settings2,
+  Activity,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+const navItems = [
+  { icon: MessageSquare, label: 'Feed', href: '/prompts' },
+  { icon: BarChart2, label: 'Analytics', href: '/analytics' },
+  { icon: Users, label: 'Team', href: '/team' },
+  { icon: FolderOpen, label: 'Projects', href: '/projects' },
+  { icon: Settings, label: 'Settings', href: '/settings' },
+];
+
+const adminNavItems = [
+  { icon: LayoutDashboard, label: 'Admin Overview', href: '/admin' },
+  { icon: Users, label: 'Users', href: '/admin/users' },
+  { icon: Building2, label: 'Teams', href: '/admin/teams' },
+  { icon: Settings2, label: 'Analysis Config', href: '/admin/config' },
+  { icon: Activity, label: 'System Health', href: '/admin/system' },
+];
+
+interface SidebarProps {
+  isAdmin?: boolean;
+}
+
+export function Sidebar({ isAdmin = false }: SidebarProps) {
+  const pathname = usePathname();
+
+  return (
+    <aside
+      className="flex w-16 flex-col items-center border-r border-[#2a2a2a] bg-[#0a0a0a] py-4"
+      data-testid="dashboard-sidebar"
+    >
+      <nav role="navigation" aria-label="Main navigation" className="flex flex-col gap-2">
+        {navItems.map((item) => {
+          // For root path '/', only match exactly; for other paths, also match subpaths
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+          return (
+            <Tooltip key={item.href}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
+                  data-testid={`nav-${item.label.toLowerCase()}`}
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    isActive
+                      ? 'bg-[#1a1a1a] text-primary'
+                      : 'text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground'
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                {item.label}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </nav>
+
+      {/* Admin navigation - only shown for super admins */}
+      {isAdmin && (
+        <>
+          <div className="my-4 w-8 border-t border-[#2a2a2a]" />
+          <nav role="navigation" aria-label="Admin navigation" className="flex flex-col gap-2">
+            {adminNavItems.map((item) => {
+              const isActive =
+                item.href === '/admin'
+                  ? pathname === '/admin'
+                  : pathname.startsWith(item.href);
+
+              return (
+                <Tooltip key={item.href}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.href}
+                      aria-label={item.label}
+                      aria-current={isActive ? 'page' : undefined}
+                      data-testid={`admin-nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                        isActive
+                          ? 'bg-amber-500/20 text-amber-500'
+                          : 'text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </nav>
+        </>
+      )}
+    </aside>
+  );
+}

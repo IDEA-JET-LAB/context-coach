@@ -1,6 +1,6 @@
 # Story 5.2: 5-Dimension Scoring
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 **As a** system,

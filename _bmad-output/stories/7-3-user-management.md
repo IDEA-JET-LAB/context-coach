@@ -1,6 +1,6 @@
 # Story 7.3: User Management
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 
@@ -31,90 +31,89 @@ Status: ready-for-dev
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create users list page** (AC: #1)
-  - [ ] Create `app/(dashboard)/admin/users/page.tsx`
-  - [ ] Implement server component for initial data load
-  - [ ] Use service role client to fetch all users (bypasses RLS)
-  - [ ] Exclude soft-deleted users (`deleted_at IS NULL`)
-  - [ ] Display users in a data table with columns: email, name, status, last active
-  - [ ] Style using shadcn/ui Table component
+- [x] **Task 1: Create users list page** (AC: #1)
+  - [x] Create `app/(dashboard)/admin/users/page.tsx`
+  - [x] Implement server component for initial data load
+  - [x] Use service role client to fetch all users (bypasses RLS)
+  - [x] Exclude soft-deleted users (`deleted_at IS NULL`)
+  - [x] Display users in a data table with columns: email, name, status, last active
+  - [x] Style using shadcn/ui Table component
 
-- [ ] **Task 2: Implement pagination** (AC: #1)
-  - [ ] Create pagination component with page size selector (10/25/50)
-  - [ ] Implement server-side pagination with offset/limit
-  - [ ] Display total count and current page info
-  - [ ] Sync pagination state with URL query params using `useSearchParams`
-  - [ ] Handle page changes with `useRouter().push()`
+- [x] **Task 2: Implement pagination** (AC: #1)
+  - [x] Create pagination component with page size selector (10/25/50)
+  - [x] Implement server-side pagination with offset/limit
+  - [x] Display total count and current page info
+  - [x] Sync pagination state with URL query params using `useSearchParams`
+  - [x] Handle page changes with `useRouter().push()`
 
-- [ ] **Task 3: Implement search and filtering** (AC: #1)
-  - [ ] Add search input for email/name (debounced, 300ms)
-  - [ ] Add status filter dropdown (all/active/disabled)
-  - [ ] Implement server-side search query with ILIKE
-  - [ ] Sync filter state with URL query params
-  - [ ] Clear filters button
+- [x] **Task 3: Implement search and filtering** (AC: #1)
+  - [x] Add search input for email/name (debounced, 300ms)
+  - [x] Add status filter dropdown (all/active/disabled)
+  - [x] Implement server-side search query with ILIKE
+  - [x] Sync filter state with URL query params
+  - [x] Clear filters button
 
-- [ ] **Task 4: Create user detail page** (AC: #2)
-  - [ ] Create `app/(dashboard)/admin/users/[id]/page.tsx`
-  - [ ] Fetch user profile with service role client
-  - [ ] Display email address
-  - [ ] Display account status (active/disabled)
-  - [ ] Display last active timestamp
+- [x] **Task 4: Create user detail page** (AC: #2)
+  - [x] Create `app/(dashboard)/admin/users/[id]/page.tsx`
+  - [x] Fetch user profile with service role client
+  - [x] Display email address
+  - [x] Display account status (active/disabled)
+  - [x] Display last active timestamp
 
-- [ ] **Task 5: Display user teams and stats** (AC: #2)
-  - [ ] Query team_members to get user's teams
-  - [ ] Display list of teams with member role
-  - [ ] Query prompts count for the user
-  - [ ] Display prompts count with link to filter by user
+- [x] **Task 5: Display user teams and stats** (AC: #2)
+  - [x] Query team_members to get user's teams
+  - [x] Display list of teams with member role
+  - [x] Query prompts count for the user
+  - [x] Display prompts count with link to filter by user
 
-- [ ] **Task 6: Implement account disable functionality** (AC: #3)
-  - [ ] Add "Disable Account" button on user detail page
-  - [ ] Create confirmation dialog with warning message
-  - [ ] Create `lib/api/admin/disable-user.ts` server action
-  - [ ] Verify caller is super admin before proceeding
-  - [ ] Update user record with `is_disabled = true`
-  - [ ] Call Supabase Auth Admin API to ban user
-  - [ ] Create audit log entry
-  - [ ] Show success toast and update UI
+- [x] **Task 6: Implement account disable functionality** (AC: #3)
+  - [x] Add "Disable Account" button on user detail page
+  - [x] Create confirmation dialog with warning message
+  - [x] Create `lib/services/admin-users.ts` server action (disableUser)
+  - [x] Verify caller is super admin before proceeding
+  - [x] Update user record with `is_disabled = true`
+  - [x] Call Supabase Auth Admin API to ban user
+  - [x] Create audit log entry
+  - [x] Show success toast and update UI
 
-- [ ] **Task 7: Add is_disabled column to users table** (AC: #3)
-  - [ ] Create migration to add `is_disabled` boolean column (default: false)
-  - [ ] Create migration to add `deleted_at` timestamptz column
-  - [ ] Create migration to add `last_active_at` timestamptz column
-  - [ ] Add index for filtering disabled users
-  - [ ] Add partial index on deleted_at for soft-delete queries
-  - [ ] Update middleware to check disabled status on login
+- [x] **Task 7: Add is_disabled column to users table** (AC: #3)
+  - [x] Create migration to add `is_disabled` boolean column (default: false)
+  - [x] Create migration to add `deleted_at` timestamptz column
+  - [x] Create migration to add `last_active_at` timestamptz column
+  - [x] Add index for filtering disabled users
+  - [x] Add partial index on deleted_at for soft-delete queries
+  - [ ] Update middleware to check disabled status on login (not implemented - using Supabase Auth ban instead)
 
-- [ ] **Task 8: Implement account deletion** (AC: #4)
-  - [ ] Add "Delete Account" button on user detail page
-  - [ ] Create multi-step confirmation dialog
-  - [ ] Require admin to type user's email to confirm
-  - [ ] Create `lib/api/admin/delete-user.ts` server action
-  - [ ] Verify caller is super admin before proceeding
-  - [ ] Implement soft delete: anonymize email, clear personal data
-  - [ ] Delete from Supabase Auth using Admin API
-  - [ ] Create audit log entry
-  - [ ] Show success toast and redirect to users list
+- [x] **Task 8: Implement account deletion** (AC: #4)
+  - [x] Add "Delete Account" button on user detail page
+  - [x] Create multi-step confirmation dialog
+  - [x] Require admin to type user's email to confirm
+  - [x] Create `lib/services/admin-users.ts` server action (deleteUser)
+  - [x] Verify caller is super admin before proceeding
+  - [x] Implement soft delete: anonymize email, clear personal data
+  - [x] Delete from Supabase Auth using Admin API
+  - [x] Create audit log entry
+  - [x] Show success toast and redirect to users list
 
-- [ ] **Task 9: Implement data retention policy** (AC: #4)
-  - [ ] Create `lib/api/admin/anonymize-user.ts` function
-  - [ ] Anonymize user email: `deleted_user_[hash]@anonymized.local`
-  - [ ] Clear name and profile fields
-  - [ ] Preserve prompts with anonymized user reference
-  - [ ] Log deletion action for audit trail
+- [x] **Task 9: Implement data retention policy** (AC: #4)
+  - [x] Anonymize user email: `deleted_user_[hash]@anonymized.local`
+  - [x] Clear name and profile fields
+  - [x] Preserve prompts with anonymized user reference
+  - [x] Log deletion action for audit trail
 
-- [ ] **Task 10: Add re-enable account functionality** (AC: #3)
-  - [ ] Add "Enable Account" button for disabled users
-  - [ ] Create `lib/api/admin/enable-user.ts` server action
-  - [ ] Verify caller is super admin before proceeding
-  - [ ] Update `is_disabled = false`
-  - [ ] Call Supabase Auth Admin API to unban user
-  - [ ] Create audit log entry
-  - [ ] Show success toast
+- [x] **Task 10: Add re-enable account functionality** (AC: #3)
+  - [x] Add "Enable Account" button for disabled users
+  - [x] Create `lib/services/admin-users.ts` server action (enableUser)
+  - [x] Verify caller is super admin before proceeding
+  - [x] Update `is_disabled = false`
+  - [x] Call Supabase Auth Admin API to unban user
+  - [x] Create audit log entry
+  - [x] Show success toast
 
-- [ ] **Task 11: Create audit log table and logging** (NEW)
-  - [ ] Create migration for `admin_audit_logs` table
-  - [ ] Create `lib/api/admin/audit-log.ts` utility function
-  - [ ] Log all admin actions with: admin_id, action, target_user_id, details, timestamp
+- [x] **Task 11: Create audit log table and logging** (NEW)
+  - [x] Create migration for `admin_audit_logs` table
+  - [x] Create audit log utility in `lib/services/admin-users.ts`
+  - [x] Log all admin actions with: admin_id, action, target_user_id, details, timestamp
 
 ## Dev Notes
 
@@ -755,17 +754,36 @@ After completing this story, verify:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- All 24 E2E tests passing for user management functionality
+- Implemented TDD approach: wrote tests first, then implementation
+- Used Supabase Auth Admin API for user banning/unbanning instead of custom middleware
+- Added email column to users table via migration for efficient searching
+- Consolidated all admin user services into single file `lib/services/admin-users.ts`
+- Audit logs automatically created for all disable/enable/delete actions
+- Protected super admin accounts from being modified through the UI
+- Tests run serially to avoid race conditions with user creation
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-21 | Initial implementation of user management | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `app/app/(dashboard)/admin/users/page.tsx` - User list page
+- `app/app/(dashboard)/admin/users/[id]/page.tsx` - User detail page
+- `app/components/admin/user-table.tsx` - User table component
+- `app/components/admin/user-actions.tsx` - Disable/enable/delete dialogs
+- `app/components/admin/users-filters.tsx` - Search and status filters
+- `app/components/admin/users-pagination.tsx` - Pagination component
+- `app/lib/services/admin-users.ts` - Server actions for user management
+- `app/e2e/admin-users.spec.ts` - E2E tests (24 tests)
+- `app/supabase/migrations/20251221200000_add_user_status_columns.sql` - User status columns
+- `app/supabase/migrations/20251221200001_create_admin_audit_logs.sql` - Audit logs table
+- `app/supabase/migrations/20251221200002_add_email_to_users.sql` - Email column for users

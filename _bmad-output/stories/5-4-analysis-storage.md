@@ -1,6 +1,6 @@
 # Story 5.4: Analysis Storage
 
-Status: complete
+Status: ✅ Done
 
 ## Story
 

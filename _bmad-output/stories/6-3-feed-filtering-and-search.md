@@ -1,6 +1,6 @@
 # Story 6.3: Feed Filtering & Search
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 2.4: Team Settings
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

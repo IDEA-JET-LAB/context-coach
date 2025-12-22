@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Vibe Contextor Icon</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 20px;
+    }
+    button {
+      background: #8B5CF6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #7C3AED;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vibe Contextor Icon Generator</h1>
+  <p>Click the button below to download the icon, then save it as <code>icon128.png</code> in this folder.</p>
+
+  <canvas id="canvas" width="128" height="128"></canvas>
+
+  <br>
+  <button onclick="downloadIcon()">Download icon128.png</button>
+
+  <script>
+    // Draw the icon
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Purple gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 128, 128);
+    gradient.addColorStop(0, '#8B5CF6');
+    gradient.addColorStop(1, '#7C3AED');
+
+    // Draw rounded rectangle
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 128, 128, 24);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Draw "VC" text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 56px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('VC', 64, 68);
+
+    function downloadIcon() {
+      const link = document.createElement('a');
+      link.download = 'icon128.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>

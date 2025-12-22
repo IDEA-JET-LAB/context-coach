@@ -21,38 +21,67 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupInput } from "@/lib/validations/auth";
 import { Loader2 } from "lucide-react";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { useEffect } from "react";
+
+interface SignUpFormProps extends React.ComponentPropsWithoutRef<"div"> {
+  inviteToken?: string;
+  prefillEmail?: string;
+}
 
 export function SignUpForm({
   className,
+  inviteToken,
+  prefillEmail,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: SignUpFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get invite token and email from URL params if not provided as props
+  const token = inviteToken || searchParams.get("invite_token") || undefined;
+  const emailFromParams = prefillEmail || searchParams.get("email") || "";
 
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      email: "",
+      email: emailFromParams,
       password: "",
       confirmPassword: "",
     },
   });
 
+  // Update email field if prefillEmail changes
+  useEffect(() => {
+    if (emailFromParams) {
+      form.setValue("email", emailFromParams);
+    }
+  }, [emailFromParams, form]);
+
   const { isSubmitting } = form.formState;
+
+  // Check if this is an invitation signup (email should be readonly)
+  const isInvitation = !!token && !!emailFromParams;
 
   async function onSubmit(data: SignupInput) {
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signUp({
+    // Build redirect URL with invite token if present
+    let redirectTo = `${window.location.origin}/callback`;
+    if (token) {
+      redirectTo += `?invite_token=${token}`;
+    }
+
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/callback`,
+        emailRedirectTo: redirectTo,
       },
     });
 
@@ -70,9 +99,20 @@ export function SignUpForm({
       return;
     }
 
-    // Always redirect to verification page (prevents enumeration)
-    // Supabase by default sends email to existing accounts too
-    router.push("/verify-email?email=" + encodeURIComponent(data.email));
+    // Check if email confirmations are disabled (user is auto-confirmed)
+    // This happens when enable_confirmations = false in Supabase config
+    if (signUpData?.user?.email_confirmed_at) {
+      // User is already confirmed, redirect to home (handles team creation for new users)
+      router.push("/home");
+      return;
+    }
+
+    // Email confirmation required - redirect to verification page
+    let verifyUrl = "/verify-email?email=" + encodeURIComponent(data.email);
+    if (token) {
+      verifyUrl += "&invite_token=" + encodeURIComponent(token);
+    }
+    router.push(verifyUrl);
   }
 
   return (
@@ -104,9 +144,16 @@ export function SignUpForm({
                         type="email"
                         placeholder="m@example.com"
                         autoComplete="email"
+                        readOnly={isInvitation}
+                        className={isInvitation ? "bg-muted" : ""}
                         {...field}
                       />
                     </FormControl>
+                    {isInvitation && (
+                      <p className="text-xs text-muted-foreground">
+                        Email is set by the invitation
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

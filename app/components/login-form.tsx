@@ -87,7 +87,7 @@ export function LoginForm({
       }
 
       // Redirect to dashboard on success
-      router.push("/");
+      router.push("/prompts");
       router.refresh();
     } catch (err) {
       // Network error detection

@@ -1,6 +1,6 @@
 # Story 1.7: Session & Security Foundation
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

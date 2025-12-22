@@ -22,4 +22,7 @@ sprint_artifacts: "{config_source}:sprint_artifacts"
 sprint_status: "{sprint_artifacts}/sprint-status.yaml"
 project_context: "**/project-context.md"
 
+# Code location - all story file paths are relative to this folder
+code_root: "{config_source}:code_root"
+
 standalone: true

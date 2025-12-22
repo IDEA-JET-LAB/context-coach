@@ -1,6 +1,6 @@
 # Story 6.7: Team Analytics (Team Leads)
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 4.4: Secret Redaction
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 **As a** platform operator,
@@ -69,19 +69,19 @@ export function redactSecrets(text: string): {
 
 ## Tasks
 
-- [ ] **Task 1: Create redact-secrets.ts with pattern definitions** (AC: #1, #2, #3)
+- [x] **Task 1: Create redact-secrets.ts with pattern definitions** (AC: #1, #2, #3)
   - Define regex patterns for each secret type (Stripe, AWS, OpenAI, JWT, URL passwords, env vars)
   - Use named capture groups for pattern identification
   - Ensure patterns handle common variations (quotes, whitespace)
 
-- [ ] **Task 2: Implement redaction function** (AC: #4, #5, #6)
+- [x] **Task 2: Implement redaction function** (AC: #4, #5, #6)
   - Apply all patterns in sequence to input text
   - Replace matches with `[REDACTED]` (single replacement string)
   - Track redaction count and pattern types for logging
   - Return both redacted text and metadata
   - Handle edge cases: empty string, already redacted text
 
-- [ ] **Task 3: Write unit tests** (AC: #1-6)
+- [x] **Task 3: Write unit tests** (AC: #1-6)
   - Test each secret pattern type individually
   - Test combined secrets in single prompt
   - Test no-secret prompts remain unchanged
@@ -113,9 +113,9 @@ const patterns = {
 - Handle `null`/`undefined` input gracefully
 
 ## Dev Checklist
-- [ ] File created at `lib/capture/redact-secrets.ts`
-- [ ] Function exported with correct signature
-- [ ] All pattern types implemented
-- [ ] Unit tests pass
-- [ ] No secrets in logs (verify manually)
-- [ ] Integration with capture API verified
+- [x] File created at `lib/capture/redact-secrets.ts`
+- [x] Function exported with correct signature
+- [x] All pattern types implemented
+- [x] Unit tests pass (36 tests)
+- [x] No secrets in logs (verified - only count logged)
+- [ ] Integration with capture API verified (deferred to Story 4.5)

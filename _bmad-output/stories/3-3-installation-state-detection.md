@@ -1,6 +1,6 @@
 # Story 3.3: Installation State Detection
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

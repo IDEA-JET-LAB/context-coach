@@ -1,6 +1,6 @@
 # Story 4.1: Capture API Endpoint
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 
@@ -34,58 +34,58 @@ Status: ready-for-dev
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create API route structure** (AC: #1, #3, #4)
-  - [ ] Create `app/api/prompts/capture/route.ts` with POST handler
-  - [ ] Define request body type interface with `prompt`, `user_id`, `timestamp`, `metadata?`
-  - [ ] Define response types following API format: `{ data: T }` or `{ error: { code, message } }`
-  - [ ] Add proper TypeScript types (no `any`, use strict mode)
+- [x] **Task 1: Create API route structure** (AC: #1, #3, #4)
+  - [x] Create `app/api/prompts/capture/route.ts` with POST handler
+  - [x] Define request body type interface with `prompt`, `user_id`, `timestamp`, `metadata?`
+  - [x] Define response types following API format: `{ data: T }` or `{ error: { code, message } }`
+  - [x] Add proper TypeScript types (no `any`, use strict mode)
 
-- [ ] **Task 2: Implement API key extraction** (AC: #1, #2)
-  - [ ] Extract API key from `Authorization` header (Bearer token format)
-  - [ ] Handle missing Authorization header with 401 response
-  - [ ] Handle malformed Authorization header (not Bearer format)
-  - [ ] Log API key validation attempts with `[API] prompts/capture` prefix
+- [x] **Task 2: Implement API key extraction** (AC: #1, #2)
+  - [x] Extract API key from `Authorization` header (Bearer token format)
+  - [x] Handle missing Authorization header with 401 response
+  - [x] Handle malformed Authorization header (not Bearer format)
+  - [x] Log API key validation attempts with `[API] prompts/capture` prefix
 
-- [ ] **Task 3: Create API key validation logic** (AC: #1, #2)
-  - [ ] Create `lib/api/validate-api-key.ts` utility
-  - [ ] Hash incoming API key using SHA-256
-  - [ ] Use `timingSafeEqual` for secure hash comparison (prevent timing attacks)
-  - [ ] Query `projects` table for matching `api_key_hash`
-  - [ ] Use Supabase admin client (service role) to bypass RLS for lookup
-  - [ ] Extract `project_id` and `team_id` from matched project row
+- [x] **Task 3: Create API key validation logic** (AC: #1, #2)
+  - [x] Create `lib/api/validate-api-key.ts` utility
+  - [x] Hash incoming API key using SHA-256
+  - [x] Use `timingSafeEqual` for secure hash comparison (prevent timing attacks)
+  - [x] Query `projects` table for matching `api_key_hash`
+  - [x] Use Supabase admin client (service role) to bypass RLS for lookup
+  - [x] Extract `project_id` and `team_id` from matched project row
 
-- [ ] **Task 4: Create Supabase admin client** (AC: #1)
-  - [ ] Create `lib/supabase/admin.ts` with service role client
-  - [ ] Use `SUPABASE_SERVICE_ROLE_KEY` environment variable
-  - [ ] Ensure client is only used server-side
+- [x] **Task 4: Create Supabase admin client** (AC: #1)
+  - [x] Create `lib/supabase/admin.ts` with service role client
+  - [x] Use `SUPABASE_SERVICE_ROLE_KEY` environment variable
+  - [x] Ensure client is only used server-side
 
-- [ ] **Task 5: Handle invalid API key response** (AC: #2)
-  - [ ] Return HTTP 401 status code
-  - [ ] Return body: `{ error: { code: 'INVALID_API_KEY', message: 'Invalid or missing API key' } }`
-  - [ ] Do NOT reveal whether key format is wrong vs key doesn't exist (security)
-  - [ ] Rate limiting for failed attempts handled by Story 4.2
+- [x] **Task 5: Handle invalid API key response** (AC: #2)
+  - [x] Return HTTP 401 status code
+  - [x] Return body: `{ error: { code: 'INVALID_API_KEY', message: 'Invalid or missing API key' } }`
+  - [x] Do NOT reveal whether key format is wrong vs key doesn't exist (security)
+  - [x] Rate limiting for failed attempts handled by Story 4.2
 
-- [ ] **Task 6: Parse and validate request body** (AC: #3)
-  - [ ] Create Zod schema for request body validation in `lib/validations/capture.ts`
-  - [ ] Validate `prompt` field exists and is string (min 1 char)
-  - [ ] Validate `user_id` field exists and is string
-  - [ ] Validate `timestamp` field exists and is ISO 8601 format
-  - [ ] Validate `metadata` field is optional object if present
-  - [ ] Handle JSON parse errors with 400 response
-  - [ ] Return HTTP 400 for validation failures with specific error codes
+- [x] **Task 6: Parse and validate request body** (AC: #3)
+  - [x] Create Zod schema for request body validation in `lib/validations/capture.ts`
+  - [x] Validate `prompt` field exists and is string (min 1 char)
+  - [x] Validate `user_id` field exists and is string
+  - [x] Validate `timestamp` field exists and is ISO 8601 format
+  - [x] Validate `metadata` field is optional object if present
+  - [x] Handle JSON parse errors with 400 response
+  - [x] Return HTTP 400 for validation failures with specific error codes
 
-- [ ] **Task 7: Create success response structure** (AC: #4)
-  - [ ] Generate unique prompt ID (UUID)
-  - [ ] Return HTTP 201 with `{ data: { id, status: 'pending' } }`
-  - [ ] Log successful requests with timestamp and project_id (no PII)
-  - [ ] Prepare data structure for handoff to validation pipeline (Story 4.3)
+- [x] **Task 7: Create success response structure** (AC: #4)
+  - [x] Generate unique prompt ID (UUID)
+  - [x] Return HTTP 201 with `{ data: { id, status: 'pending' } }`
+  - [x] Log successful requests with timestamp and project_id (no PII)
+  - [x] Prepare data structure for handoff to validation pipeline (Story 4.3)
 
-- [ ] **Task 8: Add error handling wrapper** (AC: #1, #2, #3)
-  - [ ] Wrap handler in try/catch block
-  - [ ] Handle JSON parse errors specifically with 400 response
-  - [ ] Log errors with `[API] prompts/capture: error` format
-  - [ ] Return HTTP 500 with generic error for unexpected failures
-  - [ ] Never expose stack traces or internal details to client
+- [x] **Task 8: Add error handling wrapper** (AC: #1, #2, #3)
+  - [x] Wrap handler in try/catch block
+  - [x] Handle JSON parse errors specifically with 400 response
+  - [x] Log errors with `[API] prompts/capture: error` format
+  - [x] Return HTTP 500 with generic error for unexpected failures
+  - [x] Never expose stack traces or internal details to client
 
 ## Dev Notes
 
@@ -319,18 +319,31 @@ export async function POST(request: NextRequest) {
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created Supabase admin client (`lib/supabase/admin.ts`) with service role for bypassing RLS
+- Created capture validation schema (`lib/validations/capture.ts`) using Zod v4 syntax
+- Created API key validation utility (`lib/api/validate-api-key.ts`) with SHA-256 hashing and timing-safe comparison
+- Implemented capture API route (`app/api/prompts/capture/route.ts`) with full error handling
+- Created E2E API test helpers (`e2e/helpers/api.ts`) for direct database access in tests
+- Created comprehensive E2E tests (`e2e/capture-api.spec.ts`) - 10 tests covering all acceptance criteria
+- Updated Playwright config to load environment variables from `.env.local`
+- All 10 capture API tests pass
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
-| | | |
+| 2025-12-20 | Story 4.1 implementation complete - capture API endpoint with validation | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+- `app/lib/supabase/admin.ts` - Created (Supabase admin client with service role)
+- `app/lib/validations/capture.ts` - Created (Zod schema for capture requests)
+- `app/lib/api/validate-api-key.ts` - Created (API key validation utility)
+- `app/app/api/prompts/capture/route.ts` - Created (POST /api/prompts/capture endpoint)
+- `app/e2e/helpers/api.ts` - Created (Test helpers for API testing)
+- `app/e2e/capture-api.spec.ts` - Created (E2E tests for capture API)
+- `app/playwright.config.ts` - Modified (Added dotenv loading)

@@ -1,6 +1,6 @@
 # Story 4.2: Rate Limiting
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 
@@ -109,37 +109,37 @@ if (!userOk) {
 
 ## Tasks
 
-- [ ] **Task 1: Install and configure Upstash Redis client** (AC: #1)
+- [x] **Task 1: Install and configure Upstash Redis client** (AC: #1)
   - Install `@upstash/ratelimit` and `@upstash/redis` packages
   - Add `UPSTASH_REDIS_URL` and `UPSTASH_REDIS_TOKEN` to `.env.example`
   - Create `lib/rate-limit/index.ts` with rate limit instances
 
-- [ ] **Task 2: Implement project-level rate limiting** (AC: #1, #4)
+- [x] **Task 2: Implement project-level rate limiting** (AC: #1, #4)
   - Create `projectRateLimit` with 100 requests/minute sliding window
   - Use `project_id` (from API key validation in Story 4.1) as identifier
   - Log rate limit events: `[API] prompts/capture: rate limit exceeded for project {id}`
 
-- [ ] **Task 3: Implement user-level rate limiting** (AC: #1, #4)
+- [x] **Task 3: Implement user-level rate limiting** (AC: #1, #4)
   - Create `userRateLimit` with 20 requests/minute sliding window
   - Use `user_id` from request body as identifier
   - Log rate limit events: `[API] prompts/capture: rate limit exceeded for user {id}`
 
-- [ ] **Task 4: Implement IP-level rate limiting** (AC: #1, #4)
+- [x] **Task 4: Implement IP-level rate limiting** (AC: #1, #4)
   - Create `ipRateLimit` with 10 requests/minute sliding window (fallback)
   - Extract client IP from request headers (`x-forwarded-for` or `x-real-ip`)
   - Apply when project/user identifiers are missing or invalid
 
-- [ ] **Task 5: Return HTTP 429 responses with Retry-After header** (AC: #2)
+- [x] **Task 5: Return HTTP 429 responses with Retry-After header** (AC: #2)
   - Return status code 429 when any limit is exceeded
   - Include error body: `{ error: { code: 'RATE_LIMITED', message: 'Too many requests' } }`
   - Calculate `Retry-After` header from rate limiter `reset` timestamp
 
-- [ ] **Task 6: Integrate rate limiting into capture endpoint** (AC: #1, #2, #3)
+- [x] **Task 6: Integrate rate limiting into capture endpoint** (AC: #1, #2, #3)
   - Add rate limit checks at start of `/api/prompts/capture` handler
   - Check project limit first, then user limit (fail fast)
   - Ensure rate limiting runs BEFORE input validation and processing
 
-- [ ] **Task 7: Write unit and integration tests** (AC: #1, #2, #3)
+- [x] **Task 7: Write unit and integration tests** (AC: #1, #2, #3)
   - Test project-level limit (100 requests then 429)
   - Test user-level limit (20 requests then 429)
   - Test IP-level limit (10 requests then 429)

@@ -13,6 +13,27 @@ _Critical rules and patterns for consistent implementation. Focus on unobvious d
 
 ---
 
+## CRITICAL: Code Root Location
+
+**All source code paths in stories are relative to: `{project-root}/app/`**
+
+The project structure is:
+```
+context-coach/           ← Project root ({project-root})
+├── app/                 ← Code root (Next.js project with package.json)
+│   ├── app/             ← App Router routes (app/(auth), app/(dashboard))
+│   ├── components/      ← React components
+│   ├── lib/             ← Utilities and hooks
+│   ├── supabase/        ← Migrations and Edge Functions
+│   └── e2e/             ← Playwright tests
+├── _bmad/               ← BMAD platform
+└── _bmad-output/        ← Stories, artifacts, this file
+```
+
+When stories reference `lib/supabase/server.ts`, the actual path from project root is `app/lib/supabase/server.ts`.
+
+---
+
 ## Technology Stack & Versions
 
 | Technology | Version | Notes |

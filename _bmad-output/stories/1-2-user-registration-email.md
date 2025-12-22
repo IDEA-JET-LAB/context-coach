@@ -1,6 +1,6 @@
 # Story 1.2: User Registration with Email
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 

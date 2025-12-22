@@ -1,6 +1,6 @@
 # Story 5.3: Improvement Suggestions
 
-Status: ready-for-dev
+Status: ✅ Done
 
 **Dependency:** Requires Story 5.2 (5-Dimension Scoring) to be completed first.
 

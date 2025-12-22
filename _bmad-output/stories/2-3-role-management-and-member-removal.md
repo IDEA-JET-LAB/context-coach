@@ -1,6 +1,6 @@
 # Story 2.3: Role Management & Member Removal
 
-Status: ready-for-dev
+Status: ✅ Done
 
 ## Story
 **As a** team admin,
