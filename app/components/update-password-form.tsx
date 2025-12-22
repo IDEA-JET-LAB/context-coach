@@ -91,8 +91,8 @@ export function UpdatePasswordForm({
       return;
     }
 
-    // User is now authenticated, redirect to the app
-    router.push("/");
+    // User is now authenticated, redirect to the dashboard
+    router.push("/team");
   }
 
   return (

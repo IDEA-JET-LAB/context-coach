@@ -48,7 +48,7 @@ export default function InvitePage({ params }: InvitePageProps) {
   const handleAccept = () => {
     acceptInvitation(token, {
       onSuccess: () => {
-        router.push('/');
+        router.push('/team');
         router.refresh();
       },
     });

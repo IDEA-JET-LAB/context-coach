@@ -8,11 +8,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { TeamSettingsForm } from '@/components/team/team-settings-form';
 import { TeamMembersList } from '@/components/team/team-members-list';
 import { LeaveTeamDialog } from '@/components/team/leave-team-dialog';
-import { InviteMemberForm } from '@/components/team-settings/invite-member-form';
+import { InviteTeamMembers } from '@/components/team-settings/invite-team-members';
 import { PendingInvitationsList } from '@/components/team-settings/pending-invitations-list';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -49,14 +48,14 @@ export default async function TeamSettingsPage({ params, searchParams }: TeamSet
     .single();
 
   if (!membership) {
-    redirect('/');
+    redirect('/team');
   }
 
   const team = membership.team as unknown as { id: string; name: string; description: string | null } | null;
   const isAdmin = membership.role === 'admin';
 
   if (!team) {
-    redirect('/');
+    redirect('/team');
   }
 
   // Check if user is the last admin (needed for leave team functionality)
@@ -142,23 +141,13 @@ export default async function TeamSettingsPage({ params, searchParams }: TeamSet
 
         {isAdmin && (
           <TabsContent value="invitations" className="mt-6 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Invite Team Members</CardTitle>
-                <CardDescription>
-                  Send an invitation email to add new members to your team
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <InviteMemberForm teamId={teamId} />
-              </CardContent>
-            </Card>
+            <InviteTeamMembers teamId={teamId} />
 
             <Card>
               <CardHeader>
-                <CardTitle>Pending Invitations</CardTitle>
+                <CardTitle>Pending Email Invitations</CardTitle>
                 <CardDescription>
-                  Invitations that have been sent but not yet accepted
+                  Email invitations that have been sent but not yet accepted
                 </CardDescription>
               </CardHeader>
               <CardContent>

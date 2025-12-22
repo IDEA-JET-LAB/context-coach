@@ -31,7 +31,7 @@ interface AnalyticsDashboardProps {
 }
 
 export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('today');
+  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   const [mounted, setMounted] = useState(false);
 
   // Restore time range from localStorage on mount

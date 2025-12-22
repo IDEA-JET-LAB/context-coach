@@ -56,8 +56,8 @@ export function useSwitchTeam() {
       // Show success toast
       toast.success(`Switched to ${data.team.name}`);
 
-      // Navigate to dashboard with fresh context
-      router.push('/');
+      // Navigate to team dashboard with fresh context
+      router.push('/team');
       router.refresh();
     },
     onError: (error: Error) => {

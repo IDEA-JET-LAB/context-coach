@@ -28,7 +28,7 @@ export interface PersonalAnalyticsData {
   trend: TrendDirection;
 }
 
-export function usePersonalAnalytics(userId: string, timeRange: TimeRange = 'today') {
+export function usePersonalAnalytics(userId: string, timeRange: TimeRange = '7d') {
   const supabase = createClient();
 
   return useQuery<PersonalAnalyticsData>({

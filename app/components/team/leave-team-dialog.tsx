@@ -32,9 +32,9 @@ export function LeaveTeamDialog({ teamId, teamName, isLastAdmin = false }: Leave
     leaveTeam(undefined, {
       onSuccess: (data) => {
         setIsOpen(false);
-        // Redirect to next team or team creation page
+        // Redirect to next team dashboard or team creation page
         if (data.nextTeam) {
-          router.push('/');
+          router.push('/team');
         } else {
           router.push('/teams/new');
         }
