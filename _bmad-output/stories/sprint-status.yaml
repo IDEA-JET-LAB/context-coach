@@ -376,4 +376,5 @@ development_status:
   D-5-import-recovery-ui-design: ready-for-dev
   D-6-advanced-analytics-design: ready-for-dev
   D-7-admin-config-ui-design: ready-for-dev
+  D-8-apply-component-library: ready-for-dev  # Apply D-3 components to existing UI
   epic-D-retrospective: optional
