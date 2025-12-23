@@ -50,7 +50,7 @@ export function UserFilter({ value, onChange, teamId }: UserFilterProps) {
         <Button
           variant="outline"
           className={cn(
-            'w-[160px] justify-start text-left font-normal bg-[#1a1a1a] border-[#2a2a2a]',
+            'w-[160px] justify-start text-left font-normal bg-card border-border',
             value.length === 0 && 'text-muted-foreground'
           )}
           aria-label="Filter by user"
@@ -59,7 +59,7 @@ export function UserFilter({ value, onChange, teamId }: UserFilterProps) {
           {getLabel()}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-2 bg-[#1a1a1a] border-[#2a2a2a]" align="start">
+      <PopoverContent className="w-[220px] p-2 bg-card border-border" align="start">
         <div className="flex flex-col gap-1">
           <Button
             variant="ghost"

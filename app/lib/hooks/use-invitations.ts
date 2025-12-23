@@ -201,3 +201,128 @@ export function useAcceptInvitation() {
     },
   });
 }
+
+// ============================================
+// LINK INVITATIONS
+// ============================================
+
+export interface LinkInvitation {
+  id: string;
+  invite_token: string;
+  url: string;
+  status: 'pending' | 'revoked';
+  created_at: string;
+  expires_at: string;
+  max_uses: number | null;
+  current_uses: number;
+}
+
+// Fetch link invitations for a team
+async function fetchLinkInvitations(teamId: string): Promise<LinkInvitation[]> {
+  const response = await fetch(`/api/teams/${teamId}/invites/link`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || 'Failed to fetch link invitations');
+  }
+
+  return data.data.invitations;
+}
+
+// Create a new link invitation
+async function createLinkInvitation(
+  teamId: string,
+  options?: { maxUses?: number; expiresDays?: number }
+): Promise<{
+  id: string;
+  token: string;
+  url: string;
+  expires_at: string;
+  max_uses: number;
+}> {
+  const response = await fetch(`/api/teams/${teamId}/invites/link`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {}),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(data.error?.message || 'Failed to create link invitation') as Error & {
+      code?: string;
+    };
+    error.code = data.error?.code;
+    throw error;
+  }
+
+  return data.data;
+}
+
+// Revoke a link invitation
+async function revokeLinkInvitation(
+  teamId: string,
+  invitationId: string
+): Promise<{ id: string; status: string }> {
+  const response = await fetch(`/api/teams/${teamId}/invites/link`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ invitationId }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || 'Failed to revoke link invitation');
+  }
+
+  return data.data;
+}
+
+// Hook to fetch link invitations
+export function useLinkInvitations(teamId: string) {
+  return useQuery({
+    queryKey: ['link-invitations', teamId],
+    queryFn: () => fetchLinkInvitations(teamId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: !!teamId,
+  });
+}
+
+// Hook to create link invitation
+export function useCreateLinkInvitation(teamId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (options?: { maxUses?: number; expiresDays?: number }) =>
+      createLinkInvitation(teamId, options),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['link-invitations', teamId] });
+      toast.success('Invite link created successfully');
+    },
+    onError: (error: Error & { code?: string }) => {
+      const messageMap: Record<string, string> = {
+        FORBIDDEN: 'Only team admins can create invite links',
+        VALIDATION_ERROR: 'Invalid parameters',
+      };
+
+      toast.error(messageMap[error.code || ''] || error.message);
+    },
+  });
+}
+
+// Hook to revoke link invitation
+export function useRevokeLinkInvitation(teamId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invitationId: string) => revokeLinkInvitation(teamId, invitationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['link-invitations', teamId] });
+      toast.success('Invite link revoked');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}

@@ -63,7 +63,7 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
         <Button
           variant="outline"
           className={cn(
-            'w-[160px] justify-start text-left font-normal bg-[#1a1a1a] border-[#2a2a2a]',
+            'w-[160px] justify-start text-left font-normal bg-card border-border',
             !value && 'text-muted-foreground'
           )}
           aria-label="Filter by date range"
@@ -72,7 +72,7 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
           {formatLabel()}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-2 bg-[#1a1a1a] border-[#2a2a2a]" align="start">
+      <PopoverContent className="w-auto p-2 bg-card border-border" align="start">
         <div className="flex flex-col gap-1">
           <Button
             variant="ghost"

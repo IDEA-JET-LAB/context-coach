@@ -50,7 +50,7 @@ export function ScoreFilter({ value, onChange }: ScoreFilterProps) {
       (p) => p.range?.min === value.min && p.range?.max === value.max
     );
 
-    return preset?.color ?? 'text-[#fafafa]';
+    return preset?.color ?? 'text-foreground';
   };
 
   return (
@@ -59,7 +59,7 @@ export function ScoreFilter({ value, onChange }: ScoreFilterProps) {
         <Button
           variant="outline"
           className={cn(
-            'w-[140px] justify-start text-left font-normal bg-[#1a1a1a] border-[#2a2a2a]',
+            'w-[140px] justify-start text-left font-normal bg-card border-border',
             getCurrentColor()
           )}
           aria-label="Filter by score range"
@@ -68,7 +68,7 @@ export function ScoreFilter({ value, onChange }: ScoreFilterProps) {
           {getCurrentLabel()}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-2 bg-[#1a1a1a] border-[#2a2a2a]" align="start">
+      <PopoverContent className="w-auto p-2 bg-card border-border" align="start">
         <div className="flex flex-col gap-1">
           {PRESETS.map((preset) => (
             <Button

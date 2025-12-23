@@ -21,6 +21,128 @@ date: '2025-12-19'
 
 # Product Requirements Document - Contextor
 
+## Table of Contents
+
+### Phase 1: MVP
+
+- [Executive Summary](#executive-summary) (Line 92)
+  - [What Makes This Special](#what-makes-this-special) (Line 111)
+- [Project Classification](#project-classification) (Line 121)
+  - [Architecture Direction](#architecture-direction) (Line 128)
+- [Success Criteria](#success-criteria) (Line 138)
+  - [User Success](#user-success) (Line 140)
+  - [Business Success](#business-success) (Line 161)
+  - [Technical Success](#technical-success) (Line 170)
+  - [Measurable Outcomes](#measurable-outcomes) (Line 178)
+- [Product Scope](#product-scope) (Line 188)
+  - [MVP - Minimum Viable Product](#mvp---minimum-viable-product) (Line 190)
+  - [Growth Features (Post-MVP)](#growth-features-post-mvp) (Line 250)
+  - [Vision (Future)](#vision-future) (Line 280)
+- [User Journeys](#user-journeys) (Line 291)
+  - [Journey 1: Edgars — The Team Lead Who Can Finally Help](#journey-1-edgars--the-team-lead-who-can-finally-help) (Line 293)
+  - [Journey 2: Mārtiņš — The Junior Dev Who Stops Getting Stuck](#journey-2-mārtiņš--the-junior-dev-who-stops-getting-stuck) (Line 315)
+  - [Journey 3: Sofia — The Solo Developer Seeking Self-Improvement](#journey-3-sofia--the-solo-developer-seeking-self-improvement) (Line 337)
+  - [Journey 4: Platform Admin — Keeping the System Running](#journey-4-platform-admin--keeping-the-system-running) (Line 358)
+  - [Journey Requirements Summary](#journey-requirements-summary) (Line 380)
+- [Innovation & Novel Patterns](#innovation--novel-patterns) (Line 397)
+  - [Detected Innovation Areas](#detected-innovation-areas) (Line 399)
+  - [Market Context](#market-context) (Line 420)
+  - [Validation Approach](#validation-approach) (Line 428)
+  - [Risk Mitigation](#risk-mitigation) (Line 436)
+- [SaaS B2B Specific Requirements](#saas-b2b-specific-requirements) (Line 446)
+  - [Multi-Tenancy Model](#multi-tenancy-model) (Line 448)
+  - [Role-Based Access Control (RBAC) Matrix](#role-based-access-control-rbac-matrix) (Line 467)
+  - [Subscription Tiers (MVP - Freemium Launch)](#subscription-tiers-mvp---freemium-launch) (Line 475)
+  - [Integration Architecture](#integration-architecture) (Line 485)
+  - [Compliance & Security Requirements](#compliance--security-requirements) (Line 505)
+  - [Implementation Considerations](#implementation-considerations) (Line 517)
+- [Project Scoping & Phased Development](#project-scoping--phased-development) (Line 540)
+  - [MVP Strategy & Philosophy](#mvp-strategy--philosophy) (Line 542)
+  - [MVP Feature Set (Phase 1)](#mvp-feature-set-phase-1) (Line 558)
+  - [Post-MVP Roadmap](#post-mvp-roadmap) (Line 592)
+  - [Risk Mitigation Strategy](#risk-mitigation-strategy) (Line 618)
+  - [Minimum Viable Scope](#minimum-viable-scope) (Line 641)
+- [Functional Requirements](#functional-requirements) (Line 653)
+  - [User & Authentication](#user--authentication) (Line 655)
+  - [Team Management](#team-management) (Line 664)
+  - [Project Management](#project-management) (Line 674)
+  - [Project Installation (Developer-Side Setup)](#project-installation-developer-side-setup) (Line 683)
+  - [Prompt Capture](#prompt-capture) (Line 754)
+  - [AI Analysis Engine](#ai-analysis-engine) (Line 764)
+  - [Dashboard & Visualization](#dashboard--visualization) (Line 776)
+  - [Platform Administration](#platform-administration) (Line 789)
+  - [Security & Data Privacy](#security--data-privacy) (Line 797)
+  - [User Experience & Reliability](#user-experience--reliability) (Line 804)
+- [Non-Functional Requirements](#non-functional-requirements) (Line 818)
+  - [Performance](#performance) (Line 820)
+  - [Security](#security) (Line 830)
+  - [Scalability](#scalability) (Line 842)
+  - [Reliability](#reliability) (Line 857)
+  - [Integration](#integration) (Line 872)
+  - [Accessibility (Basic)](#accessibility-basic) (Line 882)
+- [Infrastructure & DevOps Requirements](#infrastructure--devops-requirements) (Line 895)
+  - [Domain & DNS Management](#domain--dns-management) (Line 897)
+  - [npm Package Publishing](#npm-package-publishing) (Line 911)
+  - [CI/CD Pipeline](#cicd-pipeline) (Line 948)
+  - [Environment Management](#environment-management) (Line 968)
+  - [Monitoring & Observability (Post-MVP)](#monitoring--observability-post-mvp) (Line 981)
+- [Epic/Story Suggestions for Infrastructure Setup](#epicstory-suggestions-for-infrastructure-setup) (Line 992)
+
+### Phase 2: Enhanced Analysis Platform
+
+- [Phase 2 Vision & Objectives](#phase-2-vision--objectives) (Line 1039)
+  - [The Problem with Phase 1](#the-problem-with-phase-1) (Line 1041)
+  - [Phase 2 Vision](#phase-2-vision) (Line 1051)
+  - [Key Insight: Claude Code Has 10 Hooks](#key-insight-claude-code-has-10-hooks) (Line 1062)
+- [Phase 2 Success Criteria](#phase-2-success-criteria) (Line 1080)
+  - [User Success (Enhanced)](#user-success-enhanced) (Line 1082)
+  - [Technical Success](#technical-success-1) (Line 1095)
+- [Phase 2 Epic Overview](#phase-2-epic-overview) (Line 1107)
+  - [Dependency Graph](#dependency-graph) (Line 1134)
+- [Epic 14.5: Privacy & Data Protection](#epic-145-privacy--data-protection) (Line 1170)
+  - [Story 14.5.1: Enhanced Secret Redaction for Responses](#story-1451-enhanced-secret-redaction-for-responses) (Line 1186)
+  - [Story 14.5.2: User Transparency UI](#story-1452-user-transparency-ui) (Line 1208)
+  - [Story 14.5.3: Privacy Controls (Delete, Export, Pause)](#story-1453-privacy-controls-delete-export-pause) (Line 1236)
+  - [Story 14.5.4: Column Encryption for Sensitive Data](#story-1454-column-encryption-for-sensitive-data) (Line 1256)
+  - [Story 14.5.5: Privacy Levels Implementation](#story-1455-privacy-levels-implementation) (Line 1277)
+  - [Story 14.5.6: Data Retention Policy](#story-1456-data-retention-policy) (Line 1300)
+- [Epic 15: Response Context Capture](#epic-15-response-context-capture) (Line 1320)
+  - [Story 15.1: Stop Hook Integration](#story-151-stop-hook-integration) (Line 1331)
+  - [Story 15.2: Transcript Mining Implementation](#story-152-transcript-mining-implementation) (Line 1360)
+  - [Story 15.3: Prompt-Response Pairing](#story-153-prompt-response-pairing) (Line 1385)
+  - [Story 15.4: Enhanced Analysis with Response Context](#story-154-enhanced-analysis-with-response-context) (Line 1412)
+- [Epic 16: Session & Conversation Tracking](#epic-16-session--conversation-tracking) (Line 1434)
+  - [Story 16.1: Session Model and Database Schema](#story-161-session-model-and-database-schema) (Line 1445)
+  - [Story 16.2: Hook Updates for Session Tracking](#story-162-hook-updates-for-session-tracking) (Line 1479)
+  - [Story 16.3: Conversation Grouping in UI](#story-163-conversation-grouping-in-ui) (Line 1494)
+  - [Story 16.4: Multi-Terminal Session Visualization](#story-164-multi-terminal-session-visualization) (Line 1509)
+- [Epic 17: Historical Import](#epic-17-historical-import) (Line 1523)
+  - [Story 17.1: Transcript Discovery and Scanning](#story-171-transcript-discovery-and-scanning) (Line 1534)
+  - [Story 17.2: Import Consent and Project Selection UI](#story-172-import-consent-and-project-selection-ui) (Line 1564)
+  - [Story 17.3: Batch Processing and Analysis](#story-173-batch-processing-and-analysis) (Line 1580)
+  - [Story 17.4: Onboarding Integration](#story-174-onboarding-integration) (Line 1598)
+- [Epic 18: Smart Crash Recovery](#epic-18-smart-crash-recovery) (Line 1613)
+  - [Story 18.1: Interrupted Session Detection](#story-181-interrupted-session-detection) (Line 1624)
+  - [Story 18.2: AI-Powered Context Summarization](#story-182-ai-powered-context-summarization) (Line 1638)
+  - [Story 18.3: Recovery Prompt Generation](#story-183-recovery-prompt-generation) (Line 1659)
+  - [Story 18.4: VS Code Notification Integration](#story-184-vs-code-notification-integration) (Line 1684)
+- [Epic 19: VS Code Extension](#epic-19-vs-code-extension) (Line 1698)
+  - [Story 19.1: Extension Scaffolding and Architecture](#story-191-extension-scaffolding-and-architecture) (Line 1709)
+  - [Story 19.2: Analytics Dashboard Panel](#story-192-analytics-dashboard-panel) (Line 1729)
+  - [Story 19.3: Session Browser and History View](#story-193-session-browser-and-history-view) (Line 1744)
+  - [Story 19.4: Contextor Cloud API Integration](#story-194-contextor-cloud-api-integration) (Line 1758)
+- [Epic 20: Pre-Submission Coaching](#epic-20-pre-submission-coaching) (Line 1772)
+  - [Story 20.1: Fast Local Analysis Heuristics](#story-201-fast-local-analysis-heuristics) (Line 1783)
+  - [Story 20.2: Hook Blocking and Suggestion Flow](#story-202-hook-blocking-and-suggestion-flow) (Line 1804)
+  - [Story 20.3: Extension Suggestion UI](#story-203-extension-suggestion-ui) (Line 1819)
+  - [Story 20.4: Improvement Tracking and Metrics](#story-204-improvement-tracking-and-metrics) (Line 1835)
+- [Phase 2 Functional Requirements (Additions)](#phase-2-functional-requirements-additions) (Line 1849)
+- [Phase 2 Non-Functional Requirements (Additions)](#phase-2-non-functional-requirements-additions) (Line 1905)
+- [Phase 2 Infrastructure Requirements](#phase-2-infrastructure-requirements) (Line 1935)
+- [Phase 2 Timeline Considerations](#phase-2-timeline-considerations) (Line 1955)
+
+---
+
 **Author:** Edgars
 **Date:** 2025-12-19
 
@@ -962,3 +1084,1931 @@ The following infrastructure tasks should be planned as stories in an early spri
 - [ ] All required secrets configured
 - [ ] Staging environment accessible
 - [ ] Production deployment requires manual approval
+
+---
+
+# Phase 2: Enhanced Analysis Platform
+
+**Status:** Planning
+**Date:** 2025-12-22
+**Reference:** `_bmad-output/research/enhanced-prompt-analysis-brainstorm.md`
+
+---
+
+## Phase 2 Vision & Objectives
+
+### The Problem with Phase 1
+
+Phase 1 analyzes prompts **in isolation**. Without knowing:
+- What Claude responded with
+- Whether the response was helpful
+- The conversation context
+- Session patterns across multiple terminals
+
+...we're essentially grading questions without knowing the answers. This limits analysis accuracy and actionable feedback.
+
+### Phase 2 Vision
+
+Transform Contextor from a **prompt logger with scoring** into a **full conversation intelligence platform** that:
+
+1. **Captures complete context** — prompt + response pairs for accurate analysis
+2. **Tracks conversations** — group prompts into sessions, support multi-terminal workflows
+3. **Provides day-one value** — import 30 days of historical data on first install
+4. **Recovers from crashes** — smart session recovery with context summaries
+5. **Coaches in real-time** — suggest prompt improvements before submission
+6. **Meets users where they are** — VS Code extension for seamless integration
+
+### Key Insight: Claude Code Has 10 Hooks
+
+Phase 1 uses only `UserPromptSubmit`. Claude Code provides:
+
+| Hook | Data Available | Phase 2 Use |
+|------|----------------|-------------|
+| SessionStart | session_id, source | Track session begins |
+| **UserPromptSubmit** | prompt | ✅ Already using |
+| PreToolUse | tool_name, tool_input | Audit intent |
+| **PostToolUse** | tool_name, tool_response | 🆕 Response capture |
+| **Stop** | session_id | 🆕 Signal turn complete |
+| **SessionEnd** | session_id, reason | 🆕 Track session ends |
+| PreCompact | trigger | Future: track compaction |
+
+Additionally, every hook receives `transcript_path` pointing to full conversation JSONL files stored locally for 30 days.
+
+---
+
+## Phase 2 Success Criteria
+
+### User Success (Enhanced)
+
+**For All Users:**
+- See prompt AND response together for context
+- Understand conversation flow, not just individual prompts
+- Get day-one insights from historical data
+- Recover seamlessly from crashes
+
+**For VS Code Users:**
+- Access analytics without leaving IDE
+- Receive crash recovery notifications
+- Get real-time prompt coaching (opt-in)
+
+### Technical Success
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Analysis accuracy improvement | +40% | A/B test with response context |
+| Historical import completion | 80%+ | Users who accept import |
+| Crash recovery adoption | 60%+ | Users who use recovery prompts |
+| VS Code extension installs | 1,000+ | Marketplace metrics |
+| Pre-submission improvement rate | 30%+ | Accepted / offered suggestions |
+
+---
+
+## Phase 2 Epic Overview
+
+```
+PHASE 2: Enhanced Analysis Platform
+
+├── Epic 14.5: Privacy & Data Protection (P0)
+│   └── Foundation for trust — must come first
+│
+├── Epic 15: Response Context Capture (P0)
+│   └── Transcript mining for prompt+response pairs
+│
+├── Epic 16: Session & Conversation Tracking (P0)
+│   └── Group prompts by session_id
+│
+├── Epic 17: Historical Import (P1)
+│   └── Import 30 days of history on first install
+│
+├── Epic 18: Smart Crash Recovery (P2)
+│   └── Detect interrupted sessions, generate recovery prompts
+│
+├── Epic 19: VS Code Extension (P1)
+│   └── Analytics dashboard, notifications, coaching UI
+│
+├── Epic 20: Pre-Submission Coaching (P3)
+│   └── Analyze and improve prompts before sending
+│
+├── Epic 21: Enhanced Analysis Framework (P0) ⭐ RESEARCH-VALIDATED
+│   └── 25+ feedback dimensions from real transcript analysis
+│   └── Work style, sentiment, session health, tool usage, learning progression
+│
+└── Epic 22: Configurable Analysis Engine (P0)
+    └── All analysis logic as configuration, not code
+    └── Admin UI for prompts, rules, templates, A/B testing
+```
+
+### Dependency Graph
+
+```
+                    ┌─────────────────┐
+                    │ Epic 14.5:      │
+                    │ Privacy         │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ Epic 15:        │
+                    │ Response Context│
+                    └────────┬────────┘
+                             │
+    ┌────────────────────────┼────────────────────────┐
+    ▼                        ▼                        ▼
+┌─────────────┐      ┌─────────────┐          ┌─────────────┐
+│ Epic 16:    │      │ Epic 17:    │          │ Epic 19:    │
+│ Sessions    │      │ Historical  │          │ VS Code Ext │
+└──────┬──────┘      └──────┬──────┘          └──────┬──────┘
+       │                    │                        │
+       ▼                    └───────┬────────────────┘
+┌─────────────────┐                 ▼
+│ Epic 21:        │       ┌─────────────────┐
+│ Enhanced        │       │ Epic 18:        │
+│ Analysis ⭐     │       │ Crash Recovery  │
+└──────┬──────────┘       └────────┬────────┘
+       │                           │
+       ▼                           ▼
+┌─────────────────┐       ┌─────────────────┐
+│ Epic 22:        │       │ Epic 20:        │
+│ Configurable    │       │ Pre-Submission  │
+│ Analysis Engine │       └─────────────────┘
+└─────────────────┘
+```
+
+**New Dependencies:**
+- **Epic 21** (Enhanced Analysis) depends on Epic 16 (Sessions) for session-level metrics
+- **Epic 22** (Configurable Engine) depends on Epic 21 (needs analysis to configure)
+
+---
+
+## Epic 14.5: Privacy & Data Protection
+
+**Priority:** P0 (Must be first)
+**Rationale:** Phase 2 significantly expands data collection. Privacy infrastructure must exist before capturing responses.
+
+### Objective
+
+Build a privacy-first architecture with 5 layers of protection:
+1. Local redaction before upload
+2. User transparency (clear communication)
+3. User control (delete, export, pause)
+4. Encryption at rest
+5. Data minimization options
+
+### Stories
+
+#### Story 14.5.1: Enhanced Secret Redaction for Responses
+
+**As a** user capturing conversation data
+**I want** secrets automatically removed from responses
+**So that** sensitive information never leaves my machine
+
+**Acceptance Criteria:**
+- [ ] Extend `redact-secrets.ts` to handle response text
+- [ ] Add patterns: database URLs (`postgres://`, `mongodb://`)
+- [ ] Add patterns: private IP addresses (optional, user-configurable)
+- [ ] Add patterns: email addresses (optional, user-configurable)
+- [ ] Support user-defined custom regex patterns
+- [ ] Redaction runs locally in hook/CLI before any network call
+- [ ] Unit tests for all new patterns
+
+**Technical Notes:**
+- File: `lib/capture/redact-secrets.ts` (extend existing)
+- New file: `lib/capture/redact-response.ts` (response-specific logic)
+- Pattern config stored in `.contextor/privacy.json`
+
+---
+
+#### Story 14.5.2: User Transparency UI
+
+**As a** new user
+**I want** to clearly understand what data is collected
+**So that** I can make an informed decision about using Contextor
+
+**Acceptance Criteria:**
+- [ ] First-run modal explains data collection
+- [ ] Lists: prompts, responses, tool usage, session timing
+- [ ] Lists: what is automatically redacted
+- [ ] Shows configurable exclusions
+- [ ] Link to full privacy policy
+- [ ] User must acknowledge before capture begins
+- [ ] No surveillance language (use "coaching", "feedback", "improve")
+
+**UX Copy Guidelines:**
+```
+✅ "Help you become a better prompter"
+✅ "Provide feedback on your prompts"
+✅ "Learn from your patterns"
+
+❌ "Track your activity"
+❌ "Monitor your prompts"
+❌ "Log your sessions"
+```
+
+---
+
+#### Story 14.5.3: Privacy Controls (Delete, Export, Pause)
+
+**As a** user
+**I want** control over my data
+**So that** I can manage my privacy
+
+**Acceptance Criteria:**
+- [ ] "Delete My Data" button in settings → wipes all user's prompts
+- [ ] "Export My Data" button → downloads JSON of all prompts
+- [ ] "Pause Capture" toggle → temporarily disables without uninstalling
+- [ ] Confirmation dialogs for destructive actions
+- [ ] Data deletion is immediate and irreversible (with clear warning)
+
+**API Endpoints:**
+- `DELETE /api/user/data` — delete all user data
+- `GET /api/user/data/export` — export user data as JSON
+- `PATCH /api/user/capture-status` — pause/resume capture
+
+---
+
+#### Story 14.5.4: Column Encryption for Sensitive Data
+
+**As a** platform operator
+**I want** sensitive data encrypted at rest
+**So that** database breaches don't expose prompt content
+
+**Acceptance Criteria:**
+- [ ] Encrypt `prompts.text` column using Supabase Vault
+- [ ] Encrypt `prompt_responses.response_text` column
+- [ ] Encryption transparent to application code
+- [ ] Key management via Supabase Vault
+- [ ] Document key rotation procedure
+- [ ] Performance impact < 50ms per read/write
+
+**Technical Notes:**
+- Use `pgcrypto` extension
+- Vault for key storage
+- Consider per-team keys for isolation
+
+---
+
+#### Story 14.5.5: Privacy Levels Implementation
+
+**As a** user
+**I want** to choose my privacy level
+**So that** I control how much data is stored
+
+**Acceptance Criteria:**
+- [ ] Settings page shows privacy level selector
+- [ ] Levels: Full, Standard, Minimal, Local Only
+- [ ] Level changes apply to future captures (not retroactive)
+- [ ] Clear explanation of each level
+
+**Privacy Levels:**
+
+| Level | Stored | Use Case |
+|-------|--------|----------|
+| **Full** | Prompts + responses + analysis | Teams wanting full history |
+| **Standard** | Prompts + analysis (no responses) | Individual developers |
+| **Minimal** | Analysis results only | Privacy-conscious users |
+| **Local Only** | Nothing uploaded | Air-gapped environments |
+
+---
+
+#### Story 14.5.6: Data Retention Policy
+
+**As a** user
+**I want** to set how long my data is kept
+**So that** old data is automatically deleted
+
+**Acceptance Criteria:**
+- [ ] Settings page shows retention selector
+- [ ] Options: 30 days, 90 days, 1 year, Forever
+- [ ] Background job deletes expired data daily
+- [ ] User notified before data deletion (optional)
+- [ ] Team admins can set minimum retention for team
+
+**Database:**
+- Add `retention_days` to user settings
+- Add `expires_at` column to prompts table
+- Cron job for deletion
+
+---
+
+## Epic 15: Response Context Capture
+
+**Priority:** P0
+**Depends on:** Epic 14.5
+
+### Objective
+
+Capture Claude's responses alongside prompts using transcript mining, enabling analysis with full conversation context.
+
+### Stories
+
+#### Story 15.1: Stop Hook Integration
+
+**As a** system
+**I want** to know when Claude finishes responding
+**So that** I can read the complete response from the transcript
+
+**Acceptance Criteria:**
+- [ ] Add `Stop` hook to `.claude/settings.json`
+- [ ] Hook receives session_id and transcript_path
+- [ ] Hook triggers response capture process
+- [ ] Works for both CLI and VS Code extension users
+
+**Hook Configuration:**
+```json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "command",
+        "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/contextor-capture-response.sh"
+      }]
+    }]
+  }
+}
+```
+
+---
+
+#### Story 15.2: Transcript Mining Implementation
+
+**As a** system
+**I want** to parse transcript JSONL files
+**So that** I can extract prompt-response pairs
+
+**Acceptance Criteria:**
+- [ ] Read transcript file from path provided by hook
+- [ ] Parse JSONL format correctly
+- [ ] Extract last user message (prompt)
+- [ ] Extract last assistant message (response)
+- [ ] Handle tool_use and tool_result entries
+- [ ] Apply redaction to extracted content
+- [ ] Handle large files efficiently (stream parsing)
+
+**JSONL Structure:**
+```jsonl
+{"type": "user", "message": "...", "timestamp": "..."}
+{"type": "assistant", "message": "...", "timestamp": "..."}
+{"type": "tool_use", "name": "Edit", "input": {...}}
+{"type": "tool_result", "output": "..."}
+```
+
+---
+
+#### Story 15.3: Prompt-Response Pairing
+
+**As a** system
+**I want** to link responses to their prompts
+**So that** analysis has full context
+
+**Acceptance Criteria:**
+- [ ] Generate correlation ID on UserPromptSubmit
+- [ ] Pass correlation ID through to Stop hook
+- [ ] Match response to prompt using correlation ID
+- [ ] Store pairing in database
+- [ ] Handle edge cases: multiple prompts, no response
+
+**Database Schema:**
+```sql
+CREATE TABLE prompt_responses (
+  id UUID PRIMARY KEY,
+  prompt_id UUID REFERENCES prompts(id),
+  response_text TEXT,  -- Encrypted
+  tool_calls JSONB,    -- [{name, input_summary}]
+  tool_count INTEGER,
+  created_at TIMESTAMPTZ
+);
+```
+
+---
+
+#### Story 15.4: Enhanced Analysis with Response Context
+
+**As a** analysis engine
+**I want** response context for scoring
+**So that** analysis is more accurate
+
+**Acceptance Criteria:**
+- [ ] Update analysis prompt to include response summary
+- [ ] New dimension: "Prompt Effectiveness" (did it get good results?)
+- [ ] New dimension: "Iteration Efficiency" (follow-ups needed?)
+- [ ] A/B test: analysis with vs without response context
+- [ ] Measure accuracy improvement
+
+**New Analysis Dimensions:**
+
+| Dimension | Weight | Description |
+|-----------|--------|-------------|
+| Prompt Effectiveness | 20% | Did the prompt lead to useful output? |
+| Iteration Efficiency | 10% | Were follow-ups needed? |
+
+---
+
+## Epic 16: Session & Conversation Tracking
+
+**Priority:** P0
+**Depends on:** Epic 15
+
+### Objective
+
+Group prompts into conversations using session_id, enabling conversation-level analytics and multi-terminal tracking.
+
+### Stories
+
+#### Story 16.1: Session Model and Database Schema
+
+**As a** system
+**I want** to track sessions
+**So that** prompts can be grouped into conversations
+
+**Acceptance Criteria:**
+- [ ] Create sessions table
+- [ ] Link prompts to sessions
+- [ ] Store session start/end times
+- [ ] Store session end reason (if available)
+- [ ] Calculate session duration
+
+**Database Schema:**
+```sql
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY,
+  claude_session_id TEXT UNIQUE,  -- From Claude Code
+  user_id UUID REFERENCES auth.users(id),
+  team_id UUID REFERENCES teams(id),
+  project_id UUID REFERENCES projects(id),
+  started_at TIMESTAMPTZ,
+  ended_at TIMESTAMPTZ,
+  end_reason TEXT,  -- 'clear', 'logout', 'crash', 'unknown'
+  prompt_count INTEGER DEFAULT 0,
+  metadata JSONB
+);
+
+ALTER TABLE prompts ADD COLUMN session_id UUID REFERENCES sessions(id);
+ALTER TABLE prompts ADD COLUMN sequence_number INTEGER;
+```
+
+---
+
+#### Story 16.2: Hook Updates for Session Tracking
+
+**As a** system
+**I want** to capture session lifecycle events
+**So that** sessions are properly tracked
+
+**Acceptance Criteria:**
+- [ ] Add SessionStart hook → create/resume session record
+- [ ] Add SessionEnd hook → close session record
+- [ ] Extract session_id from all hooks
+- [ ] Pass session_id to capture API
+- [ ] Handle session resume (same session_id, new start)
+
+---
+
+#### Story 16.3: Conversation Grouping in UI
+
+**As a** user
+**I want** to see prompts grouped by conversation
+**So that** I can understand context
+
+**Acceptance Criteria:**
+- [ ] Prompt feed can toggle: flat list vs conversation view
+- [ ] Conversation view shows session header (start time, duration, prompt count)
+- [ ] Expand/collapse conversations
+- [ ] Filter by session
+- [ ] Show session timeline visualization
+
+---
+
+#### Story 16.4: Multi-Terminal Session Visualization
+
+**As a** user running multiple terminals
+**I want** to see which prompts came from which session
+**So that** I can track parallel work
+
+**Acceptance Criteria:**
+- [ ] Dashboard shows active sessions indicator
+- [ ] Each session has unique visual identifier (color/icon)
+- [ ] Session switcher in prompt feed
+- [ ] Analytics breakdown by session
+
+---
+
+## Epic 17: Historical Import
+
+**Priority:** P1
+**Depends on:** Epic 15, Epic 16
+
+### Objective
+
+Import 30 days of historical transcripts on first install, providing immediate value without cold start.
+
+### Stories
+
+#### Story 17.1: Transcript Discovery and Scanning
+
+**As a** system
+**I want** to find all local transcripts
+**So that** I can offer import to users
+
+**Acceptance Criteria:**
+- [ ] Scan `~/.claude/projects/` directory
+- [ ] Find all `.jsonl` files
+- [ ] Count prompts per project
+- [ ] Calculate total importable prompts
+- [ ] Respect file modification dates (30-day window)
+
+**Discovery Output:**
+```json
+{
+  "projects": [
+    {
+      "path": "-Users-edgars-project-a",
+      "prompt_count": 234,
+      "oldest": "2025-11-22",
+      "newest": "2025-12-22"
+    }
+  ],
+  "total_prompts": 847
+}
+```
+
+---
+
+#### Story 17.2: Import Consent and Project Selection UI
+
+**As a** new user
+**I want** to choose what to import
+**So that** I control my data
+
+**Acceptance Criteria:**
+- [ ] First-run modal shows import opportunity
+- [ ] Display: project list with prompt counts
+- [ ] Checkboxes for project selection
+- [ ] "Import All" / "Select Projects" / "Skip" options
+- [ ] Progress indicator during import
+- [ ] Clear privacy messaging
+
+---
+
+#### Story 17.3: Batch Processing and Analysis
+
+**As a** system
+**I want** to process historical imports efficiently
+**So that** imports complete in reasonable time
+
+**Acceptance Criteria:**
+- [ ] Stream-parse large JSONL files
+- [ ] Batch insert prompts (100 at a time)
+- [ ] Queue analysis jobs (don't block UI)
+- [ ] Show import progress: X of Y prompts
+- [ ] Handle errors gracefully (skip bad entries)
+- [ ] Resume interrupted imports
+
+**Performance Target:** 1000 prompts imported and queued in < 60 seconds
+
+---
+
+#### Story 17.4: Onboarding Integration
+
+**As a** new user
+**I want** import integrated into onboarding
+**So that** I get value immediately
+
+**Acceptance Criteria:**
+- [ ] Import step added to onboarding checklist
+- [ ] Skip option clearly visible
+- [ ] Post-import: redirect to analytics with data
+- [ ] Show "X prompts imported" success message
+- [ ] First insight highlighted: "Your average score is X"
+
+---
+
+## Epic 18: Smart Crash Recovery
+
+**Priority:** P2
+**Depends on:** Epic 17, Epic 19
+
+### Objective
+
+Detect interrupted sessions and help users recover with AI-generated context summaries.
+
+### Stories
+
+#### Story 18.1: Interrupted Session Detection
+
+**As a** system
+**I want** to detect crashed/interrupted sessions
+**So that** I can offer recovery
+
+**Acceptance Criteria:**
+- [ ] On SessionStart: check for recent unclosed sessions
+- [ ] Criteria: session with no SessionEnd, last activity < 24h ago
+- [ ] Flag session as "interrupted"
+- [ ] Trigger recovery flow
+
+---
+
+#### Story 18.2: AI-Powered Context Summarization
+
+**As a** system
+**I want** to summarize interrupted sessions
+**So that** users understand where they left off
+
+**Acceptance Criteria:**
+- [ ] Send last N messages to AI for summarization
+- [ ] Extract: task being worked on, last action, pending items
+- [ ] Generate human-readable summary (2-3 sentences)
+- [ ] Cache summary to avoid re-processing
+
+**Summary Format:**
+```
+You were implementing OAuth callback handling in auth/callback/route.ts.
+Last action: Claude suggested adding try/catch for code exchange.
+Pending: You asked to proceed but the session ended before response.
+```
+
+---
+
+#### Story 18.3: Recovery Prompt Generation
+
+**As a** user
+**I want** a ready-to-use recovery prompt
+**So that** I can continue without re-explaining
+
+**Acceptance Criteria:**
+- [ ] Generate recovery prompt from summary
+- [ ] Include: context, last action, what to continue
+- [ ] Copy-to-clipboard button
+- [ ] "Paste and send" instruction
+
+**Recovery Prompt Template:**
+```
+Continue from where we left off. Here's the context:
+- We were implementing OAuth callback handling
+- Last edit was to auth/callback/route.ts
+- You suggested adding try/catch for the code exchange
+- I asked you to proceed with that change
+
+Please continue from there.
+```
+
+---
+
+#### Story 18.4: VS Code Notification Integration
+
+**As a** VS Code user
+**I want** crash recovery notification
+**So that** I'm aware of interrupted sessions
+
+**Acceptance Criteria:**
+- [ ] Extension detects interrupted sessions on startup
+- [ ] Shows notification: "Interrupted session detected"
+- [ ] Notification links to recovery panel
+- [ ] Can dismiss or snooze notification
+
+---
+
+## Epic 19: VS Code Extension
+
+**Priority:** P1
+**Depends on:** Epic 15, Epic 16
+
+### Objective
+
+Build a VS Code extension for analytics, notifications, and coaching UI.
+
+### Stories
+
+#### Story 19.1: Extension Scaffolding and Architecture
+
+**As a** developer
+**I want** extension foundation
+**So that** features can be built
+
+**Acceptance Criteria:**
+- [ ] VS Code extension project initialized
+- [ ] TypeScript + React webview setup
+- [ ] Contextor API client integrated
+- [ ] Authentication flow (login via browser)
+- [ ] Settings sync with cloud
+
+**Tech Stack:**
+- VS Code Extension API
+- React for webview panels
+- Contextor API client
+
+---
+
+#### Story 19.2: Analytics Dashboard Panel
+
+**As a** VS Code user
+**I want** analytics in my IDE
+**So that** I don't need to switch to browser
+
+**Acceptance Criteria:**
+- [ ] Sidebar panel showing recent prompts
+- [ ] Score badges on each prompt
+- [ ] Click to expand analysis details
+- [ ] Time range selector
+- [ ] Personal vs team toggle
+
+---
+
+#### Story 19.3: Session Browser and History View
+
+**As a** VS Code user
+**I want** to browse my sessions
+**So that** I can review past conversations
+
+**Acceptance Criteria:**
+- [ ] List of sessions with metadata
+- [ ] Expand session to see prompts
+- [ ] Search within sessions
+- [ ] Filter by project, date, score
+
+---
+
+#### Story 19.4: Contextor Cloud API Integration
+
+**As a** extension
+**I want** seamless cloud sync
+**So that** data is always current
+
+**Acceptance Criteria:**
+- [ ] Real-time updates via WebSocket/polling
+- [ ] Offline mode with cached data
+- [ ] Sync status indicator
+- [ ] Error handling with retry
+
+---
+
+## Epic 20: Pre-Submission Coaching
+
+**Priority:** P3
+**Depends on:** Epic 19
+
+### Objective
+
+Analyze prompts before submission and suggest improvements.
+
+### Stories
+
+#### Story 20.1: Fast Local Analysis Heuristics
+
+**As a** system
+**I want** fast local prompt checks
+**So that** feedback is instant
+
+**Acceptance Criteria:**
+- [ ] Local heuristic rules (no API call)
+- [ ] Check: prompt length, file references, question marks
+- [ ] Check: vague words ("fix", "help", "something")
+- [ ] Return quick score estimate
+- [ ] < 100ms execution time
+
+**Heuristics:**
+- Length < 20 chars → likely too short
+- No file references → might need context
+- Contains "fix the bug" without specifics → vague
+- All caps → might be frustration prompt
+
+---
+
+#### Story 20.2: Hook Blocking and Suggestion Flow
+
+**As a** user (opt-in)
+**I want** prompts intercepted for coaching
+**So that** I can improve before sending
+
+**Acceptance Criteria:**
+- [ ] UserPromptSubmit hook can block (exit code 2)
+- [ ] Hook writes suggestion to temp file
+- [ ] Hook shows message: "See VS Code panel"
+- [ ] User can bypass: resubmit to send anyway
+- [ ] Configurable: always ask, only on low scores, never
+
+---
+
+#### Story 20.3: Extension Suggestion UI
+
+**As a** VS Code user
+**I want** to see improvement suggestions
+**So that** I can accept or modify
+
+**Acceptance Criteria:**
+- [ ] Panel shows original prompt
+- [ ] Panel shows suggested improvements
+- [ ] Side-by-side diff view
+- [ ] "Accept" copies improved prompt to clipboard
+- [ ] "Edit" opens prompt in editor
+- [ ] "Skip" lets user resubmit original
+
+---
+
+#### Story 20.4: Improvement Tracking and Metrics
+
+**As a** user
+**I want** to see my improvement patterns
+**So that** I know coaching is working
+
+**Acceptance Criteria:**
+- [ ] Track: suggestions offered vs accepted
+- [ ] Track: score before vs after improvement
+- [ ] Dashboard widget: "Coaching effectiveness"
+- [ ] Show: "You've improved X prompts this week"
+
+---
+
+## Phase 2 Functional Requirements (Additions)
+
+### Response Capture
+
+- **FR77:** System captures Claude's response text via transcript mining
+- **FR78:** System links responses to their originating prompts
+- **FR79:** System applies redaction to response text before storage
+- **FR80:** System extracts tool call summary from responses
+
+### Session Tracking
+
+- **FR81:** System tracks session start and end events
+- **FR82:** System groups prompts by session_id
+- **FR83:** Users can view prompts grouped by conversation
+- **FR84:** Users can filter prompts by session
+
+### Historical Import
+
+- **FR85:** System can scan local transcript files for import
+- **FR86:** Users can select which projects to import
+- **FR87:** System imports historical prompts with batch processing
+- **FR88:** Import respects user's privacy settings
+
+### Crash Recovery
+
+- **FR89:** System detects interrupted sessions
+- **FR90:** System generates context summaries for crashed sessions
+- **FR91:** System generates recovery prompts
+- **FR92:** VS Code extension shows crash recovery notifications
+
+### VS Code Extension
+
+- **FR93:** Users can view analytics dashboard in VS Code
+- **FR94:** Users can browse sessions and history in VS Code
+- **FR95:** Extension syncs with Contextor cloud in real-time
+- **FR96:** Extension shows crash recovery notifications
+
+### Pre-Submission Coaching
+
+- **FR97:** System can intercept prompts before submission (opt-in)
+- **FR98:** System runs fast local heuristics on prompts
+- **FR99:** System suggests prompt improvements
+- **FR100:** Users can accept, modify, or skip suggestions
+- **FR101:** System tracks improvement acceptance rates
+
+### Privacy Controls
+
+- **FR102:** Users can delete all their data
+- **FR103:** Users can export all their data
+- **FR104:** Users can pause/resume capture
+- **FR105:** Users can set data retention period
+- **FR106:** Users can choose privacy level (Full/Standard/Minimal/Local)
+- **FR107:** System encrypts sensitive columns at rest
+
+---
+
+## Phase 2 Non-Functional Requirements (Additions)
+
+### Performance
+
+| Requirement | Target |
+|-------------|--------|
+| **NFR-P6:** Transcript parsing | < 1 second for 1000-line file |
+| **NFR-P7:** Historical import | 1000 prompts in < 60 seconds |
+| **NFR-P8:** Recovery prompt generation | < 5 seconds |
+| **NFR-P9:** Local heuristics | < 100ms |
+
+### Privacy & Security
+
+| Requirement | Target |
+|-------------|--------|
+| **NFR-S8:** Local redaction | All sensitive data removed before network |
+| **NFR-S9:** Column encryption | AES-256 for text and response_text |
+| **NFR-S10:** Data deletion | Complete removal within 24 hours |
+| **NFR-S11:** Export completeness | All user data included |
+
+### Scalability
+
+| Requirement | Target |
+|-------------|--------|
+| **NFR-SC6:** Sessions per user | 1000+ |
+| **NFR-SC7:** Responses per month | 500,000 |
+| **NFR-SC8:** Historical import size | 10,000+ prompts |
+
+---
+
+## Phase 2 Infrastructure Requirements
+
+### VS Code Marketplace
+
+| Requirement | Specification |
+|-------------|---------------|
+| **INF-V1:** Publisher account | Create Contextor publisher |
+| **INF-V2:** Extension packaging | vsce for packaging |
+| **INF-V3:** Auto-publish | GitHub Actions on release |
+| **INF-V4:** Extension signing | Required for marketplace |
+
+### Additional Secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `VSCE_PAT` | VS Code Marketplace publishing |
+| `ENCRYPTION_KEY` | Column encryption (or use Vault) |
+
+---
+
+## Phase 2 Timeline Considerations
+
+**Note:** No time estimates per project guidelines. Implementation order based on dependencies:
+
+1. **Epic 14.5** (Privacy) — Must be first
+2. **Epic 15** (Response Context) — Foundation
+3. **Epic 16** (Sessions) — Requires response capture
+4. **Epic 17** (Historical) + **Epic 19** (VS Code) — Can parallelize
+5. **Epic 18** (Crash Recovery) — Requires extension
+6. **Epic 20** (Pre-Submission) — Last, most complex
+7. **Epic 21** (Enhanced Analysis) — Can parallelize after Epic 16
+
+---
+
+## Epic 21: Enhanced Analysis Framework (Research-Validated)
+
+**Priority:** P0
+**Depends on:** Epic 16 (Sessions)
+**Reference:** `_bmad-output/research/transcript-analysis-findings.md`
+
+### Research Foundation
+
+This epic is based on **real-world analysis of 366 transcript files** (376MB, 2,498 user prompts, 40,689 assistant messages). The research revealed **25+ dimensions of feedback** beyond Phase 1's basic scoring (clarity, context, constraints), which captures only ~15% of potential insights.
+
+### Objective
+
+Transform Contextor from basic prompt scoring into a **comprehensive behavioral intelligence platform** that provides:
+
+1. **Per-Prompt Analysis** — Enhanced clarity scoring + intent classification
+2. **Per-Session Analysis** — Session health, efficiency, flow quality
+3. **Per-User Profiling** — Work style, collaboration patterns, learning progression
+4. **Team Intelligence** — Best practice sharing, common struggles, style distribution
+
+---
+
+### Story 21.1: Context Window Management Analytics
+
+**As a** user
+**I want** to see my context exhaustion patterns
+**So that** I can optimize session length and avoid quality degradation
+
+**Research Finding:** 32% of long sessions exhaust context window. Average threshold: ~90 minutes.
+
+**Acceptance Criteria:**
+- [ ] Detect "continued from a previous conversation that ran out of context" in prompts
+- [ ] Track context exhaustion events per user/team
+- [ ] Calculate exhaustion rate: exhaustions / total sessions
+- [ ] Show average session duration before exhaustion
+- [ ] Generate feedback: "You hit context limits in 32% of long sessions"
+
+**Database Schema Addition:**
+```sql
+ALTER TABLE sessions ADD COLUMN context_exhausted BOOLEAN DEFAULT false;
+ALTER TABLE sessions ADD COLUMN exhaustion_detected_at TIMESTAMPTZ;
+```
+
+**Sample Feedback:**
+- "You've used 75% of context window. Consider starting a fresh session."
+- "Your sessions typically exhaust context after 90 minutes of continuous work."
+- "Tip: Breaking large tasks into sub-sessions improves quality."
+
+---
+
+### Story 21.2: Work Style Categorization
+
+**As a** user
+**I want** to see my prompting work style profile
+**So that** I understand my strengths and areas for growth
+
+**Research Finding:** 10 distinct work style categories identified.
+
+| Category | Detection | Example Patterns |
+|----------|-----------|------------------|
+| Architecture Questions | 16.3% | "How should...", "What approach..." |
+| File Operations | 13.9% | Direct file references (.tsx, .ts) |
+| Debugging | 13.5% | "Not working", "error", "fix" |
+| Agent Delegation | 12.6% | "You are a...", task assignments |
+| Testing | 10.3% | "test", "playwright", "e2e" |
+| Deployment | 5.6% | "deploy", "build", "production" |
+| Design Iteration | 4.7% | "Make larger", "change color" |
+| Context Recovery | 4.6% | Resuming after exhaustion |
+| Quick Commands | 4.0% | "yes", "continue", "1" |
+| Business Discussion | 1.8% | Strategy, pricing, users |
+
+**Acceptance Criteria:**
+- [ ] Classify each prompt into work style category
+- [ ] Store category as `prompts.work_style_category`
+- [ ] Calculate distribution per user/team
+- [ ] Generate work style profile: "Architect", "Firefighter", "Craftsman", "Explorer"
+- [ ] Show radar chart of work style distribution
+
+**Classification Logic:**
+```typescript
+interface WorkStyleClassification {
+  architecture_questions: RegExp[];  // "how should", "approach"
+  debugging: RegExp[];               // "not working", "error"
+  testing: RegExp[];                 // "test", "e2e"
+  // ... other categories
+}
+```
+
+**Sample Feedback:**
+- "Your prompting style is heavily architecture-focused (16%). Consider more concrete implementation prompts."
+- "30% of your prompts are debugging-related. This might indicate unclear initial requirements."
+- "You use agent delegation effectively (12.6%). Keep leveraging this pattern."
+
+---
+
+### Story 21.3: Sentiment & Communication Style Analysis
+
+**As a** user
+**I want** to see my communication patterns with AI
+**So that** I can improve collaboration quality
+
+**Research Finding:** 24.2% polite expressions, 3.0% frustrated expressions. 8:1 politeness ratio.
+
+| Indicator | Detection Patterns |
+|-----------|-------------------|
+| **Polite** | "please", "thank you", "thanks", "great", "awesome" |
+| **Frustrated** | "why not working", "still wrong", "can't", "this cannot be" |
+| **Directive** | Command-style prompts without context |
+| **Collaborative** | Questions, discussions, "let's" |
+
+**Acceptance Criteria:**
+- [ ] Detect polite expressions per prompt
+- [ ] Detect frustrated expressions per prompt
+- [ ] Calculate politeness ratio: polite / frustrated
+- [ ] Track sentiment trend over session (frustration increases?)
+- [ ] Generate communication style profile
+- [ ] Flag sessions with rising frustration
+
+**Database Schema Addition:**
+```sql
+ALTER TABLE prompts ADD COLUMN sentiment VARCHAR(20);  -- 'polite', 'frustrated', 'neutral'
+ALTER TABLE prompts ADD COLUMN sentiment_confidence DECIMAL(3,2);
+```
+
+**Sample Feedback:**
+- "Your communication style is highly collaborative (24% polite expressions)."
+- "We noticed 3% frustrated expressions - often around debugging sessions."
+- "Frustration peaks after 60+ minutes in a single session."
+
+---
+
+### Story 21.4: Prompt Complexity Analysis
+
+**As a** user
+**I want** to understand my prompt complexity patterns
+**So that** I can optimize prompt structure
+
+**Research Finding:**
+
+| Metric | Value |
+|--------|-------|
+| Average prompt length | 994 characters |
+| Single-sentence prompts | 42% |
+| Multi-sentence prompts | 52% |
+| Prompts with code | 8% |
+| Prompts with file refs | 15% |
+| Short prompts (<20 chars) | 11% |
+| Long prompts (>500 chars) | 21% |
+
+**Acceptance Criteria:**
+- [ ] Measure prompt length (chars, words)
+- [ ] Detect sentence count
+- [ ] Detect code presence (```, function, const)
+- [ ] Detect file references (.ts, .tsx, /Users/)
+- [ ] Calculate complexity distribution
+- [ ] Track complexity trend over time
+
+**Database Schema Addition:**
+```sql
+ALTER TABLE prompts ADD COLUMN char_count INTEGER;
+ALTER TABLE prompts ADD COLUMN word_count INTEGER;
+ALTER TABLE prompts ADD COLUMN sentence_count INTEGER;
+ALTER TABLE prompts ADD COLUMN has_code BOOLEAN DEFAULT false;
+ALTER TABLE prompts ADD COLUMN has_file_refs BOOLEAN DEFAULT false;
+```
+
+**Sample Feedback:**
+- "42% of your prompts are single-sentence. Adding context often improves results."
+- "You include code in 8% of prompts - consider using file references instead."
+- "Your average prompt is ~1000 chars - well-detailed requests!"
+
+---
+
+### Story 21.5: Interaction Timing Analysis
+
+**As a** user
+**I want** to see my prompting rhythm patterns
+**So that** I can optimize my workflow
+
+**Research Finding:**
+
+| Pattern | Occurrence | Description |
+|---------|------------|-------------|
+| Rapid-fire prompts | 8% | <30 seconds between prompts |
+| Long pauses | 29% | >5 minutes between prompts |
+| Follow-up patterns | 6% | "also", "and", "now", "next" |
+| Average gap | 28 min | Between consecutive prompts |
+| Median gap | 3.5 min | More representative |
+
+**Acceptance Criteria:**
+- [ ] Calculate time between consecutive prompts
+- [ ] Detect rapid-fire sequences (<30s gaps)
+- [ ] Detect follow-up prompts ("also", "now", "next")
+- [ ] Track average/median prompt intervals
+- [ ] Identify productivity patterns (morning vs evening)
+
+**Sample Feedback:**
+- "You send rapid-fire prompts 8% of the time. Consider batching requests."
+- "Long pauses (>5 min) appear 29% of the time - good thinking breaks!"
+- "6% of prompts are follow-ups. Try combining related requests."
+
+---
+
+### Story 21.6: Tool Usage Profiling
+
+**As a** user
+**I want** to see my Claude Code tool usage patterns
+**So that** I can leverage tools more effectively
+
+**Research Finding:**
+
+| Tool | Usage | Percentage |
+|------|-------|------------|
+| Bash | 6,101 | 30.6% |
+| Read | 5,177 | 26.0% |
+| Edit | 3,582 | 18.0% |
+| TodoWrite | 1,677 | 8.4% |
+| Write | 1,370 | 6.9% |
+| Glob | 1,233 | 6.2% |
+| Grep | 490 | 2.5% |
+| Task (subagent) | 224 | 1.1% |
+| WebFetch | 116 | 0.6% |
+| WebSearch | 101 | 0.5% |
+
+**Acceptance Criteria:**
+- [ ] Track tool usage per session
+- [ ] Calculate tool distribution per user/team
+- [ ] Identify underutilized tools
+- [ ] Generate tool mastery profile
+- [ ] Compare to team/community averages
+
+**Database Schema Addition:**
+```sql
+CREATE TABLE session_tool_usage (
+  id UUID PRIMARY KEY,
+  session_id UUID REFERENCES sessions(id),
+  tool_name VARCHAR(50),
+  usage_count INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Sample Feedback:**
+- "You're a power terminal user (30% Bash commands)."
+- "Consider using more Grep/Glob for targeted searches vs broad Read operations."
+- "Your TodoWrite usage (8%) shows good task management discipline."
+
+---
+
+### Story 21.7: Session Health Score
+
+**As a** user
+**I want** to see real-time session health indicators
+**So that** I can optimize session quality
+
+**Research Finding:** Session quality degrades over time. Average 147 min session, but quality drops after 90 min.
+
+**Session Health Formula:**
+```
+Health = f(duration, context_usage, frustration_signals, tool_errors)
+```
+
+**Acceptance Criteria:**
+- [ ] Calculate session health score (0-100)
+- [ ] Track: duration impact
+- [ ] Track: context window usage
+- [ ] Track: frustration expression frequency
+- [ ] Track: repeated similar prompts (retries)
+- [ ] Track: tool error rate
+- [ ] Show health trend over session
+- [ ] Alert when health drops below threshold
+
+**Health Scoring:**
+
+| Factor | Weight | Good | Warning | Critical |
+|--------|--------|------|---------|----------|
+| Duration | 25% | <60 min | 60-120 min | >120 min |
+| Context | 25% | <50% used | 50-80% used | >80% used |
+| Frustration | 25% | <2% | 2-5% | >5% |
+| Retries | 25% | <5% | 5-15% | >15% |
+
+**Sample Feedback:**
+- "Your average session is 2.5 hours. Consider periodic fresh starts for complex tasks."
+- "Session health dropped 20% after hour 2 - frustration signals increased."
+- "26% of your sessions exceed 1 hour. Long sessions often benefit from sub-task delegation."
+
+---
+
+### Story 21.8: Technical Depth Profiling
+
+**As a** user
+**I want** to see my technical vs business orientation
+**So that** I understand my prompting focus areas
+
+**Technical Depth Profile:**
+```json
+{
+  "coding_focus": "file_ops / total_prompts",
+  "architecture_focus": "design_questions / total_prompts",
+  "debugging_ratio": "debug_prompts / total_prompts",
+  "testing_discipline": "test_prompts / total_prompts"
+}
+```
+
+**User Personas:**
+
+| Persona | Characteristics |
+|---------|-----------------|
+| **Architect** | High architecture, low debugging |
+| **Firefighter** | High debugging, low testing |
+| **Craftsman** | Balanced across all categories |
+| **Explorer** | High questions, experimental |
+
+**Acceptance Criteria:**
+- [ ] Calculate technical focus ratio
+- [ ] Calculate business/UX focus ratio
+- [ ] Determine primary persona
+- [ ] Track persona evolution over time
+- [ ] Compare to team distribution
+
+**Sample Feedback:**
+- "Your profile: Architect (42% architecture, 35% implementation)"
+- "Debugging ratio: 15% (healthy range)"
+- "Testing discipline: 8% - consider adding more test-related prompts"
+
+---
+
+### Story 21.9: Learning Progression Tracking
+
+**As a** user
+**I want** to see my improvement over time
+**So that** I know my prompting skills are growing
+
+**Learning Metrics:**
+```json
+{
+  "prompt_quality_trend": "average_score_per_week",
+  "frustration_trend": "frustrated_rate_per_week",
+  "efficiency_trend": "prompts_per_goal_per_week",
+  "context_management": "exhaustion_rate_per_week"
+}
+```
+
+**Acceptance Criteria:**
+- [ ] Track weekly averages for all metrics
+- [ ] Calculate week-over-week changes
+- [ ] Identify improvement areas
+- [ ] Generate progress report
+- [ ] Show achievement badges
+
+**Sample Feedback:**
+- "Your prompt clarity improved 15% this month!"
+- "Debugging prompts decreased 20% - your specs are getting better."
+- "Context resets: -40% this month - You're mastering context management!"
+
+---
+
+### Story 21.10: Workflow Efficiency Score
+
+**As a** user
+**I want** to see how efficiently I achieve goals
+**So that** I can improve my workflow
+
+**Efficiency Formula:**
+```
+Efficiency = Goals_Achieved / (Prompts + Context_Resets + Debugging_Loops)
+```
+
+**Acceptance Criteria:**
+- [ ] Track prompts per completed feature
+- [ ] Track context resets per session
+- [ ] Track debugging loop iterations
+- [ ] Calculate time to resolution
+- [ ] Compare to team/community benchmarks
+
+**Sample Feedback:**
+- "Prompts per completed task: 4.2 (team avg: 5.8) - Excellent!"
+- "Context resets: 3 (down from 5 last week!)"
+- "Debugging loops: 2.1 per issue (improving)"
+
+---
+
+### Story 21.11: Interactive Insights Dashboard
+
+**As a** user
+**I want** an interactive visualization of all insights
+**So that** I can explore my data engagingly
+
+**Acceptance Criteria:**
+- [ ] Weekly insights report (interactive, not PDF)
+- [ ] Activity summary: sessions, prompts, duration
+- [ ] Prompt quality scores with breakdown
+- [ ] Work style radar chart
+- [ ] Sentiment timeline
+- [ ] Session health trend
+- [ ] Tool usage breakdown
+- [ ] Learning progression chart
+- [ ] Comparison: this week vs last week
+- [ ] Team comparison (where applicable)
+- [ ] Personalized tips based on data
+
+**UI Components:**
+
+| Component | Purpose |
+|-----------|---------|
+| Summary Cards | Key metrics at a glance |
+| Radar Chart | Work style distribution |
+| Line Charts | Trends over time |
+| Bar Charts | Category comparisons |
+| Heat Map | Activity timing patterns |
+| Progress Bars | Learning progression |
+
+---
+
+### Story 21.12: Team Intelligence Dashboard
+
+**As a** team admin
+**I want** team-level insights
+**So that** I can identify best practices and common struggles
+
+**Team Metrics:**
+
+| Dimension | Description |
+|-----------|-------------|
+| Style Distribution | Team's prompt style breakdown |
+| Best Practices | High-performer patterns to share |
+| Common Struggles | Team-wide debugging hotspots |
+| Collaboration Health | Team sentiment trends |
+
+**Acceptance Criteria:**
+- [ ] Aggregate individual metrics to team level
+- [ ] Identify top performers (anonymized patterns)
+- [ ] Identify common struggle areas
+- [ ] Show team sentiment trends
+- [ ] Generate team coaching recommendations
+
+**Sample Team Insights:**
+- "Team average clarity score: 7.8 (up from 7.2 last month)"
+- "Best practice: Sarah's prompts have 15% higher specificity - here's her pattern..."
+- "Common struggle: 40% of debugging prompts lack error context"
+
+---
+
+## Phase 2 Functional Requirements (Analysis Additions)
+
+### Enhanced Analysis
+
+- **FR108:** System classifies prompts by work style category
+- **FR109:** System detects sentiment (polite/frustrated/neutral) in prompts
+- **FR110:** System measures prompt complexity (length, sentences, code, file refs)
+- **FR111:** System tracks interaction timing patterns
+- **FR112:** System profiles tool usage per session/user
+- **FR113:** System calculates session health score
+- **FR114:** System determines user technical depth profile
+- **FR115:** System tracks learning progression over time
+- **FR116:** System calculates workflow efficiency score
+- **FR117:** System detects context exhaustion events
+- **FR118:** Users can view interactive insights dashboard
+- **FR119:** Team admins can view team intelligence dashboard
+- **FR120:** System generates personalized improvement tips
+
+---
+
+## Phase 2 Database Schema Summary (Analysis)
+
+```sql
+-- Prompt enhancements
+ALTER TABLE prompts ADD COLUMN work_style_category VARCHAR(30);
+ALTER TABLE prompts ADD COLUMN sentiment VARCHAR(20);
+ALTER TABLE prompts ADD COLUMN sentiment_confidence DECIMAL(3,2);
+ALTER TABLE prompts ADD COLUMN char_count INTEGER;
+ALTER TABLE prompts ADD COLUMN word_count INTEGER;
+ALTER TABLE prompts ADD COLUMN sentence_count INTEGER;
+ALTER TABLE prompts ADD COLUMN has_code BOOLEAN DEFAULT false;
+ALTER TABLE prompts ADD COLUMN has_file_refs BOOLEAN DEFAULT false;
+ALTER TABLE prompts ADD COLUMN is_follow_up BOOLEAN DEFAULT false;
+ALTER TABLE prompts ADD COLUMN is_rapid_fire BOOLEAN DEFAULT false;
+
+-- Session enhancements
+ALTER TABLE sessions ADD COLUMN context_exhausted BOOLEAN DEFAULT false;
+ALTER TABLE sessions ADD COLUMN exhaustion_detected_at TIMESTAMPTZ;
+ALTER TABLE sessions ADD COLUMN health_score INTEGER;
+ALTER TABLE sessions ADD COLUMN frustration_count INTEGER DEFAULT 0;
+ALTER TABLE sessions ADD COLUMN polite_count INTEGER DEFAULT 0;
+ALTER TABLE sessions ADD COLUMN retry_count INTEGER DEFAULT 0;
+
+-- Tool usage tracking
+CREATE TABLE session_tool_usage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  tool_name VARCHAR(50) NOT NULL,
+  usage_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- User analytics (daily aggregation)
+CREATE TABLE user_daily_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  prompt_count INTEGER DEFAULT 0,
+  session_count INTEGER DEFAULT 0,
+  avg_clarity_score DECIMAL(3,1),
+  avg_context_score DECIMAL(3,1),
+  avg_overall_score DECIMAL(3,1),
+  work_style_distribution JSONB,  -- {"architecture": 10, "debugging": 5, ...}
+  sentiment_distribution JSONB,   -- {"polite": 20, "frustrated": 2, ...}
+  tool_usage JSONB,               -- {"Bash": 50, "Read": 30, ...}
+  context_exhaustions INTEGER DEFAULT 0,
+  total_session_minutes INTEGER DEFAULT 0,
+  UNIQUE(user_id, date)
+);
+
+-- Team analytics (daily aggregation)
+CREATE TABLE team_daily_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  active_users INTEGER DEFAULT 0,
+  total_prompts INTEGER DEFAULT 0,
+  avg_clarity_score DECIMAL(3,1),
+  avg_overall_score DECIMAL(3,1),
+  work_style_distribution JSONB,
+  sentiment_distribution JSONB,
+  common_struggles JSONB,  -- [{category, count, example_patterns}]
+  top_patterns JSONB,      -- [{pattern, score, frequency}]
+  UNIQUE(team_id, date)
+);
+```
+
+---
+
+## Phase 2 Non-Functional Requirements (Analysis Additions)
+
+### Performance
+
+| Requirement | Target |
+|-------------|--------|
+| **NFR-P10:** Work style classification | < 50ms per prompt |
+| **NFR-P11:** Sentiment detection | < 50ms per prompt |
+| **NFR-P12:** Daily analytics aggregation | < 5 minutes for 10k prompts |
+| **NFR-P13:** Dashboard load time | < 2 seconds |
+
+### Accuracy
+
+| Requirement | Target |
+|-------------|--------|
+| **NFR-A1:** Work style classification accuracy | 85%+ |
+| **NFR-A2:** Sentiment detection accuracy | 90%+ |
+| **NFR-A3:** Context exhaustion detection | 99%+ |
+
+---
+
+## Epic 22: Configurable Analysis Engine
+
+**Priority:** P0
+**Depends on:** Epic 21
+
+### The Problem
+
+Hardcoded analysis logic means:
+- Every change requires code deployment
+- A/B testing different approaches is impossible
+- Teams can't customize scoring for their needs
+- Iterating on prompts is slow and risky
+
+### The Solution: Analysis as Configuration
+
+All analysis logic is defined as **configurable templates and rules** stored in the database, not hardcoded. Administrators can modify analysis behavior through a UI without deployments.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ANALYSIS CONFIGURATION                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐      │
+│  │   PROMPTS    │    │    RULES     │    │  TEMPLATES   │      │
+│  │  (LLM-based) │    │ (Regex/Code) │    │  (Feedback)  │      │
+│  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘      │
+│         │                   │                   │               │
+│         ▼                   ▼                   ▼               │
+│  ┌─────────────────────────────────────────────────────┐       │
+│  │              ANALYSIS CONFIGURATION DB               │       │
+│  │  • analysis_prompts (LLM prompt templates)          │       │
+│  │  • classification_rules (regex patterns)            │       │
+│  │  • feedback_templates (output messages)             │       │
+│  │  • scoring_weights (dimension weights)              │       │
+│  │  • thresholds (warning/critical levels)             │       │
+│  └─────────────────────────────────────────────────────┘       │
+│                             │                                   │
+│                             ▼                                   │
+│  ┌─────────────────────────────────────────────────────┐       │
+│  │                  ANALYSIS ENGINE                     │       │
+│  │  1. Load active config version                      │       │
+│  │  2. Apply rules (fast, local)                       │       │
+│  │  3. Call LLM with prompt template (if needed)       │       │
+│  │  4. Generate feedback from templates                │       │
+│  │  5. Return structured results                       │       │
+│  └─────────────────────────────────────────────────────┘       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Story 22.1: Analysis Prompts Configuration
+
+**As an** administrator
+**I want** to configure LLM prompts for analysis
+**So that** I can iterate on analysis quality without code changes
+
+**Acceptance Criteria:**
+- [ ] Store analysis prompts in database table
+- [ ] Support versioning (v1, v2, v3...)
+- [ ] Support A/B testing (assign % traffic to versions)
+- [ ] Admin UI to create/edit/preview prompts
+- [ ] Rollback to previous version with one click
+- [ ] Prompt variables with substitution ({{prompt_text}}, {{context}})
+
+**Database Schema:**
+```sql
+CREATE TABLE analysis_prompts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,          -- 'clarity_analysis', 'sentiment_detection'
+  version INTEGER NOT NULL,
+  prompt_template TEXT NOT NULL,        -- The actual LLM prompt with {{variables}}
+  model VARCHAR(50) DEFAULT 'gpt-4o-mini',
+  temperature DECIMAL(2,1) DEFAULT 0.3,
+  max_tokens INTEGER DEFAULT 500,
+  is_active BOOLEAN DEFAULT false,
+  traffic_percentage INTEGER DEFAULT 100,  -- For A/B testing
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID REFERENCES auth.users(id),
+  UNIQUE(name, version)
+);
+
+-- Example prompt configuration
+INSERT INTO analysis_prompts (name, version, prompt_template, is_active) VALUES
+('clarity_analysis', 1,
+'Analyze this prompt for clarity on a 1-10 scale.
+
+PROMPT:
+{{prompt_text}}
+
+Consider:
+1. Specificity of request
+2. Clear action words
+3. Unambiguous requirements
+
+Return JSON: {"score": N, "reasoning": "...", "improvements": ["..."]}',
+true);
+```
+
+**Prompt Variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `{{prompt_text}}` | The user's prompt text |
+| `{{response_text}}` | Claude's response (if available) |
+| `{{session_context}}` | Recent session history |
+| `{{user_profile}}` | User's historical patterns |
+| `{{team_context}}` | Team norms and patterns |
+
+---
+
+### Story 22.2: Classification Rules Engine
+
+**As an** administrator
+**I want** to configure classification rules
+**So that** I can add/modify categories without code changes
+
+**Acceptance Criteria:**
+- [ ] Store classification patterns in database
+- [ ] Support regex patterns with named groups
+- [ ] Support priority ordering (first match wins OR weighted)
+- [ ] Admin UI to test patterns against sample prompts
+- [ ] Import/export rules as JSON
+
+**Database Schema:**
+```sql
+CREATE TABLE classification_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category VARCHAR(50) NOT NULL,       -- 'work_style', 'sentiment', 'complexity'
+  subcategory VARCHAR(50) NOT NULL,    -- 'architecture', 'debugging', 'polite'
+  patterns JSONB NOT NULL,             -- ["regex1", "regex2"]
+  priority INTEGER DEFAULT 100,        -- Lower = higher priority
+  is_active BOOLEAN DEFAULT true,
+  description TEXT,
+  examples JSONB,                       -- Sample matching prompts
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Example rules
+INSERT INTO classification_rules (category, subcategory, patterns, priority, examples) VALUES
+('work_style', 'architecture',
+ ['\\bhow\\b.*\\bwork\\b', '\\bshould\\b.*\\bbe\\b', '\\barchitecture\\b', '\\bapproach\\b'],
+ 10,
+ '["How should we structure this?", "What approach would work best?"]'
+),
+('sentiment', 'frustrated',
+ ['\\bwhy\\b.*\\bnot\\b', '\\bstill\\b.*\\b(wrong|error)', '\\bthis cannot be\\b'],
+ 20,
+ '["Why is this not working?", "Still getting the same error"]'
+);
+```
+
+**Admin UI Features:**
+- Pattern tester: enter sample prompt, see which rules match
+- Bulk import/export
+- Rule preview with match highlighting
+- Conflict detection (overlapping patterns)
+
+---
+
+### Story 22.3: Feedback Templates
+
+**As an** administrator
+**I want** to configure feedback message templates
+**So that** I can personalize and improve feedback without code changes
+
+**Acceptance Criteria:**
+- [ ] Store feedback templates in database
+- [ ] Support conditional logic (if score < 5, show X)
+- [ ] Support personalization variables
+- [ ] Support multiple languages (future)
+- [ ] Admin UI to preview generated feedback
+- [ ] A/B test different feedback styles
+
+**Database Schema:**
+```sql
+CREATE TABLE feedback_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category VARCHAR(50) NOT NULL,       -- 'clarity', 'context_exhaustion', 'sentiment'
+  condition JSONB,                      -- {"score_range": [0, 5], "category": "debugging"}
+  template TEXT NOT NULL,               -- "Your {{metric}} is {{value}}. {{suggestion}}"
+  tone VARCHAR(20) DEFAULT 'friendly',  -- 'friendly', 'professional', 'motivational'
+  priority INTEGER DEFAULT 100,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Example templates
+INSERT INTO feedback_templates (category, condition, template, tone) VALUES
+('context_exhaustion',
+ '{"exhaustion_rate": {"gte": 0.3}}',
+ 'You hit context limits in {{exhaustion_rate}}% of long sessions. Consider breaking large tasks into smaller sub-sessions.',
+ 'friendly'
+),
+('sentiment',
+ '{"frustrated_rate": {"gte": 0.05}}',
+ 'We noticed {{frustrated_count}} frustrated expressions this week. Frustration often peaks after 60+ minutes - try shorter sessions!',
+ 'motivational'
+);
+```
+
+**Template Variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `{{user_name}}` | User's display name |
+| `{{metric_name}}` | Name of the metric |
+| `{{value}}` | Current value |
+| `{{previous_value}}` | Last period's value |
+| `{{change}}` | Difference (+/-) |
+| `{{team_avg}}` | Team average for comparison |
+| `{{suggestion}}` | Generated improvement tip |
+
+---
+
+### Story 22.4: Scoring Weights Configuration
+
+**As an** administrator
+**I want** to configure how scores are weighted
+**So that** I can adjust importance of different dimensions
+
+**Acceptance Criteria:**
+- [ ] Store scoring weights in database
+- [ ] Support per-team customization
+- [ ] Admin UI for weight adjustment with preview
+- [ ] Weights must sum to 100%
+- [ ] History of weight changes
+
+**Database Schema:**
+```sql
+CREATE TABLE scoring_weights (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scope VARCHAR(20) NOT NULL,          -- 'global', 'team'
+  scope_id UUID,                        -- NULL for global, team_id for team
+  dimension VARCHAR(50) NOT NULL,       -- 'clarity', 'context', 'specificity'
+  weight DECIMAL(5,2) NOT NULL,         -- 0.00 to 1.00
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(scope, scope_id, dimension)
+);
+
+-- Global defaults
+INSERT INTO scoring_weights (scope, scope_id, dimension, weight) VALUES
+('global', NULL, 'clarity', 0.30),
+('global', NULL, 'context', 0.25),
+('global', NULL, 'specificity', 0.20),
+('global', NULL, 'constraints', 0.15),
+('global', NULL, 'effectiveness', 0.10);
+
+-- Team override example
+INSERT INTO scoring_weights (scope, scope_id, dimension, weight) VALUES
+('team', '22222222-2222-2222-2222-222222222222', 'testing', 0.20),
+('team', '22222222-2222-2222-2222-222222222222', 'clarity', 0.25);
+```
+
+---
+
+### Story 22.5: Thresholds Configuration
+
+**As an** administrator
+**I want** to configure warning/critical thresholds
+**So that** alerts trigger at appropriate levels for our context
+
+**Acceptance Criteria:**
+- [ ] Store thresholds in database
+- [ ] Support per-team customization
+- [ ] Admin UI for threshold adjustment
+- [ ] Preview which users would trigger alerts at new thresholds
+
+**Database Schema:**
+```sql
+CREATE TABLE analysis_thresholds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scope VARCHAR(20) NOT NULL,          -- 'global', 'team'
+  scope_id UUID,
+  metric VARCHAR(50) NOT NULL,          -- 'session_duration', 'frustration_rate'
+  warning_threshold DECIMAL(10,2),
+  critical_threshold DECIMAL(10,2),
+  comparison VARCHAR(10) NOT NULL,      -- 'gt', 'lt', 'gte', 'lte'
+  is_active BOOLEAN DEFAULT true,
+  UNIQUE(scope, scope_id, metric)
+);
+
+-- Default thresholds
+INSERT INTO analysis_thresholds (scope, scope_id, metric, warning_threshold, critical_threshold, comparison) VALUES
+('global', NULL, 'session_duration_minutes', 60, 120, 'gt'),
+('global', NULL, 'context_usage_percent', 50, 80, 'gt'),
+('global', NULL, 'frustration_rate', 0.02, 0.05, 'gt'),
+('global', NULL, 'clarity_score', 5, 3, 'lt');
+```
+
+---
+
+### Story 22.6: Analysis Configuration Admin UI
+
+**As an** administrator
+**I want** a comprehensive UI to manage all analysis configuration
+**So that** I can iterate quickly without developer involvement
+
+**Acceptance Criteria:**
+- [ ] Dashboard showing all active configurations
+- [ ] Prompt editor with syntax highlighting and variable autocomplete
+- [ ] Rule tester with live feedback
+- [ ] Template previewer with sample data
+- [ ] Weight adjuster with visual representation
+- [ ] Threshold editor with impact preview
+- [ ] Version history with diff view
+- [ ] One-click rollback
+- [ ] Audit log of all changes
+
+**UI Sections:**
+
+| Section | Purpose |
+|---------|---------|
+| **Prompts** | Edit LLM prompts, test against samples |
+| **Rules** | Configure classification patterns |
+| **Templates** | Edit feedback messages |
+| **Weights** | Adjust scoring importance |
+| **Thresholds** | Set warning/critical levels |
+| **Versions** | View history, rollback |
+| **A/B Tests** | Configure and monitor experiments |
+
+---
+
+### Story 22.7: Configuration Versioning and Rollback
+
+**As an** administrator
+**I want** full version control of all configurations
+**So that** I can safely experiment and recover from mistakes
+
+**Acceptance Criteria:**
+- [ ] Every config change creates a new version
+- [ ] View diff between versions
+- [ ] One-click rollback to any previous version
+- [ ] Audit log with who changed what when
+- [ ] "Draft" mode to preview changes before activating
+
+**Database Schema:**
+```sql
+CREATE TABLE config_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_type VARCHAR(50) NOT NULL,    -- 'prompt', 'rule', 'template', 'weight', 'threshold'
+  config_id UUID NOT NULL,
+  version INTEGER NOT NULL,
+  config_data JSONB NOT NULL,           -- Full config snapshot
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID REFERENCES auth.users(id),
+  change_reason TEXT,
+  is_active BOOLEAN DEFAULT false
+);
+
+CREATE TABLE config_audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_type VARCHAR(50) NOT NULL,
+  config_id UUID NOT NULL,
+  action VARCHAR(20) NOT NULL,          -- 'create', 'update', 'activate', 'rollback'
+  old_version INTEGER,
+  new_version INTEGER,
+  user_id UUID REFERENCES auth.users(id),
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  metadata JSONB
+);
+```
+
+---
+
+### Story 22.8: A/B Testing Framework
+
+**As an** administrator
+**I want** to A/B test different analysis configurations
+**So that** I can measure which approaches work best
+
+**Acceptance Criteria:**
+- [ ] Split traffic between config versions
+- [ ] Track metrics per variant
+- [ ] Statistical significance calculator
+- [ ] Auto-promote winner (optional)
+- [ ] Dashboard showing experiment results
+
+**Database Schema:**
+```sql
+CREATE TABLE ab_experiments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  config_type VARCHAR(50) NOT NULL,
+  control_version_id UUID NOT NULL,
+  treatment_version_id UUID NOT NULL,
+  traffic_split INTEGER DEFAULT 50,     -- % to treatment
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
+  status VARCHAR(20) DEFAULT 'draft',   -- 'draft', 'running', 'completed', 'cancelled'
+  success_metric VARCHAR(50) NOT NULL,  -- 'user_satisfaction', 'improvement_rate'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE ab_experiment_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  experiment_id UUID REFERENCES ab_experiments(id),
+  variant VARCHAR(20) NOT NULL,         -- 'control', 'treatment'
+  sample_size INTEGER,
+  metric_value DECIMAL(10,4),
+  confidence_interval JSONB,            -- {"lower": 0.45, "upper": 0.55}
+  recorded_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+## Functional Requirements (Configuration Additions)
+
+- **FR121:** Administrators can configure LLM prompts without code changes
+- **FR122:** Administrators can configure classification rules without code changes
+- **FR123:** Administrators can configure feedback templates without code changes
+- **FR124:** Administrators can configure scoring weights per team
+- **FR125:** Administrators can configure thresholds per team
+- **FR126:** All configuration changes are versioned with rollback capability
+- **FR127:** Administrators can A/B test different configurations
+- **FR128:** System loads active configuration at runtime (no restart required)
+- **FR129:** Teams can customize analysis configuration within admin-set bounds

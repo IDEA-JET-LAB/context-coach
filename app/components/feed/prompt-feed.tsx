@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrompts } from '@/lib/hooks/use-prompts';
 import { useRealtimePrompts } from '@/lib/hooks/use-realtime-prompts';
@@ -29,7 +29,20 @@ export function PromptFeed() {
   // Check if user is team lead (admin)
   const isTeamLead = membersData?.currentUserRole === 'admin';
 
-  // Set up realtime subscription
+  // Create a map of user_id -> name for displaying user badges
+  const userNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (membersData?.members) {
+      for (const member of membersData.members) {
+        if (member.name) {
+          map.set(member.user_id, member.name);
+        }
+      }
+    }
+    return map;
+  }, [membersData?.members]);
+
+  // Set up realtime subscription (with polling fallback)
   useRealtimePrompts(teamId);
 
   const handlePromptClick = (promptId: string) => {
@@ -116,6 +129,7 @@ export function PromptFeed() {
             <PromptRow
               key={prompt.id}
               prompt={prompt}
+              userName={userNameMap.get(prompt.user_id)}
               onClick={() => handlePromptClick(prompt.id)}
               searchTerm={filters.search}
             />

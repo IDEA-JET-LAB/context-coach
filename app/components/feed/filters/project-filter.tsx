@@ -26,7 +26,7 @@ export function ProjectFilter({ value, onChange }: ProjectFilterProps) {
       onValueChange={(v) => onChange(v === 'all' ? undefined : v)}
     >
       <SelectTrigger
-        className="w-[180px] bg-[#1a1a1a] border-[#2a2a2a]"
+        className="w-[180px] bg-card border-border"
         aria-label="Filter by project"
       >
         <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ export function ProjectFilter({ value, onChange }: ProjectFilterProps) {
           <SelectValue placeholder="All projects" />
         </div>
       </SelectTrigger>
-      <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <SelectContent className="bg-card border-border">
         <SelectItem value="all">All projects</SelectItem>
         {projects.map((project) => (
           <SelectItem key={project.id} value={project.id}>

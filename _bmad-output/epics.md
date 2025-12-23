@@ -7,15 +7,15 @@ inputDocuments:
   - '_bmad-output/project-context.md'
 project_name: 'contextor'
 user_name: 'Edgars'
-date: '2025-12-20'
+date: '2025-12-22'
 status: 'complete'
 validation_results:
   fr_coverage: '75/75 (100%)'
   architecture_compliance: 'PASS'
   story_quality: 'PASS'
   dependency_validation: 'PASS'
-total_epics: 10
-total_stories: 63
+total_epics: 14
+total_stories: 76
 ---
 
 # Contextor - Epic Breakdown
@@ -316,9 +316,29 @@ Super admins can manage users, teams, analysis configs, and monitor system healt
 Public-facing landing page that introduces Contextor and drives signups.
 **FRs covered:** N/A (Marketing requirement, not in original FR list)
 
-### Epic 9: Production Deployment & Infrastructure
+### Epic 9: Production Deployment & Infrastructure ✅ COMPLETE
 Deploy Contextor to production with domain setup, CI/CD, npm publishing, and zero-downtime strategy.
 **INFs covered:** INF-D1 to INF-D4, INF-N1 to INF-N5, INF-C1 to INF-C5, INF-M1 to INF-M4
+
+### Epic 10: Development Environment & Database Branching
+Enable safe development workflow using Supabase branching with developer prompt mirroring for testing.
+**Priority:** Medium | **Status:** BACKLOG
+
+### Epic 11: Bug Fixes & UX Polish ✅ COMPLETE
+Fix critical bugs and UX issues discovered during production usage.
+**Priority:** P0 (Critical) | **Status:** COMPLETE (2025-12-22)
+
+### Epic 12: UX/UI Rework
+Major UX/UI overhaul to align with original HTML mockup design guidelines.
+**Priority:** P1 | **Status:** DEFERRED (needs detailed discussion)
+
+### Epic 13: Account Management
+User self-service account features: delete account, change email, change password.
+**Priority:** P2 | **Status:** NEEDS STORIES
+
+### Epic 14: Documentation Section
+In-app documentation and help section for authenticated users.
+**Priority:** P2 | **Status:** NEEDS STORIES
 
 ---
 
@@ -2601,3 +2621,908 @@ curl https://contextor.co/api/health
 - [ ] Verify prompt appears in dev branch
 - [ ] Verify analysis runs on dev branch
 - [ ] Test local dev against dev branch
+
+---
+
+## Epic 11: Bug Fixes & UX Polish ✅ COMPLETE
+
+Fix critical bugs and UX issues discovered during production usage.
+
+**Priority:** P0 (Critical)
+**Status:** COMPLETE (2025-12-22)
+**FRs Covered:** N/A (Post-MVP bug fixes and UX improvements)
+**Agent:** Claude Opus 4.5 (4 parallel subagents)
+
+**Context:** During production testing, several issues were discovered that affect core user experience. These need to be addressed before adding new features.
+
+---
+
+### Story 11.1: Fix Team Analysis Page Error
+
+**As a** user viewing team analytics,
+**I want** the Team Analysis page to load correctly,
+**So that** I can see team-level insights without errors.
+
+**Problem:** Team Analysis page shows "Failed to load team data" error.
+
+**Root Cause Investigation:**
+- Page location: `app/(dashboard)/team/page.tsx`
+- Error comes from `useTeamMembers` hook calling `/api/teams/${teamId}/members`
+- The API route at `app/api/teams/[teamId]/members/route.ts` joins `team_members` with `users` table
+- Possible issues:
+  1. RLS policy blocking access to `users` table
+  2. Missing user records in `public.users` for some `auth.users`
+  3. Team ID being undefined/null when passed
+
+**Acceptance Criteria:**
+
+**Given** I am logged in and have a team
+**When** I navigate to the Team Analysis page
+**Then** the page loads without errors
+**And** I see team member data correctly
+
+**Given** the API route
+**When** debugging the error
+**Then** check browser console and server logs for specific error
+**And** fix the root cause (RLS, missing users, or team ID)
+
+**Files to Check:**
+- `app/app/(dashboard)/team/page.tsx:27` - where hook is called
+- `app/lib/hooks/use-team-members.ts:21-30` - fetch function
+- `app/app/api/teams/[teamId]/members/route.ts` - API route
+
+**Effort:** Small (1-2 hours debugging + fix)
+
+---
+
+### Story 11.2: Debug Analytics Cards Data Display
+
+**As a** user viewing my analytics dashboard,
+**I want** all analytics cards to display data correctly,
+**So that** I can see my average score, improvement percentage, and trends.
+
+**Problem:** User reports analytics cards show no data (only Total Prompts works).
+
+**Investigation Finding:** Code IS fully implemented for all cards:
+- Average Score: `use-personal-analytics.ts:149-152`
+- Improvement %: `use-personal-analytics.ts:154-174`
+- Score Trend: Chart component working
+
+**Possible Causes (to verify):**
+1. No prompts with `analysis_status = 'complete'` in database
+2. No `prompt_analyses` records with `overall_score`
+3. User ID mismatch between prompts and current user
+4. `prompt_type = 'command'` filtering out all prompts
+
+**Acceptance Criteria:**
+
+**Given** I have captured prompts that were analyzed
+**When** I view the Analytics dashboard
+**Then** Average Score card shows my mean score
+**And** Improvement % shows change from previous period
+**And** Score Trend chart displays correctly
+
+**Given** I have no analyzed prompts
+**When** I view the Analytics dashboard
+**Then** Cards show appropriate empty states or "No data yet" messages
+
+**Files:**
+- `app/lib/hooks/use-personal-analytics.ts` - data fetching
+- `app/components/analytics/summary-stats.tsx` - card display
+- `app/components/analytics/analytics-dashboard.tsx` - main component
+
+**Debug Steps:**
+1. Query database to verify data exists
+2. Check if prompts have `analysis_status = 'complete'`
+3. Verify `prompt_analyses` records exist with `overall_score`
+4. Trace data flow from API to component
+
+**Effort:** Small-Medium (2-4 hours debugging + fix)
+
+---
+
+### Story 11.3: Improve Team Invitations Discoverability
+
+**As a** team admin,
+**I want** to easily find and share team invitations,
+**So that** I can onboard new team members quickly.
+
+**Problem:** Team invitations feature exists but is poorly discoverable:
+- Invite UI at: `/teams/[teamId]/settings` -> "Invitations" tab
+- Link only visible to admins in "Quick Actions" card on home page
+- No dedicated nav item for team settings
+
+**Current Access Path (too hidden):**
+1. Be on home page
+2. Be an admin (card hidden otherwise)
+3. See "Quick Actions" card
+4. Click "Team Settings"
+5. Navigate to "Invitations" tab
+
+**Solution:** Implement BOTH improvements:
+
+**Acceptance Criteria:**
+
+**Part A: Add Team Settings to Navigation**
+
+**Given** I am a team admin
+**When** I view the sidebar navigation
+**Then** I see a "Team Settings" or gear icon in the sidebar
+**And** clicking it takes me to `/teams/[teamId]/settings`
+
+**Given** I am a regular team member
+**When** I view the sidebar
+**Then** I see "Team Settings" but with limited access (view only, no invite)
+
+**Part B: Add URL-Copy Invite Option**
+
+**Given** I am a team admin on the Invitations tab
+**When** I view the invite options
+**Then** I see a "Copy Invite Link" button alongside email invite
+**And** clicking it generates a shareable URL
+
+**Given** I copy the invite link
+**When** I share it with a colleague
+**Then** they can click the link to join the team
+**And** if not registered, they're prompted to sign up first
+**And** link has configurable expiry (default 7 days)
+
+**Given** the invite link database
+**When** URL invites are stored
+**Then** `team_invitations` table has `invite_type` column ('email' | 'link')
+**And** `invite_token` is used for URL-based joins
+**And** `max_uses` field allows multi-use links (optional)
+
+**Files:**
+- `app/app/(dashboard)/home/page.tsx:130-145` - Quick Actions card
+- `app/app/(dashboard)/teams/[teamId]/settings/page.tsx` - Settings page
+- `app/components/team-settings/invite-member-form.tsx` - Invite form
+- `app/components/dashboard/sidebar.tsx` - Navigation sidebar
+
+**Effort:** Medium (4-6 hours)
+
+---
+
+### Story 11.4: Add Google Analytics to Marketing Pages
+
+**As a** product owner,
+**I want** Google Analytics tracking on public marketing pages,
+**So that** I can understand visitor behavior and marketing effectiveness.
+
+**Requirement:** Add Google Tag Manager / Analytics to public marketing pages.
+
+**Tracking ID:** `G-PPFJMVVMGD`
+
+**Acceptance Criteria:**
+
+**Given** the public landing page at `/`
+**When** a visitor loads the page in production
+**Then** Google Analytics script is loaded
+**And** pageview is tracked
+
+**Given** local development environment
+**When** running `npm run dev`
+**Then** GA script is NOT loaded (prevent test data)
+
+**Given** the implementation
+**When** reviewing code
+**Then** tracking ID is stored in `NEXT_PUBLIC_GA_MEASUREMENT_ID` env var
+**And** `next/script` is used with `strategy="afterInteractive"`
+**And** script is added to public layout or root layout with environment check
+
+**Implementation:**
+
+```typescript
+// app/components/analytics/google-analytics.tsx
+'use client';
+
+import Script from 'next/script';
+
+export function GoogleAnalytics() {
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
+  if (!gaId || process.env.NODE_ENV !== 'production') {
+    return null;
+  }
+
+  return (
+    <>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${gaId}');
+        `}
+      </Script>
+    </>
+  );
+}
+```
+
+**Files:**
+- `app/app/layout.tsx` or `app/app/(public)/layout.tsx`
+- New: `app/components/analytics/google-analytics.tsx`
+
+**Environment Variable:**
+- Add `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-PPFJMVVMGD` to production env
+
+**Effort:** Tiny (30 minutes)
+
+---
+
+## Epic 12: UX/UI Rework
+
+**Status:** DEFERRED (needs detailed planning discussion)
+**Priority:** P1
+
+Major UX/UI overhaul to align with original HTML mockup design guidelines. During development, the HTML mockup design was largely ignored.
+
+**Scope:** To be determined in dedicated planning session.
+
+**Reference:** Check for HTML mockups in project (likely in `_bmad-output/` or design folder).
+
+---
+
+## Epic 13: Account Management
+
+User self-service account management features.
+
+**Priority:** P2
+**Status:** Not Started (Created 2025-12-22)
+**FRs Covered:** Extensions to FR4 (User profile management)
+
+**Current State:**
+- Display Name Edit: ✅ IMPLEMENTED (works in `/settings`)
+- Avatar Upload: ✅ IMPLEMENTED (works in `/settings`)
+- Delete Account: ❌ NOT IMPLEMENTED
+- Email Change: ❌ NOT IMPLEMENTED
+- Password Change: ❌ NOT IMPLEMENTED (only via reset link)
+
+---
+
+### Story 13.1: Account Deletion (Self-Service)
+
+**As a** user,
+**I want** to delete my account,
+**So that** I can remove my data from the platform if I no longer use it.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Settings page
+**When** I scroll to the "Danger Zone" section
+**Then** I see a "Delete Account" button with warning text
+
+**Given** I click "Delete Account"
+**When** the confirmation modal appears
+**Then** I must type my email to confirm
+**And** I see a warning about data deletion being permanent
+
+**Given** I confirm account deletion
+**When** the deletion processes
+**Then** my `auth.users` entry is deleted
+**And** my `public.users` entry is deleted
+**And** my `team_members` entries are deleted
+**And** my prompts are either anonymized or deleted (configurable)
+**And** I am logged out and redirected to landing page
+
+**Given** I am the last admin of a team
+**When** I try to delete my account
+**Then** I see "You must transfer admin role or delete the team first"
+**And** deletion is blocked until resolved
+
+**Files:**
+- `app/app/(dashboard)/settings/page.tsx`
+- New: `app/lib/api/account.ts` - account deletion server action
+- `app/app/api/account/delete/route.ts` - API route (if needed)
+
+**Database Considerations:**
+- Use Supabase Auth `admin.deleteUser()` via service role
+- Cascade delete or anonymize related records
+
+**Effort:** Medium (3-4 hours)
+
+---
+
+### Story 13.2: Email Change
+
+**As a** user,
+**I want** to change my email address,
+**So that** I can update my account if my email changes.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Settings page
+**When** I view my profile section
+**Then** I see my current email with an "Edit" button
+
+**Given** I click edit on my email
+**When** the email change form appears
+**Then** I enter my new email address
+**And** I must enter my current password to confirm
+
+**Given** I submit a valid new email
+**When** Supabase processes the request
+**Then** a confirmation email is sent to the new address
+**And** I see "Check your new email to confirm the change"
+
+**Given** I click the confirmation link
+**When** the email is verified
+**Then** my email is updated in Supabase Auth
+**And** my `users.email` is synced (if stored separately)
+**And** I can log in with my new email
+
+**Given** the new email is already in use
+**When** I try to submit
+**Then** I see "This email is already associated with another account"
+
+**Files:**
+- `app/app/(dashboard)/settings/page.tsx`
+- `app/components/settings/profile-form.tsx`
+- `app/lib/validations/profile.ts`
+
+**Implementation:**
+- Use Supabase `auth.updateUser({ email: newEmail })`
+- Requires email confirmation by default
+
+**Effort:** Small-Medium (2-3 hours)
+
+---
+
+### Story 13.3: Password Change (In-App)
+
+**As a** user,
+**I want** to change my password from settings,
+**So that** I don't have to go through the reset flow to update my password.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Settings page
+**When** I view the Security section
+**Then** I see a "Change Password" option
+
+**Given** I click "Change Password"
+**When** the password change form appears
+**Then** I enter my current password
+**And** I enter my new password (twice for confirmation)
+
+**Given** I submit with correct current password
+**When** the new password meets requirements (12+ chars, mixed case, number)
+**Then** my password is updated
+**And** I see "Password updated successfully"
+**And** I remain logged in
+
+**Given** I enter incorrect current password
+**When** I submit the form
+**Then** I see "Current password is incorrect"
+**And** the password is not changed
+
+**Given** my new password doesn't meet requirements
+**When** I submit the form
+**Then** I see specific validation errors
+**And** the password is not changed
+
+**Given** I registered via Google OAuth only
+**When** I view the Security section
+**Then** I see "Set Password" instead of "Change Password"
+**And** I can set an initial password to enable email login
+
+**Files:**
+- `app/app/(dashboard)/settings/page.tsx`
+- New: `app/components/settings/password-change-form.tsx`
+- `app/lib/validations/password.ts` (update requirements)
+
+**Implementation:**
+- Use Supabase `auth.updateUser({ password: newPassword })`
+- For OAuth-only users, this sets their first password
+
+**Effort:** Small-Medium (2-3 hours)
+
+---
+
+## Epic 14: Documentation Section
+
+In-app documentation and help section for authenticated users.
+
+**Priority:** P2
+**Status:** Not Started (Created 2025-12-22)
+**FRs Covered:** N/A (Post-MVP enhancement)
+
+---
+
+### Story 14.1: Documentation Page Structure
+
+**As a** user,
+**I want** an in-app documentation section,
+**So that** I can learn how to use Contextor without leaving the app.
+
+**Acceptance Criteria:**
+
+**Given** I am logged in
+**When** I click the Help/Docs icon in the sidebar
+**Then** I navigate to `/docs`
+**And** I see a documentation landing page
+
+**Given** the docs landing page
+**When** I view it
+**Then** I see a table of contents with sections:
+  - Getting Started
+  - CLI Installation
+  - Understanding Scores
+  - Team Management
+  - FAQ
+
+**Given** I click a section
+**When** the content loads
+**Then** I see markdown-rendered documentation
+**And** navigation shows my current position
+
+**Files:**
+- New: `app/app/(dashboard)/docs/page.tsx`
+- New: `app/app/(dashboard)/docs/[slug]/page.tsx`
+- New: `app/components/docs/docs-sidebar.tsx`
+- New: `app/content/docs/` (MDX files or content)
+
+**Implementation Approach:**
+- Use MDX or simple React components for content
+- Start minimal with basic text, no screenshots
+- Use existing shadcn/ui components for styling
+
+**Effort:** Medium (4-6 hours for structure + initial content)
+
+---
+
+### Story 14.2: Core Documentation Content
+
+**As a** new user,
+**I want** documentation covering essential features,
+**So that** I can get started quickly and understand the platform.
+
+**Acceptance Criteria:**
+
+**Given** the Getting Started section
+**When** I read it
+**Then** I understand the basic flow: signup → create team → create project → install CLI → capture prompts
+
+**Given** the CLI Installation section
+**When** I read it
+**Then** I see step-by-step instructions with code snippets
+**And** I understand the install token flow
+**And** I see troubleshooting tips
+
+**Given** the Understanding Scores section
+**When** I read it
+**Then** I understand the 5 dimensions (Clarity, Context, Specificity, Goal, Constraints)
+**And** I understand the scoring scale (1-10)
+**And** I see examples of good vs. improvable prompts
+
+**Given** the Team Management section
+**When** I read it
+**Then** I understand roles (admin vs. member)
+**And** I understand how to invite members
+**And** I understand team switching
+
+**Content Files:**
+- `docs/getting-started.mdx`
+- `docs/cli-installation.mdx`
+- `docs/understanding-scores.mdx`
+- `docs/team-management.mdx`
+- `docs/faq.mdx`
+
+**Effort:** Medium (3-4 hours for writing content)
+
+---
+
+### Story 14.3: Documentation Search (Future)
+
+**As a** user,
+**I want** to search the documentation,
+**So that** I can quickly find answers to specific questions.
+
+**Status:** Future enhancement (not MVP)
+
+**Notes:**
+- Can use simple client-side search (Fuse.js)
+- Or integrate with Algolia DocSearch
+- Low priority until docs content grows
+
+---
+
+### Implementation Checklist for Epic 11-14
+
+**Epic 11 (P0 - Do First):**
+- [ ] 11.1: Debug and fix Team Analysis page
+- [ ] 11.2: Debug and fix Analytics cards data
+- [ ] 11.3: Add Team Settings to sidebar + URL invite links
+- [ ] 11.4: Add Google Analytics to marketing pages
+
+**Epic 13 (P2):**
+- [ ] 13.1: Account deletion with confirmation
+- [ ] 13.2: Email change with verification
+- [ ] 13.3: In-app password change
+
+**Epic 14 (P2):**
+- [ ] 14.1: Documentation page structure and navigation
+- [ ] 14.2: Write core documentation content
+
+**Epic 12 (Deferred):**
+- [ ] Schedule detailed UX/UI planning session with Edgars
+
+---
+
+# Phase 2 Epics (Advanced Features)
+
+The following epics extend Contextor with advanced capabilities including response capture, session intelligence, real-time coaching, and a VS Code extension.
+
+---
+
+## Epic 14.5: Privacy & Security Enhancements
+
+**Goal:** Provide robust privacy controls and local data protection before prompts leave the user's machine.
+
+**Business Value:** Enterprise customers require confidence that sensitive data (API keys, credentials, personal info) never leaves their environment unredacted. This epic establishes trust and enables adoption in security-conscious organizations.
+
+**FRs Covered:** Enhanced security beyond MVP requirements
+
+**Stories:**
+- **14.5-1:** Local Redaction Engine - Enhanced pattern matching for secrets, credentials, file paths
+- **14.5-2:** Privacy Consent Dialog - First-run consent flow explaining data handling
+- **14.5-3:** User Privacy Controls - Settings page for redaction preferences
+- **14.5-4:** Column-Level Encryption - Encrypt sensitive fields in database
+- **14.5-5:** Data Minimization Pipeline - Automatic data retention and cleanup
+- **14.5-6:** Privacy Preferences Database - Store user preferences and consent records
+
+---
+
+## Epic 15: Response Capture & Context Extraction
+
+**Goal:** Capture Claude's responses alongside prompts to enable full conversation analysis.
+
+**Business Value:** Understanding prompt quality requires seeing the responses. This enables "before/after" coaching, response quality metrics, and understanding which prompts lead to successful outcomes.
+
+**FRs Covered:** Response context for enhanced analytics
+
+**Stories:**
+- **15-1:** Transcript File Discovery - Locate Claude Code JSONL transcript files
+- **15-2:** JSONL Parser Implementation - Parse Claude Code transcript format
+- **15-3:** User Message Extraction - Extract user prompts from transcripts
+- **15-4:** Assistant Response Extraction - Extract Claude's responses
+- **15-5:** Prompt-Response Pairing - Match prompts with their corresponding responses
+- **15-6:** Response Storage Schema - Database schema for storing responses
+- **15-7:** Tool Execution Capture - Capture tool usage patterns from transcripts
+
+---
+
+## Epic 16: Session Management
+
+**Goal:** Group prompts into sessions for conversation-level analytics.
+
+**Business Value:** Developers work in sessions, not individual prompts. Session tracking enables workflow analysis, context exhaustion detection, and understanding how developers interact with Claude over time.
+
+**FRs Covered:** Session-level analytics and tracking
+
+**Stories:**
+- **16-1:** Sessions Database Schema - Tables and relationships for session tracking
+- **16-2:** Session Detection Logic - Identify session boundaries from transcripts
+- **16-3:** Session Metadata Capture - Git branch, Claude version, working directory
+- **16-4:** Conversation Threading - Link related prompts within sessions
+- **16-5:** Multi-Terminal Awareness - Handle multiple simultaneous Claude instances
+- **16-6:** Session Duration Calculation - Track active time vs wall clock time
+
+---
+
+## Epic 17: Transcript Import Experience
+
+**Goal:** Allow users to import historical Claude Code transcripts into Contextor.
+
+**Business Value:** Users have existing conversation history. Import allows retroactive analysis and immediate value from day one, rather than starting from zero.
+
+**FRs Covered:** Historical data import and analysis
+
+**Stories:**
+- **17-1:** Transcript Discovery Service - Find all Claude Code transcripts
+- **17-2:** Import Preview UI - Show what will be imported with estimates
+- **17-3:** Batch Import Processing - Process large transcript sets efficiently
+- **17-4:** Deduplication Logic - Avoid importing already-captured prompts
+- **17-5:** Import Progress Tracking - Show import status in real-time
+- **17-6:** Import History & Rollback - Track imports and allow reverting
+
+---
+
+## Epic 18: Session Recovery
+
+**Goal:** Detect interrupted Claude Code sessions and help users resume their work.
+
+**Business Value:** Sessions crash, contexts get lost. Offering "pick up where you left off" functionality reduces friction and demonstrates intelligent awareness of the developer's workflow.
+
+**FRs Covered:** Session continuity and recovery assistance
+
+**Stories:**
+- **18-1:** Interrupted Session Detection - Identify crashed/abandoned sessions
+- **18-2:** Session State Snapshot - Capture last known state
+- **18-3:** Recovery Prompt Generator - Create prompts to resume context
+- **18-4:** Recovery Notification UI - Alert users to recoverable sessions
+- **18-5:** One-Click Resume - Quick action to resume interrupted work
+
+---
+
+## Epic 19: VS Code Extension
+
+**Goal:** Bring Contextor analytics directly into the developer's IDE.
+
+**Business Value:** Developers live in VS Code. An extension provides immediate, in-context feedback without leaving their workflow. This is the primary interface for real-time coaching features.
+
+**FRs Covered:** IDE integration for developer experience
+
+**Stories:**
+- **19-1:** Extension Scaffold - TypeScript VS Code extension project setup
+- **19-2:** Authentication Flow - Securely connect extension to Contextor account
+- **19-3:** Sidebar Panel - Dedicated view for Contextor analytics
+- **19-4:** Real-time Analytics Display - Live session and prompt metrics
+- **19-5:** Quick Coaching Tips - Contextual suggestions in sidebar
+- **19-6:** Extension Settings - Configure coaching preferences
+- **19-7:** Marketplace Publishing - Publish to VS Code marketplace
+
+---
+
+## Epic 20: Real-time Coaching
+
+**Goal:** Provide instant feedback on prompts before they're sent to Claude.
+
+**Business Value:** The most impactful coaching happens in the moment. Catching a vague prompt before it wastes tokens is more valuable than analyzing it after the fact.
+
+**FRs Covered:** Proactive prompt improvement
+
+**Stories:**
+- **20-1:** Blocking Hook Implementation - Intercept prompts before submission
+- **20-2:** Fast Heuristics Engine - Sub-100ms analysis for common issues
+- **20-3:** Improvement Suggestions Display - Show suggestions in VS Code
+- **20-4:** User Override Flow - Allow proceeding despite suggestions
+- **20-5:** Coaching Preferences - Configure sensitivity and categories
+
+---
+
+## Epic 21: Advanced Analytics
+
+**Goal:** Provide deep insights into developer-AI interaction patterns.
+
+**Business Value:** Beyond basic scoring, teams want to understand work styles, sentiment, learning progression, and workflow efficiency. This enables data-driven coaching and team improvement.
+
+**FRs Covered:** Advanced metrics and intelligence
+
+**Stories:**
+- **21-1:** Context Window Management - Detect and warn about context exhaustion
+- **21-2:** Work Style Categorization - Classify interaction patterns
+- **21-3:** Sentiment Analysis - Detect frustration, confusion, satisfaction
+- **21-4:** Prompt Complexity Metrics - Measure prompt sophistication
+- **21-5:** Interaction Timing Analysis - Analyze response time patterns
+- **21-6:** Tool Usage Profiling - Track which tools developers leverage
+- **21-7:** Session Health Score - Overall session quality metric
+- **21-8:** Technical Depth Profile - Measure technical sophistication
+- **21-9:** Learning Progression Tracking - Track improvement over time
+- **21-10:** Workflow Efficiency Metrics - Measure productivity patterns
+- **21-11:** Interactive Insights Dashboard - Visualize advanced metrics
+- **21-12:** Team Intelligence Analytics - Team-level pattern analysis
+
+---
+
+## Epic 22: Analysis Configuration & A/B Testing
+
+**Goal:** Give admins control over analysis prompts, scoring weights, and enable experimentation.
+
+**Business Value:** Different teams have different needs. Configurable analysis and A/B testing allows optimizing the coaching engine for specific contexts and validating improvements with data.
+
+**FRs Covered:** Admin configurability and experimentation
+
+**Stories:**
+- **22-1:** Analysis Prompt Templates - Create/edit LLM prompt templates
+- **22-2:** Classification Rule Editor - Define prompt categorization rules
+- **22-3:** Scoring Weight Configuration - Adjust dimension weights
+- **22-4:** Team-Level Weight Overrides - Per-team scoring customization
+- **22-5:** Configuration Version Control - Track config changes over time
+- **22-6:** A/B Experiment Creation - Define experiments with variants
+- **22-7:** A/B Traffic Splitting - Route users to experiment variants
+- **22-8:** Statistical Significance Calculation - Determine experiment winners
+- **22-9:** Experiment Results Dashboard - Visualize experiment outcomes
+- **22-10:** Configuration Audit Trail - Full audit log for all changes
+
+---
+
+### Phase 2 Implementation Checklist
+
+**Epic 14.5 (P1 - Security First):**
+- [ ] 14.5-1: Local Redaction Engine
+- [ ] 14.5-2: Privacy Consent Dialog
+- [ ] 14.5-3: User Privacy Controls
+- [ ] 14.5-4: Column-Level Encryption
+- [ ] 14.5-5: Data Minimization Pipeline
+- [ ] 14.5-6: Privacy Preferences Database
+
+**Epic 15 (P1 - Response Capture):**
+- [ ] 15-1: Transcript File Discovery
+- [ ] 15-2: JSONL Parser Implementation
+- [ ] 15-3: User Message Extraction
+- [ ] 15-4: Assistant Response Extraction
+- [ ] 15-5: Prompt-Response Pairing
+- [ ] 15-6: Response Storage Schema
+- [ ] 15-7: Tool Execution Capture
+
+**Epic 16 (P1 - Sessions):**
+- [ ] 16-1: Sessions Database Schema
+- [ ] 16-2: Session Detection Logic
+- [ ] 16-3: Session Metadata Capture
+- [ ] 16-4: Conversation Threading
+- [ ] 16-5: Multi-Terminal Awareness
+- [ ] 16-6: Session Duration Calculation
+
+**Epic 17 (P2 - Import):**
+- [ ] 17-1: Transcript Discovery Service
+- [ ] 17-2: Import Preview UI
+- [ ] 17-3: Batch Import Processing
+- [ ] 17-4: Deduplication Logic
+- [ ] 17-5: Import Progress Tracking
+- [ ] 17-6: Import History & Rollback
+
+**Epic 18 (P2 - Recovery):**
+- [ ] 18-1: Interrupted Session Detection
+- [ ] 18-2: Session State Snapshot
+- [ ] 18-3: Recovery Prompt Generator
+- [ ] 18-4: Recovery Notification UI
+- [ ] 18-5: One-Click Resume
+
+**Epic 19 (P1 - VS Code Extension):**
+- [ ] 19-1: Extension Scaffold
+- [ ] 19-2: Authentication Flow
+- [ ] 19-3: Sidebar Panel
+- [ ] 19-4: Real-time Analytics Display
+- [ ] 19-5: Quick Coaching Tips
+- [ ] 19-6: Extension Settings
+- [ ] 19-7: Marketplace Publishing
+
+**Epic 20 (P1 - Real-time Coaching):**
+- [ ] 20-1: Blocking Hook Implementation
+- [ ] 20-2: Fast Heuristics Engine
+- [ ] 20-3: Improvement Suggestions Display
+- [ ] 20-4: User Override Flow
+- [ ] 20-5: Coaching Preferences
+
+**Epic 21 (P2 - Advanced Analytics):**
+- [ ] 21-1: Context Window Management
+- [ ] 21-2: Work Style Categorization
+- [ ] 21-3: Sentiment Analysis
+- [ ] 21-4: Prompt Complexity Metrics
+- [ ] 21-5: Interaction Timing Analysis
+- [ ] 21-6: Tool Usage Profiling
+- [ ] 21-7: Session Health Score
+- [ ] 21-8: Technical Depth Profile
+- [ ] 21-9: Learning Progression Tracking
+- [ ] 21-10: Workflow Efficiency Metrics
+- [ ] 21-11: Interactive Insights Dashboard
+- [ ] 21-12: Team Intelligence Analytics
+
+**Epic 22 (P3 - Config & A/B Testing):**
+- [ ] 22-1: Analysis Prompt Templates
+- [ ] 22-2: Classification Rule Editor
+- [ ] 22-3: Scoring Weight Configuration
+- [ ] 22-4: Team-Level Weight Overrides
+- [ ] 22-5: Configuration Version Control
+- [ ] 22-6: A/B Experiment Creation
+- [ ] 22-7: A/B Traffic Splitting
+- [ ] 22-8: Statistical Significance Calculation
+- [ ] 22-9: Experiment Results Dashboard
+- [ ] 22-10: Configuration Audit Trail
+
+---
+
+## Epic D: Phase 2 Design Foundation
+
+**Goal:** Complete all UX/UI design work BEFORE implementation begins for Phase 2 features.
+
+**Business Value:** Design-first development ensures consistent, polished user experience across all new features. By creating styled React components with mock data first, implementation becomes "filling in the logic" rather than "inventing UI on the fly." This prevents the UX debt accumulated in Phase 1.
+
+**Scope:**
+- Audit and document existing design system
+- Polish and refactor existing Phase 1 UI
+- Create styled component library for Phase 2 features
+- Design all new screens for VS Code Extension, Advanced Analytics, Import/Recovery, and Admin Config
+
+**Execution Model:** This epic MUST complete before any Phase 2 implementation epics begin. The deliverables are working React components with mock/placeholder data, not Figma files.
+
+**Stories:**
+
+- **D-1:** Design System Audit & Documentation
+  - Audit existing Tailwind config, color tokens, typography
+  - Document component inventory
+  - Identify design debt and inconsistencies
+  - Create `_bmad-output/design/design-system.md`
+
+- **D-2:** Existing UI Refactoring & Polish
+  - Apply design tokens consistently across Phase 1 UI
+  - Polish dashboard, forms, cards, tables
+  - Fix accessibility issues (contrast, focus states, ARIA)
+  - Ensure responsive behavior on tablet/mobile
+
+- **D-3:** Component Library Expansion
+  - Create chart components (line, bar, gauge, sparkline, heatmap)
+  - Create advanced form components (rule editor, weight slider, JSON editor)
+  - Create import/recovery components (file tree, progress bar, recovery banner)
+  - Create VS Code webview components
+  - Set up component documentation (Storybook or /design route)
+
+- **D-4:** VS Code Extension UI Design
+  - Design sidebar panel layout with tabs
+  - Design analytics panel (session health, recent prompts)
+  - Design coaching panel (suggestions, dismiss/apply)
+  - Design settings panel (auth, preferences)
+  - Support dark and light VS Code themes
+
+- **D-5:** Import & Recovery UI Design
+  - Design transcript browser and file tree
+  - Design import preview and progress
+  - Design recovery banner and session snapshot
+  - Design import history with rollback
+
+- **D-6:** Advanced Analytics Dashboard Design
+  - Design analytics page layout with filters
+  - Design all 12 metric visualizations (Epic 21)
+  - Design personal and team views
+  - Design interactive drill-down patterns
+
+- **D-7:** Admin Configuration & A/B Testing UI Design
+  - Design prompt template editor with syntax highlighting
+  - Design weight configuration sliders
+  - Design A/B experiment creator and results dashboard
+  - Design audit trail and version history
+
+---
+
+### Epic D Implementation Checklist
+
+**Epic D (P0 - Design First):**
+- [ ] D-1: Design System Audit & Documentation
+- [ ] D-2: Existing UI Refactoring & Polish
+- [ ] D-3: Component Library Expansion
+- [ ] D-4: VS Code Extension UI Design
+- [ ] D-5: Import & Recovery UI Design
+- [ ] D-6: Advanced Analytics Dashboard Design
+- [ ] D-7: Admin Configuration & A/B Testing UI Design
+
+---
+
+### Phase 2 Execution Order
+
+**Important:** Epic D must complete before implementation epics begin.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    DESIGN PHASE (Epic D)                        │
+│  D-1 → D-2 → D-3 ─┬─→ D-4 (VS Code)                            │
+│                   ├─→ D-5 (Import/Recovery)                     │
+│                   ├─→ D-6 (Analytics)                           │
+│                   └─→ D-7 (Admin Config)                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 IMPLEMENTATION PHASE                             │
+│  Backend (14.5, 15, 16) can start in parallel with late design  │
+│  UI epics (17, 18, 19, 20, 21, 22) wait for relevant D-x story  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Parallel Work During Design Phase:**
+- Epic 14.5 (Privacy/Security) - backend-only, can proceed
+- Epic 15 (Response Capture) - backend-only, can proceed
+- Epic 16 (Session Management) - backend-only, can proceed
+
+**Blocked Until Design Complete:**
+- Epic 17 (Import) - blocked by D-5
+- Epic 18 (Recovery) - blocked by D-5
+- Epic 19 (VS Code Extension) - blocked by D-4
+- Epic 20 (Real-time Coaching) - blocked by D-4
+- Epic 21 (Advanced Analytics) - blocked by D-6
+- Epic 22 (Config & A/B) - blocked by D-7
