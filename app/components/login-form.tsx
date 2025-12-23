@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
@@ -43,7 +43,11 @@ export function LoginForm({
   ...props
 }: LoginFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Get redirect URL from search params (used for invitation flows)
+  const redirectTo = searchParams.get("redirect") || undefined;
   const passwordTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoginAttemptRef = useRef<number>(0);
   const loginAttemptsRef = useRef<number>(0);
@@ -124,8 +128,8 @@ export function LoginForm({
         return;
       }
 
-      // Redirect to dashboard on success
-      router.push("/prompts");
+      // Redirect to specified URL or dashboard on success
+      router.push(redirectTo || "/prompts");
       router.refresh();
     } catch (err) {
       // Network error detection
@@ -276,7 +280,7 @@ export function LoginForm({
                 </div>
               </div>
 
-              <GoogleAuthButton />
+              <GoogleAuthButton redirectTo={redirectTo} />
             </form>
           </Form>
         </CardContent>

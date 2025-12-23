@@ -5,17 +5,28 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-export function GoogleAuthButton() {
+interface GoogleAuthButtonProps {
+  /** URL to redirect to after successful authentication */
+  redirectTo?: string;
+}
+
+export function GoogleAuthButton({ redirectTo }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     const supabase = createClient();
 
+    // Build callback URL with optional redirect path
+    let callbackUrl = `${window.location.origin}/callback`;
+    if (redirectTo) {
+      callbackUrl += `?next=${encodeURIComponent(redirectTo)}`;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/callback`,
+        redirectTo: callbackUrl,
         queryParams: {
           access_type: "offline",
           prompt: "consent",

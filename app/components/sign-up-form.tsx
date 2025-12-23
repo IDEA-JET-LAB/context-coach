@@ -47,6 +47,9 @@ export function SignUpForm({
   const token = inviteToken || searchParams.get("invite_token") || undefined;
   const emailFromParams = prefillEmail || searchParams.get("email") || "";
 
+  // Get redirect URL from search params (used for invitation flows)
+  const redirectTo = searchParams.get("redirect") || undefined;
+
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -71,17 +74,24 @@ export function SignUpForm({
   async function onSubmit(data: SignupInput) {
     const supabase = createClient();
 
-    // Build redirect URL with invite token if present
-    let redirectTo = `${window.location.origin}/callback`;
+    // Build email redirect URL with invite token and/or redirect path if present
+    let emailRedirectUrl = `${window.location.origin}/callback`;
+    const emailParams = new URLSearchParams();
     if (token) {
-      redirectTo += `?invite_token=${token}`;
+      emailParams.set("invite_token", token);
+    }
+    if (redirectTo) {
+      emailParams.set("next", redirectTo);
+    }
+    if (emailParams.toString()) {
+      emailRedirectUrl += `?${emailParams.toString()}`;
     }
 
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: redirectTo,
+        emailRedirectTo: emailRedirectUrl,
       },
     });
 
@@ -102,8 +112,8 @@ export function SignUpForm({
     // Check if email confirmations are disabled (user is auto-confirmed)
     // This happens when enable_confirmations = false in Supabase config
     if (signUpData?.user?.email_confirmed_at) {
-      // User is already confirmed, redirect to home (handles team creation for new users)
-      router.push("/home");
+      // User is already confirmed, redirect to specified URL or home
+      router.push(redirectTo || "/home");
       return;
     }
 
@@ -111,6 +121,9 @@ export function SignUpForm({
     let verifyUrl = "/verify-email?email=" + encodeURIComponent(data.email);
     if (token) {
       verifyUrl += "&invite_token=" + encodeURIComponent(token);
+    }
+    if (redirectTo) {
+      verifyUrl += "&redirect=" + encodeURIComponent(redirectTo);
     }
     router.push(verifyUrl);
   }
@@ -224,7 +237,7 @@ export function SignUpForm({
                 </div>
               </div>
 
-              <GoogleAuthButton />
+              <GoogleAuthButton redirectTo={redirectTo} />
             </form>
           </Form>
         </CardContent>
