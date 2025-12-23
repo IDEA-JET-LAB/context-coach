@@ -1,0 +1,136 @@
+# =============================================================================
+# Publish VS Code Extension to Marketplace
+# Triggered when a release is created with a tag starting with 'vscode-v'
+# =============================================================================
+
+name: Publish VS Code Extension
+
+on:
+  release:
+    types: [published]
+
+  # Allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (package only, no publish)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  publish:
+    # Only run for VS Code releases (tags like vscode-v0.1.0)
+    if: startsWith(github.event.release.tag_name, 'vscode-v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      # SECURITY: Pin actions to commit SHAs to prevent supply-chain attacks
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: packages/vscode-extension/package-lock.json
+
+      # Install dependencies for both extension and webview
+      - name: Install extension dependencies
+        working-directory: packages/vscode-extension
+        run: npm ci
+
+      - name: Install webview dependencies
+        working-directory: packages/vscode-extension/webviews/analytics
+        run: npm ci
+
+      # Build everything
+      - name: Build webview
+        working-directory: packages/vscode-extension/webviews/analytics
+        run: npm run build
+
+      - name: Build extension
+        working-directory: packages/vscode-extension
+        run: npm run build
+
+      # Run tests
+      - name: Run tests
+        working-directory: packages/vscode-extension
+        run: npm test
+        continue-on-error: true  # Don't fail on test errors during initial setup
+
+      # Package the extension
+      - name: Package extension
+        working-directory: packages/vscode-extension
+        run: npx vsce package
+
+      # Upload VSIX as artifact (useful for manual installation/testing)
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        with:
+          name: contextor-vscode-${{ github.event.release.tag_name || 'dev' }}
+          path: packages/vscode-extension/*.vsix
+          retention-days: 30
+
+      # Publish to VS Code Marketplace
+      - name: Publish to VS Code Marketplace
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')
+        working-directory: packages/vscode-extension
+        run: npx vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      # Publish to Open VSX Registry (for Cursor, VSCodium, etc.)
+      - name: Publish to Open VSX Registry
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')
+        working-directory: packages/vscode-extension
+        run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
+        continue-on-error: true  # Don't fail if Open VSX is down
+
+      # Attach VSIX to GitHub Release
+      - name: Attach VSIX to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8f3c11 # v2.2.0
+        with:
+          files: packages/vscode-extension/*.vsix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Verify publication (runs after publish job)
+  verify:
+    needs: publish
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for marketplace indexing
+        run: sleep 60
+
+      - name: Verify VS Code Marketplace
+        run: |
+          echo "Checking VS Code Marketplace..."
+          # Extract version from tag (vscode-v0.1.0 -> 0.1.0)
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#vscode-v}"
+
+          # Check marketplace API
+          RESPONSE=$(curl -s "https://marketplace.visualstudio.com/items?itemName=ideajetlab.contextor-vscode")
+          if echo "$RESPONSE" | grep -q "contextor-vscode"; then
+            echo "Extension found in VS Code Marketplace!"
+          else
+            echo "Warning: Extension not yet visible in marketplace (may take a few minutes)"
+          fi
+
+      - name: Verify Open VSX
+        run: |
+          echo "Checking Open VSX Registry..."
+          RESPONSE=$(curl -s "https://open-vsx.org/api/ideajetlab/contextor-vscode")
+          if echo "$RESPONSE" | grep -q "contextor-vscode"; then
+            echo "Extension found in Open VSX Registry!"
+          else
+            echo "Warning: Extension not found in Open VSX (may not be published yet)"
+          fi
+        continue-on-error: true

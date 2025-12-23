@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { SuggestionCard, SuggestionType, SparklesIcon, ChevronDownIcon, HistoryIcon } from '../components';
+import {
+  SuggestionCard,
+  SuggestionType,
+  SparklesIcon,
+  ChevronDownIcon,
+  HistoryIcon,
+  CoachingSection,
+  CoachingTip,
+  WeakDimension,
+} from '../components';
 
 export interface Suggestion {
   id: string;
@@ -10,13 +19,20 @@ export interface Suggestion {
 }
 
 export interface CoachingPanelProps {
+  // Legacy suggestion format
   suggestions?: Suggestion[];
   dismissedSuggestions?: Suggestion[];
+  // New coaching tips format (Story 19-5)
+  coachingTips?: CoachingTip[];
+  weakDimensions?: WeakDimension[];
+  dismissedTips?: CoachingTip[];
+  // Common props
   isLoading?: boolean;
   isMinimized?: boolean;
   onApply?: (suggestionId: string) => void;
   onDismiss?: (suggestionId: string) => void;
   onToggleMinimize?: () => void;
+  onRefresh?: () => void;
 }
 
 // Loading skeleton
@@ -139,18 +155,46 @@ const MinimizedBadge: React.FC<{ count: number; onClick?: () => void }> = ({ cou
 export const CoachingPanel: React.FC<CoachingPanelProps> = ({
   suggestions = [],
   dismissedSuggestions = [],
+  coachingTips = [],
+  weakDimensions = [],
+  dismissedTips = [],
   isLoading = false,
   isMinimized = false,
   onApply,
   onDismiss,
   onToggleMinimize,
+  onRefresh,
 }) => {
   const [showHistory, setShowHistory] = useState(false);
+
+  // Use new coaching tips format if available, otherwise fall back to legacy suggestions
+  const hasCoachingTips = coachingTips.length > 0 || weakDimensions.length > 0 || dismissedTips.length > 0;
 
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
+  // If using new coaching tips format
+  if (hasCoachingTips) {
+    const totalCount = coachingTips.length + weakDimensions.length;
+
+    if (isMinimized && totalCount > 0) {
+      return <MinimizedBadge count={totalCount} onClick={onToggleMinimize} />;
+    }
+
+    return (
+      <CoachingSection
+        tips={coachingTips}
+        weakDimensions={weakDimensions}
+        dismissedTips={dismissedTips}
+        isLoading={isLoading}
+        onDismiss={onDismiss}
+        onRefresh={onRefresh}
+      />
+    );
+  }
+
+  // Legacy format handling
   if (suggestions.length === 0 && dismissedSuggestions.length === 0) {
     return <EmptyState />;
   }

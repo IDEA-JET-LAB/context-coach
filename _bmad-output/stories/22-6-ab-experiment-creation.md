@@ -1,6 +1,6 @@
 # Story 22.6: A/B Experiment Creation
 
-Status: Ready
+Status: Complete
 
 ## Story
 
@@ -49,82 +49,82 @@ Status: Ready
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create experiments database schema** (AC: #1, #6)
-  - [ ] Create migration `20251223005000_experiments.sql`
-  - [ ] Create `experiments` table with experiment metadata
-  - [ ] Create `experiment_variants` table for control/variant configs
-  - [ ] Add status enum: draft, active, running, paused, analyzing, completed
-  - [ ] Add RLS policies for super admin access
+- [x] **Task 1: Create experiments database schema** (AC: #1, #6)
+  - [x] Create migration `20251223005000_experiments.sql`
+  - [x] Create `experiments` table with experiment metadata
+  - [x] Create `experiment_variants` table for control/variant configs
+  - [x] Add status enum: draft, active, running, paused, analyzing, completed
+  - [x] Add RLS policies for super admin access
 
-- [ ] **Task 2: Create experiments list page** (AC: #1)
-  - [ ] Create `app/(dashboard)/admin/experiments/page.tsx`
-  - [ ] Query all experiments with status badges
-  - [ ] Show key metrics inline: sample sizes, current winner
-  - [ ] Add filter by status
-  - [ ] Add "Create Experiment" button
+- [x] **Task 2: Create experiments list page** (AC: #1)
+  - [x] Create `app/(dashboard)/admin/experiments/page.tsx`
+  - [x] Query all experiments with status badges
+  - [x] Show key metrics inline: sample sizes, current winner
+  - [x] Add filter by status
+  - [x] Add "Create Experiment" button
 
-- [ ] **Task 3: Create experiment card component** (AC: #1)
-  - [ ] Create `components/admin/experiment-card.tsx`
-  - [ ] Display experiment name and hypothesis
-  - [ ] Show control vs variant with traffic split
-  - [ ] Display sample counts per variant
-  - [ ] Show status-specific actions
+- [x] **Task 3: Create experiment card component** (AC: #1)
+  - [x] Create `components/admin/experiment-card.tsx`
+  - [x] Display experiment name and hypothesis
+  - [x] Show control vs variant with traffic split
+  - [x] Display sample counts per variant
+  - [x] Show status-specific actions
 
-- [ ] **Task 4: Create experiment form** (AC: #2, #4)
-  - [ ] Create `components/admin/experiment-form.tsx`
-  - [ ] Add name and hypothesis fields
-  - [ ] Add config selector for control (typically active config)
-  - [ ] Add config selector for variant (must be different)
-  - [ ] Add traffic split slider (10-90%, default 50%)
+- [x] **Task 4: Create experiment form** (AC: #2, #4)
+  - [x] Create `components/admin/experiment-form.tsx`
+  - [x] Add name and hypothesis fields
+  - [x] Add config selector for control (typically active config)
+  - [x] Add config selector for variant (must be different)
+  - [x] Add traffic split slider (10-90%, default 50%)
 
-- [ ] **Task 5: Add experiment parameters** (AC: #4)
-  - [ ] Add minimum sample size input (default 100 per variant)
-  - [ ] Add minimum run duration selector (1 day - 30 days)
-  - [ ] Add success metric selector (overall score, specific dimension)
-  - [ ] Add significance threshold input (default 0.05)
-  - [ ] Add auto-promotion toggle
+- [x] **Task 5: Add experiment parameters** (AC: #4)
+  - [x] Add minimum sample size input (default 100 per variant)
+  - [x] Add minimum run duration selector (1 day - 30 days)
+  - [x] Add success metric selector (overall score, specific dimension)
+  - [x] Add significance threshold input (default 0.05)
+  - [x] Add auto-promotion toggle
 
-- [ ] **Task 6: Create config comparison view** (AC: #3)
-  - [ ] Create `components/admin/experiment-config-comparison.tsx`
-  - [ ] Display side-by-side config summaries
-  - [ ] Highlight weight differences
-  - [ ] Highlight dimension differences
-  - [ ] Show prompt template diff if different
+- [x] **Task 6: Create config comparison view** (AC: #3)
+  - [x] Create `components/admin/experiment-config-comparison.tsx`
+  - [x] Display side-by-side config summaries
+  - [x] Highlight weight differences
+  - [x] Highlight dimension differences
+  - [x] Show prompt template diff if different
 
-- [ ] **Task 7: Implement experiment save** (AC: #5)
-  - [ ] Create `lib/services/experiments.ts` server actions
-  - [ ] Validate control and variant are different
-  - [ ] Create experiment as draft
-  - [ ] Create snapshots of both configs
-  - [ ] Log creation to audit trail
+- [x] **Task 7: Implement experiment save** (AC: #5)
+  - [x] Create `lib/services/experiments.ts` server actions
+  - [x] Validate control and variant are different
+  - [x] Create experiment as draft
+  - [x] Create snapshots of both configs
+  - [x] Log creation to audit trail
 
-- [ ] **Task 8: Create draft edit page** (AC: #5)
-  - [ ] Create `app/(dashboard)/admin/experiments/[id]/page.tsx`
-  - [ ] Load existing experiment data
-  - [ ] Allow editing all fields if draft
-  - [ ] Show read-only view if not draft
-  - [ ] Add "Activate" button for drafts
+- [x] **Task 8: Create draft edit page** (AC: #5)
+  - [x] Create `app/(dashboard)/admin/experiments/[id]/page.tsx`
+  - [x] Load existing experiment data
+  - [x] Allow editing all fields if draft
+  - [x] Show read-only view if not draft
+  - [x] Add "Activate" button for drafts
 
-- [ ] **Task 9: Implement experiment activation** (AC: #6)
-  - [ ] Create `activateExperiment()` server action
-  - [ ] Validate no other experiment is running with same configs
-  - [ ] Lock both configs (prevent changes during experiment)
-  - [ ] Initialize assignment counters
-  - [ ] Change status to "running"
+- [x] **Task 9: Implement experiment activation** (AC: #6)
+  - [x] Create `activateExperiment()` server action
+  - [x] Validate no other experiment is running with same configs
+  - [x] Lock both configs (prevent changes during experiment)
+  - [x] Initialize assignment counters
+  - [x] Change status to "running"
 
-- [ ] **Task 10: Add experiment lifecycle controls** (AC: #6)
-  - [ ] Add "Pause" button for running experiments
-  - [ ] Add "Resume" button for paused experiments
-  - [ ] Add "Stop Early" button with confirmation
-  - [ ] Log all lifecycle changes to audit trail
+- [x] **Task 10: Add experiment lifecycle controls** (AC: #6)
+  - [x] Add "Pause" button for running experiments
+  - [x] Add "Resume" button for paused experiments
+  - [x] Add "Stop Early" button with confirmation
+  - [x] Log all lifecycle changes to audit trail
 
-- [ ] **Task 11: Write E2E tests** (AC: #1-6)
-  - [ ] Create `e2e/admin-experiments.spec.ts`
-  - [ ] Test experiment list displays correctly
-  - [ ] Test experiment creation with all fields
-  - [ ] Test config comparison shows differences
-  - [ ] Test draft editing and validation
-  - [ ] Test activation changes status
+- [x] **Task 11: Write E2E tests** (AC: #1-6)
+  - [x] Create `e2e/admin-experiments.spec.ts`
+  - [x] Test experiment list displays correctly
+  - [x] Test experiment creation with all fields
+  - [x] Test config comparison shows differences
+  - [x] Test draft editing and validation
+  - [x] Test activation changes status
 
 ## Dev Notes
 
@@ -745,14 +745,50 @@ After completing this story, verify:
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+- Implemented full A/B experiment system with CRUD operations
+- Created database schema with experiments, experiment_variants, and experiment_assignments tables
+- Used semantic tokens throughout (no hardcoded colors)
+- All components follow design system mandate
+- Experiment lifecycle: draft -> running -> paused/completed
+- Config snapshots created at activation time for experiment integrity
+- Traffic split slider (10-90%) with visual representation
+- Config comparison view shows weight differences and system prompt changes
+- Full lifecycle controls: activate, pause, resume, stop early
+- E2E tests cover list, form, navigation, and interaction scenarios
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2024-12-24 | Initial implementation of Story 22.6 | Claude Opus 4.5 |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+
+**Database Migration:**
+- `app/supabase/migrations/20251223005000_experiments.sql`
+
+**Types:**
+- `app/lib/types/experiments.ts`
+
+**Services:**
+- `app/lib/services/experiments.ts`
+
+**Pages:**
+- `app/app/(dashboard)/admin/experiments/page.tsx`
+- `app/app/(dashboard)/admin/experiments/new/page.tsx`
+- `app/app/(dashboard)/admin/experiments/[id]/page.tsx`
+
+**Components:**
+- `app/components/admin/experiment-card.tsx`
+- `app/components/admin/experiment-form.tsx`
+- `app/components/admin/experiment-status-badge.tsx`
+- `app/components/admin/experiment-config-comparison.tsx`
+- `app/components/admin/experiment-detail-view.tsx`
+
+**Modified:**
+- `app/components/admin/admin-sidebar.tsx` (added Experiments nav item)
+
+**Tests:**
+- `app/e2e/admin-experiments.spec.ts`

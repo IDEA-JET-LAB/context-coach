@@ -1,28 +1,57 @@
 {
   "name": "contextor-vscode",
   "displayName": "Contextor - Prompt Analytics",
-  "description": "Real-time prompt analytics and coaching for AI-assisted development",
+  "description": "Track, analyze, and improve your AI prompting skills. Real-time analytics dashboard with 5-dimension scoring, personalized coaching tips, and team insights - all directly in VS Code.",
   "version": "0.1.0",
-  "publisher": "contextor",
+  "publisher": "ideajetlab",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/contextor/context-coach"
+    "url": "https://github.com/IDEA-JET-LAB/context-coach"
   },
+  "homepage": "https://contextor.co",
+  "bugs": {
+    "url": "https://github.com/IDEA-JET-LAB/context-coach/issues"
+  },
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1a1a2e",
+    "theme": "dark"
+  },
+  "preview": true,
+  "badges": [
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/v/ideajetlab.contextor-vscode",
+      "href": "https://marketplace.visualstudio.com/items?itemName=ideajetlab.contextor-vscode",
+      "description": "Version"
+    },
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/i/ideajetlab.contextor-vscode",
+      "href": "https://marketplace.visualstudio.com/items?itemName=ideajetlab.contextor-vscode",
+      "description": "Installs"
+    }
+  ],
+  "qna": "https://github.com/IDEA-JET-LAB/context-coach/discussions",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other",
     "Machine Learning",
-    "Education"
+    "Education",
+    "Visualization"
   ],
   "keywords": [
     "ai",
     "claude",
     "prompt",
     "analytics",
-    "coaching"
+    "coaching",
+    "llm",
+    "gpt",
+    "copilot",
+    "productivity",
+    "ai-assistant"
   ],
   "activationEvents": [
     "onStartupFinished",
@@ -86,12 +115,30 @@
         "contextor.apiEndpoint": {
           "type": "string",
           "default": "https://contextor.co/api",
-          "description": "Contextor API endpoint URL"
+          "description": "API endpoint URL for Contextor service. Change for self-hosted installations.",
+          "format": "uri"
         },
-        "contextor.enableNotifications": {
+        "contextor.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 15,
+          "maximum": 300,
+          "description": "Analytics auto-refresh interval in seconds (minimum 15)."
+        },
+        "contextor.showNotifications": {
           "type": "boolean",
           "default": true,
-          "description": "Show coaching notifications"
+          "description": "Show notification messages for successful operations."
+        },
+        "contextor.showStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Contextor score in the status bar."
+        },
+        "contextor.autoRefreshEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic refresh of analytics data."
         }
       }
     }
@@ -118,6 +165,7 @@
     "esbuild": "^0.19.8",
     "eslint": "^8.55.0",
     "jest": "^29.7.0",
+    "sharp": "^0.34.5",
     "ts-jest": "^29.1.1",
     "typescript": "^5.3.2"
   }

@@ -2,6 +2,26 @@
  * Contextor VS Code Extension Type Definitions
  */
 
+// Re-export analytics types
+export * from './analytics';
+
+// Re-export coaching types (Story 19-5)
+// Note: PromptSuggestion is also exported from analytics, so we use CoachingPromptSuggestion here
+export {
+  DimensionName,
+  TipPriority,
+  TipSource,
+  CoachingTip,
+  WeakDimension,
+  CoachingResponse,
+  CoachingPromptSuggestion,
+  DismissTipRequest,
+  COACHING_STORAGE_KEYS,
+  CachedCoaching,
+  DIMENSION_CONFIG,
+  DEFAULT_GETTING_STARTED_TIPS,
+} from './coaching';
+
 /**
  * Extension configuration settings
  */
@@ -22,18 +42,6 @@ export interface AuthToken {
   expiresAt: number;
   /** Refresh token for token renewal */
   refreshToken?: string;
-}
-
-/**
- * Analytics data from Contextor API
- */
-export interface AnalyticsData {
-  /** Session metrics */
-  sessions: SessionMetrics;
-  /** Prompt efficiency scores */
-  efficiency: EfficiencyMetrics;
-  /** Recent activity summary */
-  recentActivity: ActivitySummary[];
 }
 
 /**
@@ -76,21 +84,8 @@ export interface ActivitySummary {
   description: string;
 }
 
-/**
- * Coaching tip from the backend
- */
-export interface CoachingTip {
-  /** Tip identifier */
-  id: string;
-  /** Tip category */
-  category: 'clarity' | 'context' | 'efficiency' | 'best-practice';
-  /** Tip title */
-  title: string;
-  /** Detailed tip message */
-  message: string;
-  /** Optional action URL */
-  actionUrl?: string;
-}
+// Note: CoachingTip is now imported from './coaching' (Story 19-5)
+// The old interface with 'category' field has been replaced by the new one with 'dimension' field
 
 /**
  * Session state for recovery

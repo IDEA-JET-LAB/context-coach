@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Building2, Settings2, Activity, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Settings2, Activity, ArrowLeft, History, Beaker, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -15,6 +15,9 @@ const adminNavItems = [
   { icon: Users, label: 'Users', href: '/admin/users' },
   { icon: Building2, label: 'Teams', href: '/admin/teams' },
   { icon: Settings2, label: 'Analysis Config', href: '/admin/config' },
+  { icon: FileText, label: 'Templates', href: '/admin/analysis/templates' },
+  { icon: Beaker, label: 'Experiments', href: '/admin/experiments' },
+  { icon: History, label: 'Audit Log', href: '/admin/audit' },
   { icon: Activity, label: 'System Health', href: '/admin/system' },
 ];
 

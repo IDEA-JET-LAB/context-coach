@@ -1,6 +1,6 @@
 # Story 22.1: Analysis Prompt Templates
 
-Status: Ready
+Status: Completed
 
 ## Story
 
@@ -47,81 +47,81 @@ Status: Ready
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create database schema for prompt templates** (AC: #1, #6)
-  - [ ] Create migration `20251223001000_prompt_templates.sql`
-  - [ ] Create `prompt_templates` table with fields: id, name, type, body, variables, status, version, created_by, created_at, updated_at
-  - [ ] Create `prompt_template_variables` table for variable definitions
-  - [ ] Add RLS policies for super admin access only
-  - [ ] Add audit trigger for all changes
+- [x] **Task 1: Create database schema for prompt templates** (AC: #1, #6)
+  - [x] Create migration `20251224001000_prompt_templates.sql`
+  - [x] Create `prompt_templates` table with fields: id, name, type, body, variables, status, version, created_by, created_at, updated_at
+  - [x] Create `prompt_template_variables` table for variable definitions
+  - [x] Add RLS policies for super admin access only
+  - [x] Add audit trigger for all changes
 
-- [ ] **Task 2: Create prompt templates list page** (AC: #1)
-  - [ ] Create `app/(dashboard)/admin/analysis/templates/page.tsx`
-  - [ ] Query all templates with service role client
-  - [ ] Display templates in table with: name, type badge, status badge, last updated
-  - [ ] Add filter by type (analysis/feedback/classification)
-  - [ ] Add "Create Template" button
+- [x] **Task 2: Create prompt templates list page** (AC: #1)
+  - [x] Create `app/(dashboard)/admin/analysis/templates/page.tsx`
+  - [x] Query all templates with service role client
+  - [x] Display templates in table with: name, type badge, status badge, last updated
+  - [x] Add filter by type (analysis/feedback/classification)
+  - [x] Add "Create Template" button
 
-- [ ] **Task 3: Create template form component** (AC: #2, #3)
-  - [ ] Create `components/admin/prompt-template-form.tsx`
-  - [ ] Add name input field
-  - [ ] Add type selector (analysis, feedback, classification)
-  - [ ] Create template body editor with syntax highlighting
-  - [ ] Display available variables panel based on selected type
+- [x] **Task 3: Create template form component** (AC: #2, #3)
+  - [x] Create `components/admin/templates/template-form.tsx`
+  - [x] Add name input field
+  - [x] Add type selector (analysis, feedback, classification)
+  - [x] Create template body editor with syntax highlighting
+  - [x] Display available variables panel based on selected type
 
-- [ ] **Task 4: Implement variable highlighting in editor** (AC: #3)
-  - [ ] Create `components/admin/template-editor.tsx` with CodeMirror or Monaco
-  - [ ] Define variable regex pattern: `\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}`
-  - [ ] Highlight valid variables in green (from variable definitions)
-  - [ ] Highlight unknown variables in yellow with tooltip warning
-  - [ ] Add autocomplete for variables
+- [x] **Task 4: Implement variable highlighting in editor** (AC: #3)
+  - [x] Create `components/admin/templates/template-editor.tsx` with custom textarea overlay
+  - [x] Define variable regex pattern: `\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}`
+  - [x] Highlight valid variables in green (from variable definitions)
+  - [x] Highlight unknown variables in yellow with tooltip warning
+  - [x] Add autocomplete for variables
 
-- [ ] **Task 5: Create template variable definitions** (AC: #2)
-  - [ ] Define analysis variables: `{{prompt}}`, `{{prompt_length}}`, `{{word_count}}`, `{{context}}`
-  - [ ] Define feedback variables: `{{score}}`, `{{dimension_scores}}`, `{{suggestions}}`
-  - [ ] Define classification variables: `{{prompt}}`, `{{patterns}}`, `{{categories}}`
-  - [ ] Store in `prompt_template_variables` table with descriptions
+- [x] **Task 5: Create template variable definitions** (AC: #2)
+  - [x] Define analysis variables: `{{prompt}}`, `{{prompt_length}}`, `{{word_count}}`, `{{context}}`
+  - [x] Define feedback variables: `{{score}}`, `{{dimension_scores}}`, `{{suggestions}}`
+  - [x] Define classification variables: `{{prompt}}`, `{{patterns}}`, `{{categories}}`
+  - [x] Store in `prompt_template_variables` table with descriptions
 
-- [ ] **Task 6: Create template preview functionality** (AC: #4, #5)
-  - [ ] Create `lib/services/prompt-template-preview.ts`
-  - [ ] Create sample data generator for each template type
-  - [ ] Implement variable substitution engine
-  - [ ] Add "Preview" button that shows rendered template
-  - [ ] Add optional "Test with LLM" button (rate limited)
+- [x] **Task 6: Create template preview functionality** (AC: #4, #5)
+  - [x] Create `lib/services/prompt-template-preview.ts`
+  - [x] Create sample data generator for each template type
+  - [x] Implement variable substitution engine
+  - [x] Add "Preview" button that shows rendered template
+  - [x] Add optional "Test with LLM" button (rate limited)
 
-- [ ] **Task 7: Implement template save/publish workflow** (AC: #4, #6)
-  - [ ] Create `lib/services/prompt-templates.ts` server actions
-  - [ ] Implement `createTemplate()` - saves as draft
-  - [ ] Implement `updateTemplate()` - only for drafts
-  - [ ] Implement `publishTemplate()` - changes status to active
-  - [ ] Add validation for required variables per type
+- [x] **Task 7: Implement template save/publish workflow** (AC: #4, #6)
+  - [x] Create `lib/services/prompt-templates.ts` server actions
+  - [x] Implement `createTemplate()` - saves as draft
+  - [x] Implement `updateTemplate()` - only for drafts
+  - [x] Implement `publishTemplate()` - changes status to active
+  - [x] Add validation for required variables per type
 
-- [ ] **Task 8: Create template detail/edit page** (AC: #2, #4)
-  - [ ] Create `app/(dashboard)/admin/analysis/templates/[id]/page.tsx`
-  - [ ] Load existing template data
-  - [ ] Allow editing if template is draft
-  - [ ] Show read-only view for published templates
-  - [ ] Add "Publish" button for drafts
+- [x] **Task 8: Create template detail/edit page** (AC: #2, #4)
+  - [x] Create `app/(dashboard)/admin/analysis/templates/[id]/page.tsx`
+  - [x] Load existing template data
+  - [x] Allow editing if template is draft
+  - [x] Show read-only view for published templates
+  - [x] Add "Publish" button for drafts
 
-- [ ] **Task 9: Add template duplication** (AC: #2)
-  - [ ] Add "Duplicate" action to template list
-  - [ ] Create copy with "Copy of [name]" naming
-  - [ ] New copy is always draft status
-  - [ ] Redirect to edit page for new copy
+- [x] **Task 9: Add template duplication** (AC: #2)
+  - [x] Add "Duplicate" action to template list
+  - [x] Create copy with "Copy of [name]" naming
+  - [x] New copy is always draft status
+  - [x] Redirect to edit page for new copy
 
-- [ ] **Task 10: Write E2E tests** (AC: #1-6)
-  - [ ] Create `e2e/admin-prompt-templates.spec.ts`
-  - [ ] Test template list displays correctly
-  - [ ] Test template creation with valid variables
-  - [ ] Test variable highlighting (valid/unknown)
-  - [ ] Test preview with sample data
-  - [ ] Test publish workflow
+- [x] **Task 10: Write E2E tests** (AC: #1-6)
+  - [x] Create `e2e/admin-prompt-templates.spec.ts`
+  - [x] Test template list displays correctly
+  - [x] Test template creation with valid variables
+  - [x] Test variable highlighting (valid/unknown)
+  - [x] Test preview with sample data
+  - [x] Test publish workflow
 
 ## Dev Notes
 
 ### Database Schema
 
 ```sql
--- Migration: 20251223001000_prompt_templates.sql
+-- Migration: 20251224001000_prompt_templates.sql
 
 -- Template types enum
 CREATE TYPE prompt_template_type AS ENUM ('analysis', 'feedback', 'classification');
@@ -347,10 +347,10 @@ export function TemplateEditor({ value, onChange, validVariables, disabled }: Te
 | Templates List Page | `app/(dashboard)/admin/analysis/templates/page.tsx` |
 | Template Detail Page | `app/(dashboard)/admin/analysis/templates/[id]/page.tsx` |
 | New Template Page | `app/(dashboard)/admin/analysis/templates/new/page.tsx` |
-| Template Form | `components/admin/prompt-template-form.tsx` |
-| Template Editor | `components/admin/template-editor.tsx` |
-| Variable Panel | `components/admin/template-variable-panel.tsx` |
-| Preview Modal | `components/admin/template-preview-modal.tsx` |
+| Template Form | `components/admin/templates/template-form.tsx` |
+| Template Editor | `components/admin/templates/template-editor.tsx` |
+| Variable Panel | `components/admin/templates/template-variable-panel.tsx` |
+| Preview Modal | `components/admin/templates/template-preview-modal.tsx` |
 | Services | `lib/services/prompt-templates.ts` |
 | Types | `lib/types/prompt-templates.ts` |
 | Template Engine | `lib/utils/template-engine.ts` |
@@ -365,15 +365,15 @@ export function TemplateEditor({ value, onChange, validVariables, disabled }: Te
 ### Verification Checklist
 
 After completing this story, verify:
-- [ ] Template list shows all templates with correct badges
-- [ ] Can create new template with all fields
-- [ ] Variable highlighting works (green for valid, yellow for unknown)
-- [ ] Variable autocomplete appears when typing `{{`
-- [ ] Preview shows rendered template correctly
-- [ ] Cannot edit published templates
-- [ ] Publish changes status from draft to active
-- [ ] Duplicate creates new draft copy
-- [ ] Audit log records all changes
+- [x] Template list shows all templates with correct badges
+- [x] Can create new template with all fields
+- [x] Variable highlighting works (green for valid, yellow for unknown)
+- [x] Variable autocomplete appears when typing `{{`
+- [x] Preview shows rendered template correctly
+- [x] Cannot edit published templates
+- [x] Publish changes status from draft to active
+- [x] Duplicate creates new draft copy
+- [x] Audit log records all changes
 
 
 ## Design System Requirements
@@ -381,16 +381,26 @@ After completing this story, verify:
 **MANDATORY:** This story MUST use existing design system components exclusively.
 
 ### Pre-Implementation Checklist
-- [ ] Reviewed `_bmad-output/DESIGN-SYSTEM-MANDATE.md` for component inventory
-- [ ] Checked `/design` route for component examples
-- [ ] Identified required components from the inventory below
-- [ ] Confirmed no hardcoded colors - using semantic tokens only
-- [ ] No new UI patterns needed (or Design Epic story created)
+- [x] Reviewed `_bmad-output/DESIGN-SYSTEM-MANDATE.md` for component inventory
+- [x] Checked `/design` route for component examples
+- [x] Identified required components from the inventory below
+- [x] Confirmed no hardcoded colors - using semantic tokens only
+- [x] No new UI patterns needed (or Design Epic story created)
 
 ### Required Components
-<!-- Dev agent: Fill in specific components needed from DESIGN-SYSTEM-MANDATE.md -->
-- Review `/design` route and `components/` directory before implementation
-- Use semantic tokens: `bg-surface-*`, `text-content-*`, `border-border-*`
+- `Button` from `@/components/ui/button`
+- `Card`, `CardHeader`, `CardContent`, `CardTitle` from `@/components/ui/card`
+- `Badge` from `@/components/ui/badge`
+- `Input` from `@/components/ui/input`
+- `Label` from `@/components/ui/label`
+- `Textarea` from `@/components/ui/textarea`
+- `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem` from `@/components/ui/select`
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` from `@/components/ui/tabs`
+- `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle` from `@/components/ui/dialog`
+- `AlertDialog` from `@/components/ui/alert-dialog`
+- `DropdownMenu` from `@/components/ui/dropdown-menu`
+- `Tooltip` from `@/components/ui/tooltip`
+- `InlineAlert`, `EmptyState`, `showToast` from `@/components/feedback`
 
 ### Styling Rules
 - NO hardcoded colors (no `bg-zinc-*`, `text-gray-*`, etc.)
@@ -400,14 +410,71 @@ After completing this story, verify:
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+
+1. **Database Migration**: Created `20251224001000_prompt_templates.sql` with proper enums, tables, indexes, RLS, audit triggers, and seed data for variables.
+
+2. **Type System**: Created comprehensive TypeScript types in `lib/types/prompt-templates.ts` including `PromptTemplate`, `PromptTemplateVariable`, `TemplatePreviewResult`, and status/type configurations.
+
+3. **Template Engine**: Implemented `lib/utils/template-engine.ts` with variable extraction, validation, rendering, and sample data generation for all three template types.
+
+4. **Server Actions**: Created two service files:
+   - `lib/services/prompt-templates.ts` - CRUD operations with verifySuperAdmin() protection
+   - `lib/services/prompt-template-preview.ts` - Preview and test functionality
+
+5. **UI Components**: Built modular component architecture in `components/admin/templates/`:
+   - `template-list.tsx` - List view with actions dropdown
+   - `template-filters.tsx` - Type and status filters with URL state
+   - `template-form.tsx` - Main form with validation
+   - `template-editor.tsx` - Custom editor with variable highlighting overlay
+   - `template-variable-panel.tsx` - Variable reference panel with click-to-insert
+   - `template-preview-modal.tsx` - Preview dialog with sample/custom data
+
+6. **Pages**: Created three pages under `app/(dashboard)/admin/analysis/templates/`:
+   - `page.tsx` - List page with filters
+   - `new/page.tsx` - Create new template
+   - `[id]/page.tsx` - View/edit existing template
+
+7. **Navigation**: Updated `components/admin/admin-sidebar.tsx` to include Templates link
+
+8. **E2E Tests**: Created comprehensive test suite in `e2e/admin-prompt-templates.spec.ts` covering:
+   - List page display and filtering
+   - Template creation workflow
+   - Variable highlighting
+   - Preview functionality
+   - Publish workflow
+   - Template duplication
+   - Variable panel interactions
+   - Access control
+
+9. **Design System Compliance**: All components use semantic tokens (text-foreground, bg-background, border-border, etc.) and existing UI components from the design system.
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Initial implementation of Story 22-1 | Claude Opus 4.5 |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+
+**Created Files:**
+- `/app/supabase/migrations/20251224001000_prompt_templates.sql`
+- `/app/lib/types/prompt-templates.ts`
+- `/app/lib/utils/template-engine.ts`
+- `/app/lib/services/prompt-templates.ts`
+- `/app/lib/services/prompt-template-preview.ts`
+- `/app/components/admin/templates/index.ts`
+- `/app/components/admin/templates/template-list.tsx`
+- `/app/components/admin/templates/template-filters.tsx`
+- `/app/components/admin/templates/template-form.tsx`
+- `/app/components/admin/templates/template-editor.tsx`
+- `/app/components/admin/templates/template-variable-panel.tsx`
+- `/app/components/admin/templates/template-preview-modal.tsx`
+- `/app/app/(dashboard)/admin/analysis/templates/page.tsx`
+- `/app/app/(dashboard)/admin/analysis/templates/new/page.tsx`
+- `/app/app/(dashboard)/admin/analysis/templates/[id]/page.tsx`
+- `/app/e2e/admin-prompt-templates.spec.ts`
+
+**Modified Files:**
+- `/app/components/admin/admin-sidebar.tsx` - Added Templates navigation link

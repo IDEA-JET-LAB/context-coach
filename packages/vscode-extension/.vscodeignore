@@ -1,25 +1,30 @@
 # Source files (bundled into dist)
 src/**
 
-# Webview source files (keep dist)
+# Webview source and dev files (keep only compiled dist)
 webviews/**/src/**
 webviews/**/node_modules/**
 webviews/**/package*.json
 webviews/**/tsconfig.json
 webviews/**/vite.config.ts
 webviews/**/index.html
-!webviews/**/dist/**
+!webviews/analytics/dist/**
 
 # Config files
 .vscode/**
 .eslintrc*
 tsconfig.json
 vite.config.ts
+jest.config.js
+
+# Development scripts
+scripts/**
 
 # Development files
 *.map
 .gitignore
 **/*.ts
+**/*.tsx
 !dist/**/*.d.ts
 
 # Build artifacts
@@ -30,7 +35,7 @@ node_modules/**
 **/*.test.ts
 **/__tests__/**
 
-# Documentation
+# Documentation (allow README, CHANGELOG, LICENSE only)
 *.md
 !README.md
 !CHANGELOG.md
@@ -44,3 +49,6 @@ Thumbs.db
 .idea/**
 *.swp
 *.swo
+
+# Root node_modules
+**/node_modules/**

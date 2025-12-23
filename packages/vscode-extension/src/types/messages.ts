@@ -1,23 +1,135 @@
 /**
  * Message types for extension-webview communication
+ * Story 19-4: Real-time Analytics Display
+ * Story 19-5: Quick Coaching Tips
  */
 
-import { AnalyticsData } from "./index";
 import { UserProfile } from "../services/auth";
+import {
+  TimeRange,
+  SyncState,
+  AnalyticsData,
+  RecentPrompt,
+  PromptDetail,
+} from "./analytics";
+import {
+  CoachingTip,
+  WeakDimension,
+} from "./coaching";
+
+/**
+ * Analytics panel state sent to webview
+ */
+export interface AnalyticsPanelState {
+  // Analytics data
+  analytics: AnalyticsData | null;
+  recentPrompts: RecentPrompt[];
+  promptDetail: PromptDetail | null;
+
+  // Loading/error states
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+
+  // Sync/offline states
+  isOffline: boolean;
+  syncState: SyncState;
+  lastSyncTime: string | null;
+
+  // Settings
+  timeRange: TimeRange;
+
+  // User info
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+
+  // Coaching data (Story 19-5)
+  coachingTips: CoachingTip[];
+  weakDimensions: WeakDimension[];
+  dismissedTipIds: string[];
+  isCoachingLoading: boolean;
+}
 
 /**
  * Messages sent from the extension to the webview
  */
 export type ExtensionToWebviewMessage =
-  | { type: "auth"; authenticated: boolean }
-  | { type: "analytics"; data: AnalyticsData; user: UserProfile }
+  // Authentication
+  | { type: "auth"; authenticated: boolean; user?: UserProfile }
+
+  // Full state update
+  | { type: "state"; state: Partial<AnalyticsPanelState> }
+
+  // Analytics data
+  | { type: "analytics"; data: AnalyticsData; recentPrompts: RecentPrompt[] }
+
+  // Prompt detail
+  | { type: "prompt-detail"; detail: PromptDetail | null }
+
+  // Loading states
+  | { type: "loading"; isLoading: boolean }
+  | { type: "refreshing"; isRefreshing: boolean }
+
+  // Error handling
   | { type: "error"; message: string }
-  | { type: "loading"; isLoading: boolean };
+
+  // Sync status
+  | { type: "sync-state"; state: SyncState; lastSyncTime?: string }
+  | { type: "offline"; isOffline: boolean }
+
+  // Legacy support (from existing code)
+  | { type: "analytics-legacy"; data: LegacyAnalyticsData; user: UserProfile }
+
+  // Coaching messages (Story 19-5)
+  | { type: "coaching"; tips: CoachingTip[]; weakDimensions: WeakDimension[] }
+  | { type: "coaching-loading"; isLoading: boolean }
+  | { type: "tip-dismissed"; tipId: string };
 
 /**
  * Messages sent from the webview to the extension
  */
 export type WebviewToExtensionMessage =
+  // Initialization
+  | { type: "ready" }
+
+  // Analytics actions
   | { type: "refresh" }
+  | { type: "time-range-change"; timeRange: TimeRange }
+
+  // Prompt actions
+  | { type: "prompt-click"; promptId: string }
+  | { type: "prompt-detail-close" }
+
+  // Error reporting
   | { type: "error"; error: string }
-  | { type: "ready" };
+
+  // Retry action
+  | { type: "retry" }
+
+  // Coaching actions (Story 19-5)
+  | { type: "refresh-coaching" }
+  | { type: "dismiss-tip"; tipId: string; reason?: "applied" | "not_relevant" | "already_know" };
+
+/**
+ * Legacy AnalyticsData type for backward compatibility
+ * TODO: Remove once webview is fully migrated
+ */
+export interface LegacyAnalyticsData {
+  sessions: {
+    todayCount: number;
+    todayPrompts: number;
+    avgDuration: number;
+    streak: number;
+  };
+  efficiency: {
+    overallScore: number;
+    promptsPerHour: number;
+    avgPromptLength: number;
+    contextUtilization: number;
+  };
+  recentActivity: Array<{
+    timestamp: string;
+    type: "prompt" | "session_start" | "session_end";
+    description: string;
+  }>;
+}

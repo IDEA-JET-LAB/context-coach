@@ -8,6 +8,8 @@ import {
   SettingsIcon,
   HelpIcon,
   ExternalLinkIcon,
+  CoachingTip,
+  WeakDimension,
 } from '../components';
 import { AnalyticsPanel, AnalyticsData } from './analytics-panel';
 import { CoachingPanel, Suggestion } from './coaching-panel';
@@ -23,12 +25,17 @@ export interface SidebarLayoutProps {
   analyticsData?: AnalyticsData | null;
   isAnalyticsLoading?: boolean;
 
-  // Coaching data
+  // Legacy coaching data (Suggestion format)
   suggestions?: Suggestion[];
   dismissedSuggestions?: Suggestion[];
   isCoachingLoading?: boolean;
   isCoachingMinimized?: boolean;
   suggestionBadgeCount?: number;
+
+  // New coaching data (Story 19-5)
+  coachingTips?: CoachingTip[];
+  weakDimensions?: WeakDimension[];
+  dismissedTips?: CoachingTip[];
 
   // Settings data
   user?: User | null;
@@ -40,6 +47,7 @@ export interface SidebarLayoutProps {
 
   // Event handlers
   onRefreshAnalytics?: () => void;
+  onRefreshCoaching?: () => void;
   onPromptClick?: (promptId: string) => void;
   onApplySuggestion?: (suggestionId: string) => void;
   onDismissSuggestion?: (suggestionId: string) => void;
@@ -72,6 +80,10 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
   isCoachingLoading = false,
   isCoachingMinimized = false,
   suggestionBadgeCount,
+  // New coaching data (Story 19-5)
+  coachingTips = [],
+  weakDimensions = [],
+  dismissedTips = [],
   user,
   isAuthenticated = false,
   coachingSensitivity = 3,
@@ -79,6 +91,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
   realtimeCoachingEnabled = true,
   version = '1.0.0',
   onRefreshAnalytics,
+  onRefreshCoaching,
   onPromptClick,
   onApplySuggestion,
   onDismissSuggestion,
@@ -99,7 +112,12 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
     setActiveTab(tabId);
   }, []);
 
-  const badgeCount = suggestionBadgeCount ?? suggestions.length;
+  // Calculate badge count including coaching tips (Story 19-5)
+  const badgeCount = suggestionBadgeCount ?? (
+    coachingTips.length > 0 || weakDimensions.length > 0
+      ? coachingTips.length + weakDimensions.length
+      : suggestions.length
+  );
 
   // Styles
   const sidebarStyle: React.CSSProperties = {
@@ -220,11 +238,15 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
           <CoachingPanel
             suggestions={suggestions}
             dismissedSuggestions={dismissedSuggestions}
+            coachingTips={coachingTips}
+            weakDimensions={weakDimensions}
+            dismissedTips={dismissedTips}
             isLoading={isCoachingLoading}
             isMinimized={isCoachingMinimized}
             onApply={onApplySuggestion}
             onDismiss={onDismissSuggestion}
             onToggleMinimize={onToggleCoachingMinimize}
+            onRefresh={onRefreshCoaching}
           />
         );
       case 'settings':

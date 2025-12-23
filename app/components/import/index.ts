@@ -48,3 +48,5 @@ export {
   type ImportBatchFile,
   type ImportBatchStatus,
 } from './import-history';
+
+export { RollbackDialog } from './rollback-dialog';

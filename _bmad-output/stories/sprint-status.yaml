@@ -271,17 +271,18 @@ development_status:
   epic-16-retrospective: optional
 
   # =============================================================================
-  # Epic 17: Transcript Import Experience (P2)
+  # Epic 17: Transcript Import Experience (P2) ✅ COMPLETED
   # Import historical Claude Code transcripts into Contextor.
   # Story files at: _bmad-output/stories/17-*.md
+  # Completed: 2025-12-24
   # =============================================================================
-  epic-17: backlog
-  17-1-transcript-discovery-service: ready-for-dev
-  17-2-import-preview-ui: ready-for-dev
-  17-3-batch-import-processing: ready-for-dev
-  17-4-deduplication-logic: ready-for-dev
-  17-5-import-progress-tracking: ready-for-dev
-  17-6-import-history-rollback: ready-for-dev
+  epic-17: done
+  17-1-transcript-discovery-service: done  # Transcript file discovery with path normalization
+  17-2-import-preview-ui: done              # Import preview UI with session list
+  17-3-batch-import-processing: done        # JSONL parser, batch processor, retry logic, API endpoint, 49 unit tests
+  17-4-deduplication-logic: done            # Fingerprint-based deduplication with 47 unit tests
+  17-5-import-progress-tracking: done  # Progress UI, cancellation, completion summary
+  17-6-import-history-rollback: done
   epic-17-retrospective: optional
 
   # =============================================================================
@@ -298,18 +299,19 @@ development_status:
   epic-18-retrospective: optional
 
   # =============================================================================
-  # Epic 19: VS Code Extension (P1)
+  # Epic 19: VS Code Extension (P1) - COMPLETED
   # Bring Contextor analytics directly into the developer's IDE.
   # Story files at: _bmad-output/stories/19-*.md
+  # Completed: 2025-12-24
   # =============================================================================
-  epic-19: backlog
-  19-1-extension-scaffold: ready-for-dev
-  19-2-authentication-flow: ready-for-dev
-  19-3-sidebar-panel: ready-for-dev
-  19-4-realtime-analytics-display: ready-for-dev
-  19-5-quick-coaching-tips: ready-for-dev
-  19-6-extension-settings: ready-for-dev
-  19-7-marketplace-publishing: ready-for-dev
+  epic-19: done
+  19-1-extension-scaffold: done            # VS Code extension scaffold with TypeScript
+  19-2-authentication-flow: done           # OAuth flow with token management
+  19-3-sidebar-panel: done                 # VS Code sidebar with webview analytics panel, 32 tests
+  19-4-realtime-analytics-display: done
+  19-5-quick-coaching-tips: done  # Coaching tips display with dismissal, weak dimension alerts, empty state
+  19-6-extension-settings: done               # Settings management with validation, 75 tests
+  19-7-marketplace-publishing: done          # Package.json metadata, README, CHANGELOG, icon, GH Actions workflow, 187KB VSIX
   epic-19-retrospective: optional
 
   # =============================================================================
@@ -326,23 +328,24 @@ development_status:
   epic-20-retrospective: optional
 
   # =============================================================================
-  # Epic 21: Advanced Analytics (P2)
+  # Epic 21: Advanced Analytics (P2) ✅ COMPLETED
   # Deep insights into developer-AI interaction patterns.
   # Story files at: _bmad-output/stories/21-*.md
+  # Completed: 2025-12-23
   # =============================================================================
-  epic-21: backlog
-  21-1-context-window-management: ready-for-dev
-  21-2-work-style-categorization: ready-for-dev
-  21-3-sentiment-analysis: ready-for-dev
-  21-4-prompt-complexity-metrics: ready-for-dev
-  21-5-interaction-timing-analysis: ready-for-dev
-  21-6-tool-usage-profiling: ready-for-dev
-  21-7-session-health-score: ready-for-dev
-  21-8-technical-depth-profile: ready-for-dev
-  21-9-learning-progression-tracking: ready-for-dev
-  21-10-workflow-efficiency-metrics: ready-for-dev
-  21-11-interactive-insights-dashboard: ready-for-dev
-  21-12-team-intelligence-analytics: ready-for-dev
+  epic-21: done
+  21-1-context-window-management: done  # Context window tracking and estimation
+  21-2-work-style-categorization: done  # 10-category work style classification
+  21-3-sentiment-analysis: done         # Polite/frustrated/neutral sentiment detection
+  21-4-prompt-complexity-metrics: done  # Complexity scoring and analysis
+  21-5-interaction-timing-analysis: done # Timing patterns and activity heatmap
+  21-6-tool-usage-profiling: done       # Tool usage distribution and recommendations
+  21-7-session-health-score: done       # Session health calculation
+  21-8-technical-depth-profile: done    # Technical persona classification
+  21-9-learning-progression-tracking: done # Learning trends and achievements
+  21-10-workflow-efficiency-metrics: done  # Efficiency calculations
+  21-11-interactive-insights-dashboard: done  # Interactive dashboard with 11 visualizations
+  21-12-team-intelligence-analytics: done     # Team comparison and percentile ranks
   epic-21-retrospective: optional
 
   # =============================================================================
@@ -350,17 +353,17 @@ development_status:
   # Admin control over analysis prompts, scoring weights, experimentation.
   # Story files at: _bmad-output/stories/22-*.md
   # =============================================================================
-  epic-22: backlog
-  22-1-analysis-prompt-templates: ready-for-dev
-  22-2-classification-rule-editor: ready-for-dev
-  22-3-scoring-weight-configuration: ready-for-dev
+  epic-22: in-progress
+  22-1-analysis-prompt-templates: in-progress
+  22-2-classification-rule-editor: in-progress
+  22-3-scoring-weight-configuration: in-progress
   22-4-team-level-weight-overrides: ready-for-dev
   22-5-configuration-version-control: ready-for-dev
-  22-6-ab-experiment-creation: ready-for-dev
+  22-6-ab-experiment-creation: in-progress
   22-7-ab-traffic-splitting: ready-for-dev
   22-8-statistical-significance-calculation: ready-for-dev
   22-9-experiment-results-dashboard: ready-for-dev
-  22-10-configuration-audit-trail: ready-for-dev
+  22-10-configuration-audit-trail: in-progress
   epic-22-retrospective: optional
 
   # =============================================================================

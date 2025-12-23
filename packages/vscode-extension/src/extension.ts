@@ -3,6 +3,7 @@ import { showAnalyticsCommand } from "./commands/showAnalytics";
 import { showSettingsCommand } from "./commands/showSettings";
 import { signInCommand, signOutCommand } from "./commands/auth";
 import { AuthService } from "./services/auth";
+import { SettingsService } from "./services/settings";
 import { AnalyticsPanelProvider } from "./providers/analyticsPanel";
 
 /**
@@ -16,6 +17,11 @@ let outputChannel: vscode.OutputChannel;
 let authService: AuthService;
 
 /**
+ * Settings service instance
+ */
+let settingsService: SettingsService;
+
+/**
  * Called when the extension is activated.
  * Activation happens on VS Code startup (onStartupFinished).
  */
@@ -23,6 +29,14 @@ export function activate(context: vscode.ExtensionContext): void {
   // Create output channel for logging
   outputChannel = vscode.window.createOutputChannel("Contextor");
   outputChannel.appendLine("Contextor extension is now active");
+
+  // Initialize settings service first (other services depend on it)
+  settingsService = SettingsService.getInstance();
+  settingsService.initialize(outputChannel);
+  context.subscriptions.push(settingsService);
+
+  // Validate settings on startup
+  validateSettingsOnStartup();
 
   // Initialize auth service
   authService = new AuthService(context, outputChannel);
@@ -68,6 +82,8 @@ export function activate(context: vscode.ExtensionContext): void {
     authService,
     outputChannel
   );
+  // Set global state for persistent analytics caching (Story 19-4)
+  analyticsPanelProvider.setGlobalState(context.globalState);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       AnalyticsPanelProvider.viewType,
@@ -119,4 +135,26 @@ export function deactivate(): void {
     outputChannel.dispose();
   }
   console.log("Contextor extension deactivated");
+}
+
+/**
+ * Validates settings on startup and shows warnings for invalid values.
+ */
+function validateSettingsOnStartup(): void {
+  const result = settingsService.validateSettings();
+
+  if (result.errors.length > 0 || result.warnings.length > 0) {
+    const issues = [...result.errors, ...result.warnings];
+    const message = `Contextor settings issues: ${issues.join(", ")}. Using defaults where necessary.`;
+
+    if (result.errors.length > 0) {
+      vscode.window.showErrorMessage(message);
+    } else {
+      vscode.window.showWarningMessage(message);
+    }
+
+    outputChannel.appendLine(`Settings validation: ${issues.join("; ")}`);
+  } else {
+    outputChannel.appendLine("Settings validation passed");
+  }
 }

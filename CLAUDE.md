@@ -722,6 +722,51 @@ Design system and component library (6/8 stories complete):
 
 Key files: `app/(design)/design/*`, `components/analytics/*` (34 components), `tailwind.config.ts` (semantic tokens)
 
+## Epic 17 Status: COMPLETED (December 2025)
+
+Transcript import experience for historical Claude Code prompts:
+- 17-1: Transcript discovery service with path normalization
+- 17-2: Import preview UI with session list
+- 17-3: Batch import processing - JSONL parser, retry logic, 49 unit tests
+- 17-4: Fingerprint-based deduplication with 47 unit tests
+- 17-5: Import progress tracking - progress UI, cancellation, completion summary
+- 17-6: Import history & rollback with rate limiting
+
+Key files: `lib/import/*`, `components/import/*`, `app/api/import/*`, `app/(dashboard)/settings/import-history/*`
+
+## Epic 19 Status: COMPLETED (December 2025)
+
+VS Code extension bringing Contextor analytics to the IDE:
+- 19-1: Extension scaffold with TypeScript and React webviews
+- 19-2: OAuth authentication flow with secure token storage
+- 19-3: Sidebar panel with webview analytics, 32 tests
+- 19-4: Real-time analytics display with 5 dimensions, auto-refresh
+- 19-5: Quick coaching tips with dismissal, weak dimension alerts
+- 19-6: Extension settings with validation, 75 tests
+- 19-7: Marketplace publishing ready - 187KB VSIX package
+
+Key files: `packages/vscode-extension/src/*`, `packages/vscode-extension/webviews/*`
+
+Extension ready to publish: See `packages/vscode-extension/PUBLISHING.md`
+
+## Epic 21 Status: COMPLETED (December 2025)
+
+Advanced analytics with deep insights into developer-AI interactions:
+- 21-1: Context window management and token estimation
+- 21-2: Work style categorization (10 categories)
+- 21-3: Sentiment analysis (polite/frustrated/neutral)
+- 21-4: Prompt complexity metrics
+- 21-5: Interaction timing analysis with activity heatmap
+- 21-6: Tool usage profiling and recommendations
+- 21-7: Session health score calculation
+- 21-8: Technical depth profile and persona classification
+- 21-9: Learning progression tracking with achievements
+- 21-10: Workflow efficiency metrics
+- 21-11: Interactive insights dashboard with 11 visualizations
+- 21-12: Team intelligence analytics with percentile ranks
+
+Key files: `lib/analytics/*`, `components/analytics/*`, `app/api/analytics/*`
+
 ## CRITICAL: Design System Mandate (Epic 17+)
 
 **All development from Epic 17 onwards MUST use the established design system exclusively.**

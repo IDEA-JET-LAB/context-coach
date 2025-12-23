@@ -1,19 +1,22 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 /**
  * Command handler for "Contextor: Show Settings"
  *
- * In the future, this will open a settings panel for:
- * - API endpoint configuration
- * - Authentication token management
+ * Opens VS Code Settings UI filtered to Contextor extension options.
+ * This allows users to configure:
+ * - API endpoint URL
+ * - Auto-refresh interval
  * - Notification preferences
- * - Coaching preferences
+ * - Status bar visibility
  */
 export async function showSettingsCommand(
   _context: vscode.ExtensionContext
 ): Promise<void> {
-  // Placeholder implementation - will be replaced with settings UI
-  vscode.window.showInformationMessage(
-    'Contextor Settings coming soon! Configure your API connection and preferences here.'
+  // Open VS Code Settings UI filtered to Contextor settings
+  // The filter query uses @ext:<publisher>.<extension-id> format
+  await vscode.commands.executeCommand(
+    "workbench.action.openSettings",
+    "@ext:contextor.contextor-vscode"
   );
 }

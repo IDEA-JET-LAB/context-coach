@@ -2,16 +2,64 @@
  * Mock implementation of VS Code API for testing
  */
 
+// Configuration change listeners
+type ConfigChangeListener = (e: ConfigurationChangeEvent) => void;
+const configChangeListeners: ConfigChangeListener[] = [];
+
+export interface ConfigurationChangeEvent {
+  affectsConfiguration(section: string): boolean;
+}
+
+// Mock configuration values that can be modified in tests
+export const mockConfigValues: Record<string, unknown> = {
+  apiEndpoint: "https://test.contextor.co/api",
+  refreshInterval: 30,
+  showNotifications: true,
+  showStatusBarItem: true,
+  autoRefreshEnabled: true,
+};
+
 export const workspace = {
-  getConfiguration: jest.fn(() => ({
-    get: jest.fn((key: string, defaultValue: string) => {
-      if (key === "apiEndpoint") {
-        return "https://test.contextor.co/api";
-      }
-      return defaultValue;
+  getConfiguration: jest.fn((_section?: string) => ({
+    get: jest.fn((key: string, defaultValue: unknown) => {
+      const value = mockConfigValues[key];
+      return value !== undefined ? value : defaultValue;
     }),
   })),
+  onDidChangeConfiguration: jest.fn((listener: ConfigChangeListener) => {
+    configChangeListeners.push(listener);
+    return {
+      dispose: () => {
+        const index = configChangeListeners.indexOf(listener);
+        if (index >= 0) {
+          configChangeListeners.splice(index, 1);
+        }
+      },
+    };
+  }),
 };
+
+/**
+ * Helper function to simulate a configuration change in tests
+ */
+export function simulateConfigChange(changedSections: string[]): void {
+  const event: ConfigurationChangeEvent = {
+    affectsConfiguration: (section: string) =>
+      changedSections.some((s) => s === section || s.startsWith(`${section}.`)),
+  };
+  configChangeListeners.forEach((listener) => listener(event));
+}
+
+/**
+ * Reset mock configuration to defaults
+ */
+export function resetMockConfig(): void {
+  mockConfigValues.apiEndpoint = "https://test.contextor.co/api";
+  mockConfigValues.refreshInterval = 30;
+  mockConfigValues.showNotifications = true;
+  mockConfigValues.showStatusBarItem = true;
+  mockConfigValues.autoRefreshEnabled = true;
+}
 
 export const window = {
   showInformationMessage: jest.fn(),

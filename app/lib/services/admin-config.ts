@@ -10,6 +10,7 @@ import {
   type AnalysisConfigWithDimensions,
   type AnalysisDimension,
 } from '@/lib/validations/analysis-config';
+import { logConfigChange } from '@/lib/services/audit-log';
 
 // Error types
 export type ActionResult<T> =
@@ -203,6 +204,22 @@ export async function createAnalysisConfig(input: AnalysisConfigInput): Promise<
     }
 
     console.log(`[Admin] Analysis config ${config.id} created with ${dimensions.length} dimensions`);
+
+    // Log audit entry (non-blocking)
+    logConfigChange({
+      action: 'config_created',
+      entity_type: 'analysis_config',
+      entity_id: config.id,
+      entity_name: config.name,
+      after_state: {
+        name: config.name,
+        version: config.version,
+        model: config.model,
+        system_prompt: validated.data.system_prompt,
+        dimensions: validated.data.dimensions.map((d) => d.name),
+      },
+    }).catch(console.error);
+
     revalidatePath('/admin/config');
     return { success: true, data: { id: config.id } };
   } catch (err) {
@@ -224,10 +241,10 @@ export async function updateAnalysisConfig(
 
     const supabase = createAdminClient();
 
-    // Check if config is active
+    // Get existing config for audit (before state)
     const { data: existingConfig } = await supabase
       .from('analysis_configs')
-      .select('is_active')
+      .select('*, analysis_dimensions(*)')
       .eq('id', id)
       .single();
 
@@ -238,6 +255,14 @@ export async function updateAnalysisConfig(
     if (existingConfig.is_active) {
       return { success: false, error: { code: 'FORBIDDEN', message: 'Cannot edit active config' } };
     }
+
+    // Capture before state for audit
+    const beforeState = {
+      name: existingConfig.name,
+      model: existingConfig.model,
+      system_prompt: existingConfig.system_prompt,
+      dimensions: existingConfig.analysis_dimensions?.map((d: AnalysisDimension) => d.name) || [],
+    };
 
     // Update config
     const { error: configError } = await supabase
@@ -282,6 +307,22 @@ export async function updateAnalysisConfig(
     }
 
     console.log(`[Admin] Analysis config ${id} updated`);
+
+    // Log audit entry (non-blocking)
+    logConfigChange({
+      action: 'config_updated',
+      entity_type: 'analysis_config',
+      entity_id: id,
+      entity_name: input.name || existingConfig.name,
+      before_state: beforeState,
+      after_state: {
+        name: input.name || existingConfig.name,
+        model: input.model || existingConfig.model,
+        system_prompt: input.system_prompt || existingConfig.system_prompt,
+        dimensions: input.dimensions?.map((d) => d.name) || beforeState.dimensions,
+      },
+    }).catch(console.error);
+
     revalidatePath('/admin/config');
     revalidatePath(`/admin/config/${id}`);
     return { success: true, data: { id } };
@@ -306,6 +347,7 @@ export async function activateConfig(configId: string): Promise<ActionResult<{ s
       .from('analysis_configs')
       .select(`
         id,
+        name,
         is_active,
         analysis_dimensions(weight)
       `)
@@ -353,6 +395,17 @@ export async function activateConfig(configId: string): Promise<ActionResult<{ s
     }
 
     console.log(`[Admin] Analysis config ${configId} activated`);
+
+    // Log audit entry (non-blocking)
+    logConfigChange({
+      action: 'config_activated',
+      entity_type: 'analysis_config',
+      entity_id: configId,
+      entity_name: config.name,
+      before_state: { is_active: false },
+      after_state: { is_active: true },
+    }).catch(console.error);
+
     revalidatePath('/admin/config');
     revalidatePath(`/admin/config/${configId}`);
     return { success: true, data: { success: true } };
@@ -402,6 +455,20 @@ export async function duplicateConfig(configId: string): Promise<ActionResult<{ 
     }
 
     console.log(`[Admin] Analysis config ${configId} duplicated to ${createResult.data.id}`);
+
+    // Log audit entry for duplication (non-blocking)
+    // Note: createAnalysisConfig already logs the creation
+    logConfigChange({
+      action: 'config_duplicated',
+      entity_type: 'analysis_config',
+      entity_id: createResult.data.id,
+      entity_name: `Copy of ${original.name}`,
+      after_state: {
+        original_id: configId,
+        original_name: original.name,
+      },
+    }).catch(console.error);
+
     return createResult;
   } catch (err) {
     return handleError(err);
@@ -419,10 +486,10 @@ export async function deleteConfig(configId: string): Promise<ActionResult<{ suc
 
     const supabase = createAdminClient();
 
-    // Check if config is active
+    // Get config for audit before deleting
     const { data: config } = await supabase
       .from('analysis_configs')
-      .select('is_active')
+      .select('name, is_active, model, system_prompt')
       .eq('id', configId)
       .single();
 
@@ -446,6 +513,20 @@ export async function deleteConfig(configId: string): Promise<ActionResult<{ suc
     }
 
     console.log(`[Admin] Analysis config ${configId} deleted`);
+
+    // Log audit entry (non-blocking)
+    logConfigChange({
+      action: 'config_deleted',
+      entity_type: 'analysis_config',
+      entity_id: configId,
+      entity_name: config.name,
+      before_state: {
+        name: config.name,
+        model: config.model,
+        system_prompt: config.system_prompt,
+      },
+    }).catch(console.error);
+
     revalidatePath('/admin/config');
     return { success: true, data: { success: true } };
   } catch (err) {

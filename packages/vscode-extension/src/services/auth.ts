@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { randomBytes } from "crypto";
+import { SettingsService } from "./settings";
 
 /**
  * User profile information from the Contextor API
@@ -65,8 +66,9 @@ const TOKEN_REFRESH_BUFFER_SECONDS = 60;
  */
 export class AuthService {
   private readonly secrets: vscode.SecretStorage;
-  private readonly apiEndpoint: string;
   private readonly outputChannel: vscode.OutputChannel;
+  private readonly settingsService: SettingsService;
+  private readonly disposables: vscode.Disposable[] = [];
 
   /**
    * Event emitter for auth state changes.
@@ -87,12 +89,32 @@ export class AuthService {
     this.secrets = context.secrets;
     this.outputChannel = outputChannel;
 
-    // Get API endpoint from configuration, default to production
-    const config = vscode.workspace.getConfiguration("contextor");
-    this.apiEndpoint = config.get<string>(
-      "apiEndpoint",
-      "https://contextor.co/api"
-    );
+    // Use SettingsService for configuration
+    this.settingsService = SettingsService.getInstance();
+
+    // Subscribe to settings changes for API endpoint
+    const settingsDisposable = this.settingsService.onDidChange((changes) => {
+      if (changes.apiEndpoint) {
+        this.log(`API endpoint updated to: ${changes.apiEndpoint}`);
+      }
+    });
+    this.disposables.push(settingsDisposable);
+    this.disposables.push(this._onDidChangeAuth);
+  }
+
+  /**
+   * Gets the current API endpoint from settings.
+   */
+  private get apiEndpoint(): string {
+    return this.settingsService.apiEndpoint;
+  }
+
+  /**
+   * Disposes of resources held by this service.
+   */
+  dispose(): void {
+    this.disposables.forEach((d) => d.dispose());
+    this.disposables.length = 0;
   }
 
   /**

@@ -233,8 +233,8 @@ epics:
     status: in-progress
     priority: P1
     stories: 6
-    stories_done: 1
-    note: "17-1 Transcript Discovery complete (62 tests). Remaining: 17-2 Import Preview UI, 17-3 to 17-6."
+    stories_done: 2
+    note: "17-1 Transcript Discovery (62 tests), 17-5 Progress Tracking (34 tests) complete. Remaining: 17-2 Import Preview UI, 17-3, 17-4, 17-6."
 
   epic-18:
     name: "Crash Recovery"
