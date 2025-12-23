@@ -73,13 +73,13 @@ export function OnboardingChecklist({
   return (
     <>
       <div
-        className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4"
+        className="rounded-lg border border-border bg-card p-4"
         role="region"
         aria-label="Setup checklist"
         data-testid="onboarding-checklist"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-medium text-[#fafafa]">Get Started</h3>
+          <h3 className="font-medium text-foreground">Get Started</h3>
           <Button
             variant="ghost"
             size="sm"

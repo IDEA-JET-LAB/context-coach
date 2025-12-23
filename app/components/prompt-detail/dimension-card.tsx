@@ -23,12 +23,12 @@ export function DimensionCard({ name, dimensionScore, suggestion }: DimensionCar
 
   return (
     <div
-      className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4"
+      className="rounded-lg border border-border bg-card p-4"
       data-testid="dimension-card"
       data-dimension={name}
     >
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-[#fafafa]" data-testid="dimension-name">
+        <h3 className="text-sm font-medium text-foreground" data-testid="dimension-name">
           {name}
         </h3>
         <span

@@ -18,7 +18,7 @@ export function DimensionBar({ score, maxScore = 10 }: DimensionBarProps) {
 
   return (
     <div
-      className="h-2 w-full rounded-full bg-[#2a2a2a] overflow-hidden"
+      className="h-2 w-full rounded-full bg-muted overflow-hidden"
       role="progressbar"
       aria-valuenow={score}
       aria-valuemin={0}

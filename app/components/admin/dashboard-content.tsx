@@ -49,7 +49,7 @@ function DashboardContent() {
             variant="outline"
             size="sm"
             onClick={refresh}
-            className="border-[#2a2a2a] bg-[#0f0f0f] hover:bg-[#1a1a1a]"
+            className="border-border bg-background hover:bg-card"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -151,19 +151,19 @@ function DashboardContent() {
             Queue Status
           </h3>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+            <div className="rounded-lg border border-border bg-background p-4">
               <p className="text-sm font-medium text-muted-foreground">Processing</p>
               <p className="text-xl font-bold text-foreground">
                 {healthData.health.processingCount}
               </p>
             </div>
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+            <div className="rounded-lg border border-border bg-background p-4">
               <p className="text-sm font-medium text-muted-foreground">Dead Letter</p>
               <p className="text-xl font-bold text-foreground">
                 {healthData.deadLetterCount}
               </p>
             </div>
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+            <div className="rounded-lg border border-border bg-background p-4">
               <p className="text-sm font-medium text-muted-foreground">Pending</p>
               <p className="text-xl font-bold text-foreground">
                 {healthData.health.pendingCount}

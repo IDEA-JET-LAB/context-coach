@@ -34,7 +34,7 @@ export function Header() {
 
   return (
     <header
-      className="flex h-16 items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-6"
+      className="flex h-16 items-center justify-between border-b border-border bg-background px-6"
       data-testid="dashboard-header"
     >
       <div className="flex items-center gap-4">
@@ -51,11 +51,11 @@ export function Header() {
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8" data-testid="user-avatar">
               <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name ?? user.email} />
-              <AvatarFallback className="bg-[#1a1a1a] text-xs">
+              <AvatarFallback className="bg-card text-xs">
                 {getInitials(user.name, user.email)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-[#fafafa]" data-testid="user-name">
+            <span className="text-sm text-foreground" data-testid="user-name">
               {user.name ?? user.email}
             </span>
             <Button

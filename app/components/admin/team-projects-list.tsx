@@ -43,7 +43,7 @@ export function TeamProjectsList({ projects }: TeamProjectsListProps) {
       </h3>
       <Table aria-label="Team projects">
         <TableHeader>
-          <TableRow className="border-[#2a2a2a] hover:bg-transparent">
+          <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Name</TableHead>
             <TableHead className="text-muted-foreground">Description</TableHead>
             <TableHead className="text-muted-foreground">API Key</TableHead>
@@ -53,7 +53,7 @@ export function TeamProjectsList({ projects }: TeamProjectsListProps) {
         </TableHeader>
         <TableBody>
           {activeProjects.map((project) => (
-            <TableRow key={project.id} className="border-[#2a2a2a]">
+            <TableRow key={project.id} className="border-border">
               <TableCell className="font-medium">{project.name}</TableCell>
               <TableCell className="text-muted-foreground max-w-xs truncate">
                 {project.description ?? '-'}
@@ -72,7 +72,7 @@ export function TeamProjectsList({ projects }: TeamProjectsListProps) {
             </TableRow>
           ))}
           {archivedProjects.map((project) => (
-            <TableRow key={project.id} className="border-[#2a2a2a] opacity-60">
+            <TableRow key={project.id} className="border-border opacity-60">
               <TableCell className="font-medium">{project.name}</TableCell>
               <TableCell className="text-muted-foreground max-w-xs truncate">
                 {project.description ?? '-'}

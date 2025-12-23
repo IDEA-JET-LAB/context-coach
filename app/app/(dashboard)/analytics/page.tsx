@@ -15,7 +15,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#fafafa]">Your Analytics</h1>
+        <h1 className="text-2xl font-bold text-foreground">Your Analytics</h1>
       </div>
       <AnalyticsDashboard userId={user.id} />
     </div>

@@ -53,13 +53,13 @@ export function ActiveFilters({ filters, onRemove, onClearAll }: ActiveFiltersPr
         <Badge
           key={key}
           variant="secondary"
-          className="bg-[#2a2a2a] text-[#fafafa] pr-1 gap-1"
+          className="bg-muted text-foreground pr-1 gap-1"
           data-testid={`active-filter-${key}`}
         >
           <span>{formatFilterLabel(key, value)}</span>
           <button
             onClick={() => onRemove(key as keyof FeedFilters)}
-            className="ml-1 rounded-full p-0.5 hover:bg-[#3a3a3a]"
+            className="ml-1 rounded-full p-0.5 hover:bg-muted"
             aria-label={`Remove ${key} filter`}
           >
             <X className="h-3 w-3" />

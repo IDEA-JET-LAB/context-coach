@@ -44,7 +44,7 @@ export function TeamsTable({ teams, isPending }: TeamsTableProps) {
   return (
     <Table aria-label="Teams list" data-testid="teams-table">
       <TableHeader>
-        <TableRow className="border-[#2a2a2a] hover:bg-transparent">
+        <TableRow className="border-border hover:bg-transparent">
           <TableHead className="text-muted-foreground">Team Name</TableHead>
           <TableHead className="text-right text-muted-foreground">Members</TableHead>
           <TableHead className="text-right text-muted-foreground">Projects</TableHead>
@@ -56,7 +56,7 @@ export function TeamsTable({ teams, isPending }: TeamsTableProps) {
         {teams.map((team) => (
           <TableRow
             key={team.id}
-            className="cursor-pointer border-[#2a2a2a] hover:bg-[#1a1a1a]"
+            className="cursor-pointer border-border hover:bg-card"
             onClick={() => router.push(`/admin/teams/${team.id}`)}
             tabIndex={0}
             role="button"
@@ -92,7 +92,7 @@ function TeamsTableSkeleton() {
   return (
     <Table aria-label="Loading teams" data-testid="teams-table-skeleton">
       <TableHeader>
-        <TableRow className="border-[#2a2a2a] hover:bg-transparent">
+        <TableRow className="border-border hover:bg-transparent">
           <TableHead className="text-muted-foreground">Team Name</TableHead>
           <TableHead className="text-right text-muted-foreground">Members</TableHead>
           <TableHead className="text-right text-muted-foreground">Projects</TableHead>
@@ -102,21 +102,21 @@ function TeamsTableSkeleton() {
       </TableHeader>
       <TableBody>
         {Array.from({ length: 5 }).map((_, i) => (
-          <TableRow key={i} className="border-[#2a2a2a]">
+          <TableRow key={i} className="border-border">
             <TableCell>
-              <Skeleton className="h-4 w-32 bg-[#2a2a2a]" />
+              <Skeleton className="h-4 w-32 bg-muted" />
             </TableCell>
             <TableCell className="text-right">
-              <Skeleton className="h-4 w-8 ml-auto bg-[#2a2a2a]" />
+              <Skeleton className="h-4 w-8 ml-auto bg-muted" />
             </TableCell>
             <TableCell className="text-right">
-              <Skeleton className="h-4 w-8 ml-auto bg-[#2a2a2a]" />
+              <Skeleton className="h-4 w-8 ml-auto bg-muted" />
             </TableCell>
             <TableCell className="text-right">
-              <Skeleton className="h-4 w-12 ml-auto bg-[#2a2a2a]" />
+              <Skeleton className="h-4 w-12 ml-auto bg-muted" />
             </TableCell>
             <TableCell>
-              <Skeleton className="h-4 w-24 bg-[#2a2a2a]" />
+              <Skeleton className="h-4 w-24 bg-muted" />
             </TableCell>
           </TableRow>
         ))}

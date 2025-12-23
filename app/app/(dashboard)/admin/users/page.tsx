@@ -78,7 +78,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         <UsersFilters search={search} status={status} />
       </Suspense>
 
-      <div className="rounded-lg bg-[#0f0f0f]">
+      <div className="rounded-lg bg-background">
         <Suspense fallback={<UsersTableSkeleton />}>
           <UsersContent
             page={page}

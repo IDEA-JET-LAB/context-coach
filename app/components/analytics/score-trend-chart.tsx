@@ -119,10 +119,10 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 
   return (
     <div
-      className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-3 shadow-lg"
+      className="rounded-lg border border-border bg-card p-3 shadow-lg"
       data-testid="chart-tooltip"
     >
-      <p className="text-sm font-medium text-[#fafafa]">
+      <p className="text-sm font-medium text-foreground">
         {format(new Date(label as string), 'MMMM d, yyyy')}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">

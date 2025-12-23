@@ -39,9 +39,9 @@ export function InstallCliModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <DialogContent className="bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-[#fafafa]">
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <Terminal className="h-5 w-5" />
             Install Contextor CLI
           </DialogTitle>
@@ -54,7 +54,7 @@ export function InstallCliModal({
         <div className="mt-4">
           <div className="relative">
             <pre
-              className="p-4 bg-[#0a0a0a] rounded-lg text-sm text-[#fafafa] overflow-x-auto"
+              className="p-4 bg-background rounded-lg text-sm text-foreground overflow-x-auto"
               data-testid="install-command"
             >
               <code>{installCommand}</code>

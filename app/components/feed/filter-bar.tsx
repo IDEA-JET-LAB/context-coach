@@ -83,14 +83,14 @@ export function FilterBar({ filters, onFiltersChange, isTeamLead, teamId }: Filt
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="pl-9 bg-[#1a1a1a] border-[#2a2a2a]"
+          className="pl-9 bg-card border-border"
           aria-label="Search prompts by text"
           data-testid="search-input"
         />
         {searchInput && (
           <button
             onClick={() => setSearchInput('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-[#2a2a2a] rounded"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
             aria-label="Clear search"
             data-testid="clear-search"
           >

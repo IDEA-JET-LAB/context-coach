@@ -131,14 +131,14 @@ export default function SystemHealthPage() {
 
         {/* Loading skeletons */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="metrics-grid">
-          <Skeleton className="h-32 bg-[#1a1a1a]" />
-          <Skeleton className="h-32 bg-[#1a1a1a]" />
-          <Skeleton className="h-32 bg-[#1a1a1a]" />
+          <Skeleton className="h-32 bg-card" />
+          <Skeleton className="h-32 bg-card" />
+          <Skeleton className="h-32 bg-card" />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-80 bg-[#1a1a1a]" />
-          <Skeleton className="h-80 bg-[#1a1a1a]" />
+          <Skeleton className="h-80 bg-card" />
+          <Skeleton className="h-80 bg-card" />
         </div>
       </div>
     );

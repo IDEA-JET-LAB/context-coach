@@ -17,7 +17,7 @@ export function ProgressIndicator({ completed, total }: ProgressIndicatorProps) 
         </span>
       </div>
       <div
-        className="h-2 rounded-full bg-[#2a2a2a] overflow-hidden"
+        className="h-2 rounded-full bg-muted overflow-hidden"
         role="progressbar"
         aria-valuenow={completed}
         aria-valuemin={0}

@@ -47,7 +47,7 @@ export function UsersPagination({
   return (
     <div
       data-testid="users-pagination"
-      className="flex items-center justify-between border-t border-[#2a2a2a] px-4 py-3"
+      className="flex items-center justify-between border-t border-border px-4 py-3"
     >
       <div className="text-sm text-muted-foreground">
         Showing {startItem} to {endItem} of {total} users

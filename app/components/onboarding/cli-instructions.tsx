@@ -28,14 +28,14 @@ export function CliInstructions({ projectId }: CliInstructionsProps) {
   };
 
   return (
-    <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-sm text-muted-foreground mb-3">
         Run this command in your project directory:
       </p>
 
-      <div className="flex items-center gap-2 rounded-md bg-[#0a0a0a] p-3 font-mono text-sm">
+      <div className="flex items-center gap-2 rounded-md bg-background p-3 font-mono text-sm">
         {isPending ? (
-          <div className="h-5 w-full animate-pulse rounded bg-[#2a2a2a]" />
+          <div className="h-5 w-full animate-pulse rounded bg-muted" />
         ) : (
           <>
             <code className="flex-1 text-teal-500 overflow-x-auto">
@@ -62,7 +62,7 @@ export function CliInstructions({ projectId }: CliInstructionsProps) {
         href="https://docs.contextor.com/cli"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-[#fafafa]"
+        className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
       >
         View full documentation
         <ExternalLink className="h-3 w-3" aria-hidden="true" />

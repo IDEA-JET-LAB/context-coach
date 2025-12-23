@@ -22,7 +22,7 @@ export function PromptDetailSkeleton() {
       </div>
 
       {/* Prompt text */}
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4 mb-8">
+      <div className="rounded-lg border border-border bg-card p-4 mb-8">
         <Skeleton className="h-4 w-16 mb-2" />
         <Skeleton className="h-4 w-full mb-2" />
         <Skeleton className="h-4 w-full mb-2" />
@@ -35,7 +35,7 @@ export function PromptDetailSkeleton() {
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4"
+            className="rounded-lg border border-border bg-card p-4"
           >
             <div className="flex items-center justify-between mb-2">
               <Skeleton className="h-4 w-20" />

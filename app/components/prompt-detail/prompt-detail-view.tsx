@@ -98,12 +98,12 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
 
       {/* Full prompt text */}
       <div
-        className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4 mb-8"
+        className="rounded-lg border border-border bg-card p-4 mb-8"
         data-testid="prompt-text-container"
       >
         <h2 className="text-sm font-medium text-muted-foreground mb-2">Prompt</h2>
         <p
-          className="text-[#fafafa] whitespace-pre-wrap"
+          className="text-foreground whitespace-pre-wrap"
           data-testid="prompt-full-text"
         >
           {prompt.text}
@@ -113,7 +113,7 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
       {/* Dimension scores */}
       {prompt.analysis_status === 'complete' && Object.keys(dimensionScores).length > 0 && (
         <div data-testid="dimension-breakdown">
-          <h2 className="text-lg font-medium text-[#fafafa] mb-4">Score Breakdown</h2>
+          <h2 className="text-lg font-medium text-foreground mb-4">Score Breakdown</h2>
           <div className="space-y-3">
             {sortedDimensions.map((dimension) => {
               const score = dimensionScores[dimension];

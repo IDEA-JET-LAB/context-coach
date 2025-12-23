@@ -37,15 +37,15 @@ export function PromptRow({ prompt, onClick, searchTerm }: PromptRowProps) {
       onClick={onClick}
       className={`flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition-colors ${
         isCommand
-          ? 'border-[#3a3a3a] bg-[#141414] hover:bg-[#1a1a1a] opacity-70'
-          : 'border-[#2a2a2a] bg-[#1a1a1a] hover:bg-[#242424]'
+          ? 'border-muted bg-surface hover:bg-card opacity-70'
+          : 'border-border bg-card hover:bg-surface-hover'
       }`}
       data-testid="prompt-row"
       data-prompt-id={prompt.id}
       data-prompt-type={prompt.prompt_type}
     >
       {isCommand ? (
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2a2a]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
           <Terminal className="h-5 w-5 text-muted-foreground" />
         </div>
       ) : (
@@ -57,7 +57,7 @@ export function PromptRow({ prompt, onClick, searchTerm }: PromptRowProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {command && (
-            <span className="inline-flex items-center rounded bg-[#2a2a2a] px-2 py-0.5 text-xs font-mono text-muted-foreground">
+            <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground">
               {command}
             </span>
           )}
@@ -65,7 +65,7 @@ export function PromptRow({ prompt, onClick, searchTerm }: PromptRowProps) {
             <span className="text-xs text-muted-foreground">Command</span>
           )}
         </div>
-        <p className={`text-sm line-clamp-2 ${isCommand ? 'text-muted-foreground' : 'text-[#fafafa]'}`} data-testid="prompt-text">
+        <p className={`text-sm line-clamp-2 ${isCommand ? 'text-muted-foreground' : 'text-foreground'}`} data-testid="prompt-text">
           {searchTerm ? (
             <HighlightText text={truncatedText} search={searchTerm} />
           ) : (

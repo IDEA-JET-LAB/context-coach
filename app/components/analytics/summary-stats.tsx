@@ -5,13 +5,43 @@ import { SCORE_DECIMAL_PLACES } from '@/lib/constants/analytics';
 
 interface SummaryStatsProps {
   totalPrompts: number;
-  avgScore: number;
-  improvement: number;
+  analyzedPrompts: number;
+  avgScore: number | null;
+  improvement: number | null;
   trend: TrendDirection;
 }
 
-export function SummaryStats({ totalPrompts, avgScore, improvement, trend }: SummaryStatsProps) {
-  const improvementDisplay = `${improvement >= 0 ? '+' : ''}${improvement.toFixed(SCORE_DECIMAL_PLACES)}%`;
+export function SummaryStats({
+  totalPrompts,
+  analyzedPrompts,
+  avgScore,
+  improvement,
+  trend,
+}: SummaryStatsProps) {
+  // Format average score - show "N/A" when no analyses yet
+  const avgScoreDisplay = avgScore !== null
+    ? `${avgScore.toFixed(SCORE_DECIMAL_PLACES)}/10`
+    : 'N/A';
+
+  // Format improvement - show "N/A" when not enough data
+  const improvementDisplay = improvement !== null
+    ? `${improvement >= 0 ? '+' : ''}${improvement.toFixed(SCORE_DECIMAL_PLACES)}%`
+    : 'N/A';
+
+  // Show hint about awaiting analysis if prompts exist but none analyzed
+  const promptsHint = totalPrompts > 0 && analyzedPrompts === 0
+    ? 'awaiting analysis'
+    : undefined;
+
+  const scoreHint = avgScore === null && totalPrompts > 0
+    ? 'analysis in progress'
+    : undefined;
+
+  const improvementHint = improvement === null && analyzedPrompts > 0 && analyzedPrompts < 2
+    ? 'need more data'
+    : improvement === null && totalPrompts > 0
+      ? 'analysis in progress'
+      : undefined;
 
   return (
     <div
@@ -23,16 +53,18 @@ export function SummaryStats({ totalPrompts, avgScore, improvement, trend }: Sum
       <StatCard
         label="Total Prompts"
         value={totalPrompts}
+        trendValue={promptsHint}
       />
       <StatCard
         label="Average Score"
-        value={`${avgScore.toFixed(SCORE_DECIMAL_PLACES)}/10`}
+        value={avgScoreDisplay}
+        trendValue={scoreHint}
       />
       <StatCard
         label="Improvement"
         value={improvementDisplay}
-        trend={trend}
-        trendValue="vs previous period"
+        trend={improvement !== null ? trend : undefined}
+        trendValue={improvementHint ?? (improvement !== null ? 'vs previous period' : undefined)}
       />
     </div>
   );

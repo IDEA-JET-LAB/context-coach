@@ -11,7 +11,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
  */
 export default function ScoreDisplayTestPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8 text-[#fafafa]">
+    <div className="min-h-screen bg-background p-8 text-foreground">
       <h1 className="text-2xl font-bold mb-8">Score Display Components Test Page</h1>
 
       {/* ScoreBadge Tests */}

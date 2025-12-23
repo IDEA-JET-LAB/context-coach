@@ -35,7 +35,7 @@ export function MemberDimensionBreakdown({ dimensions }: MemberDimensionBreakdow
                 {dim.score.toFixed(1)}
               </span>
             </div>
-            <div className="h-2 rounded-full bg-[#2a2a2a]">
+            <div className="h-2 rounded-full bg-muted">
               <div
                 className={cn('h-full rounded-full transition-all', colorClass)}
                 style={{ width: `${percentage}%` }}

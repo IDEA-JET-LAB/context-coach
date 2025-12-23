@@ -12,6 +12,7 @@ import {
   Building2,
   Settings2,
   Activity,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -19,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useCurrentTeam } from '@/lib/hooks/use-current-team';
 
 const navItems = [
   { icon: MessageSquare, label: 'Feed', href: '/prompts' },
@@ -42,10 +44,14 @@ interface SidebarProps {
 
 export function Sidebar({ isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
+  const { data: currentTeam } = useCurrentTeam();
+
+  // Check if we're on team settings page
+  const isTeamSettingsActive = pathname.includes('/teams/') && pathname.includes('/settings');
 
   return (
     <aside
-      className="flex w-16 flex-col items-center border-r border-[#2a2a2a] bg-[#0a0a0a] py-4"
+      className="flex w-16 flex-col items-center border-r border-border bg-background py-4"
       data-testid="dashboard-sidebar"
     >
       <nav role="navigation" aria-label="Main navigation" className="flex flex-col gap-2">
@@ -68,8 +74,8 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
                     'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     isActive
-                      ? 'bg-[#1a1a1a] text-primary'
-                      : 'text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground'
+                      ? 'bg-surface text-primary'
+                      : 'text-muted-foreground hover:bg-surface hover:text-foreground'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -81,12 +87,38 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
             </Tooltip>
           );
         })}
+
+        {/* Team Settings - only show if user has a current team */}
+        {currentTeam && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href={`/teams/${currentTeam.id}/settings`}
+                aria-label="Team Settings"
+                aria-current={isTeamSettingsActive ? 'page' : undefined}
+                data-testid="nav-team-settings"
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  isTeamSettingsActive
+                    ? 'bg-surface text-primary'
+                    : 'text-muted-foreground hover:bg-surface hover:text-foreground'
+                )}
+              >
+                <UserCog className="h-5 w-5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              Team Settings
+            </TooltipContent>
+          </Tooltip>
+        )}
       </nav>
 
       {/* Admin navigation - only shown for super admins */}
       {isAdmin && (
         <>
-          <div className="my-4 w-8 border-t border-[#2a2a2a]" />
+          <div className="my-4 w-8 border-t border-border" />
           <nav role="navigation" aria-label="Admin navigation" className="flex flex-col gap-2">
             {adminNavItems.map((item) => {
               const isActive =
@@ -107,7 +139,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         isActive
                           ? 'bg-amber-500/20 text-amber-500'
-                          : 'text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground'
+                          : 'text-muted-foreground hover:bg-surface hover:text-foreground'
                       )}
                     >
                       <item.icon className="h-5 w-5" />

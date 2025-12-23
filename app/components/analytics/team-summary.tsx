@@ -27,11 +27,11 @@ export function TeamSummary({ teamId }: TeamSummaryProps) {
     return (
       <div className="space-y-4" data-testid="team-summary-loading">
         <div className="grid grid-cols-3 gap-4">
-          <Skeleton className="h-24 bg-[#1a1a1a]" />
-          <Skeleton className="h-24 bg-[#1a1a1a]" />
-          <Skeleton className="h-24 bg-[#1a1a1a]" />
+          <Skeleton className="h-24 bg-card" />
+          <Skeleton className="h-24 bg-card" />
+          <Skeleton className="h-24 bg-card" />
         </div>
-        <Skeleton className="h-[250px] w-full bg-[#1a1a1a]" />
+        <Skeleton className="h-[250px] w-full bg-card" />
       </div>
     );
   }
@@ -50,10 +50,10 @@ export function TeamSummary({ teamId }: TeamSummaryProps) {
   if (!data || data.totalPrompts === 0) {
     return (
       <div
-        className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8 text-center"
+        className="rounded-lg border border-border bg-card p-8 text-center"
         data-testid="team-summary-empty"
       >
-        <p className="text-[#fafafa] text-lg mb-2">No team data yet</p>
+        <p className="text-foreground text-lg mb-2">No team data yet</p>
         <p className="text-muted-foreground">
           Team statistics will appear as members start capturing prompts.
         </p>
@@ -65,23 +65,23 @@ export function TeamSummary({ teamId }: TeamSummaryProps) {
     <div className="space-y-6" data-testid="team-summary">
       {/* Aggregated Stats Only - No Individual Data */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-lg bg-[#1a1a1a] p-4 border border-[#2a2a2a]">
+        <div className="rounded-lg bg-card p-4 border border-border">
           <p className="text-sm text-muted-foreground">Team Prompts</p>
-          <p className="text-2xl font-bold text-[#fafafa]" data-testid="team-total-prompts">
+          <p className="text-2xl font-bold text-foreground" data-testid="team-total-prompts">
             {data.totalPrompts}
           </p>
         </div>
-        <div className="rounded-lg bg-[#1a1a1a] p-4 border border-[#2a2a2a]">
+        <div className="rounded-lg bg-card p-4 border border-border">
           <p className="text-sm text-muted-foreground">Team Average</p>
-          <p className="text-2xl font-bold text-teal-500" data-testid="team-average-score">
+          <p className="text-2xl font-bold text-primary" data-testid="team-average-score">
             {data.teamAverage.toFixed(1)}
           </p>
         </div>
-        <div className="rounded-lg bg-[#1a1a1a] p-4 border border-[#2a2a2a]">
+        <div className="rounded-lg bg-card p-4 border border-border">
           <p className="text-sm text-muted-foreground">Trend</p>
           <div className="flex items-center gap-2 mt-1">
             <TrendIcon trend={data.teamTrend} />
-            <span className="text-[#fafafa] capitalize" data-testid="team-trend">
+            <span className="text-foreground capitalize" data-testid="team-trend">
               {data.teamTrend}
             </span>
           </div>
@@ -89,8 +89,8 @@ export function TeamSummary({ teamId }: TeamSummaryProps) {
       </div>
 
       {/* Score Distribution (aggregated, no individual data) */}
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4">
-        <h2 className="text-lg font-medium text-[#fafafa] mb-4">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <h2 className="text-lg font-medium text-foreground mb-4">
           Team Score Distribution
         </h2>
         <TeamDistributionChart data={data.distribution} />

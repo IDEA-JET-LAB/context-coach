@@ -8,18 +8,18 @@ interface MarketingNavbarProps {
 
 export function MarketingNavbar({ isAuthenticated = false }: MarketingNavbarProps) {
   return (
-    <nav className="sticky top-0 z-40 border-b border-[#27272a] bg-[#0a0a0a]/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="flex h-16 max-w-7xl mx-auto px-6 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-[#14b8a6]" />
+          <Sparkles className="h-5 w-5 text-primary" />
           <span className="text-lg font-bold tracking-tight text-white">
             Contextor
           </span>
         </Link>
 
         {/* Navigation Links - Hidden on mobile */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#a1a1aa]">
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
           <a href="#features" className="hover:text-white transition-colors">
             Features
           </a>
@@ -34,15 +34,15 @@ export function MarketingNavbar({ isAuthenticated = false }: MarketingNavbarProp
         {/* Auth Buttons - Show different options based on auth state */}
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            <Button asChild className="bg-[#14b8a6] hover:bg-[#0d9488] text-white">
+            <Button asChild className="bg-primary hover:bg-primary/80 text-white">
               <Link href="/prompts">Go to Dashboard</Link>
             </Button>
           ) : (
             <>
-              <Button variant="ghost" asChild className="text-[#a1a1aa] hover:text-white">
+              <Button variant="ghost" asChild className="text-muted-foreground hover:text-white">
                 <Link href="/login">Log In</Link>
               </Button>
-              <Button asChild className="bg-[#14b8a6] hover:bg-[#0d9488] text-white">
+              <Button asChild className="bg-primary hover:bg-primary/80 text-white">
                 <Link href="/signup">Sign Up</Link>
               </Button>
             </>

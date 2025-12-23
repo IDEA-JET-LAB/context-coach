@@ -63,7 +63,7 @@ export function SystemMetricCard({
   return (
     <Card
       className={cn(
-        'border-2 bg-[#0f0f0f]',
+        'border-2 bg-background',
         config.borderColor,
         status === 'critical' && config.animate
       )}

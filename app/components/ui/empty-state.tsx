@@ -35,10 +35,10 @@ export function EmptyState({
       role="status"
       aria-label={title}
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#1a1a1a]">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-card">
         <Icon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
       </div>
-      <h3 className="mt-4 text-lg font-medium text-[#fafafa]">{title}</h3>
+      <h3 className="mt-4 text-lg font-medium text-foreground">{title}</h3>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
         {description}
       </p>

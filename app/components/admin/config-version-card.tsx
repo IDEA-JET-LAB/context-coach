@@ -67,7 +67,7 @@ export function ConfigVersionCard({ config }: ConfigVersionCardProps) {
   return (
     <Card
       data-testid="config-version-card"
-      className="border-[#2a2a2a] bg-[#0f0f0f]"
+      className="border-border bg-background"
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">

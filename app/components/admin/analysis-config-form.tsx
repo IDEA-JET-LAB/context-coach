@@ -113,7 +113,7 @@ export function AnalysisConfigForm({ config, mode }: AnalysisConfigFormProps) {
         </div>
       )}
 
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-6 space-y-6">
+      <div className="rounded-lg border border-border bg-background p-6 space-y-6">
         <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -123,7 +123,7 @@ export function AnalysisConfigForm({ config, mode }: AnalysisConfigFormProps) {
               id="name"
               placeholder="e.g., Scoring v2.0"
               {...form.register('name')}
-              className="bg-[#1a1a1a]"
+              className="bg-card"
             />
             {form.formState.errors.name && (
               <p className="text-xs text-destructive">
@@ -140,7 +140,7 @@ export function AnalysisConfigForm({ config, mode }: AnalysisConfigFormProps) {
                 form.setValue('model', value as AnalysisConfigFormInput['model'])
               }
             >
-              <SelectTrigger id="model" data-testid="model-select-trigger" className="bg-[#1a1a1a]">
+              <SelectTrigger id="model" data-testid="model-select-trigger" className="bg-card">
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
@@ -171,7 +171,7 @@ export function AnalysisConfigForm({ config, mode }: AnalysisConfigFormProps) {
             placeholder="Instructions for the AI on how to analyze prompts..."
             {...form.register('system_prompt')}
             rows={6}
-            className="bg-[#1a1a1a]"
+            className="bg-card"
           />
           {form.formState.errors.system_prompt && (
             <p className="text-xs text-destructive">
@@ -181,7 +181,7 @@ export function AnalysisConfigForm({ config, mode }: AnalysisConfigFormProps) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-6">
+      <div className="rounded-lg border border-border bg-background p-6">
         <DimensionEditor form={form} />
         {form.formState.errors.dimensions?.root && (
           <p className="mt-2 text-sm text-destructive">

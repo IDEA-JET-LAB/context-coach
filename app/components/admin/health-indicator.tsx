@@ -40,7 +40,7 @@ export function HealthIndicator({
     return (
       <Card
         data-testid={testId}
-        className="border-[#2a2a2a] bg-[#0f0f0f]"
+        className="border-border bg-background"
         role="status"
         aria-label={`Loading ${title}`}
       >
@@ -73,7 +73,7 @@ export function HealthIndicator({
   return (
     <Card
       data-testid={testId}
-      className="border-[#2a2a2a] bg-[#0f0f0f]"
+      className="border-border bg-background"
       role="status"
       aria-label={`${title}: ${value}${unit}`}
     >
@@ -119,7 +119,7 @@ export function HealthIndicator({
  */
 export function HealthIndicatorSkeleton() {
   return (
-    <Card className="border-[#2a2a2a] bg-[#0f0f0f]">
+    <Card className="border-border bg-background">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-4 w-4 rounded-full" />

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
 import { Providers } from '@/components/providers';
+import { GoogleAnalytics } from '@/components/analytics/google-analytics';
 import './globals.css';
 
 const defaultUrl = process.env.VERCEL_URL
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
+        <GoogleAnalytics />
         <Providers>{children}</Providers>
       </body>
     </html>

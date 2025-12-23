@@ -14,7 +14,7 @@ export default async function LandingPage() {
 
   // Show landing page for everyone - CTAs change based on auth state
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-y-auto">
+    <div className="min-h-screen bg-background text-white overflow-y-auto">
       <MarketingNavbar isAuthenticated={isAuthenticated} />
       <MarketingHero isAuthenticated={isAuthenticated} />
       <MarketingFeatures />

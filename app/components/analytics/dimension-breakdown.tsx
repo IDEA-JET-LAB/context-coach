@@ -48,7 +48,7 @@ export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
           {weakestWithSuggestions.map((dim) => (
             <div key={dim.dimension ?? 'unknown'} className="space-y-1" data-testid={`focus-area-${dim.dimension}`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#fafafa]">{dim.dimension ?? 'Unknown'}</span>
+                <span className="text-sm font-medium text-foreground">{dim.dimension ?? 'Unknown'}</span>
                 <span className="text-sm text-muted-foreground">{(dim.avgScore ?? 0).toFixed(1)}</span>
               </div>
               <DimensionBar score={dim.avgScore ?? 0} />
@@ -60,12 +60,12 @@ export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
 
       {/* All Dimensions */}
       <div data-testid="all-dimensions">
-        <h3 className="mb-3 font-medium text-[#fafafa]">All Dimensions</h3>
+        <h3 className="mb-3 font-medium text-foreground">All Dimensions</h3>
         <div className="space-y-3">
           {dimensions.map((dim) => (
             <div key={dim.dimension ?? 'unknown'} className="space-y-1" data-testid={`dimension-${dim.dimension}`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#fafafa]">{dim.dimension ?? 'Unknown'}</span>
+                <span className="text-sm font-medium text-foreground">{dim.dimension ?? 'Unknown'}</span>
                 <span className="text-sm text-muted-foreground">{(dim.avgScore ?? 0).toFixed(1)}</span>
               </div>
               <DimensionBar score={dim.avgScore ?? 0} />

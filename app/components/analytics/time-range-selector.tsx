@@ -25,10 +25,10 @@ const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
 export function TimeRangeSelector({ value, onChange }: TimeRangeSelectorProps) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as TimeRange)} data-testid="time-range-selector">
-      <SelectTrigger className="w-[140px] bg-[#1a1a1a] border-[#2a2a2a]" data-testid="time-range-trigger">
+      <SelectTrigger className="w-[140px] bg-card border-border" data-testid="time-range-trigger">
         <SelectValue placeholder="Time range" />
       </SelectTrigger>
-      <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+      <SelectContent className="bg-card border-border">
         {TIME_RANGE_OPTIONS.map((option) => (
           <SelectItem
             key={option.value}

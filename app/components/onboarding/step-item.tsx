@@ -20,7 +20,7 @@ export function StepItem({ icon: Icon, label, completed, href, onClick }: StepIt
         'flex items-center gap-3 p-2 rounded-md transition-all duration-300',
         completed
           ? 'text-muted-foreground'
-          : 'text-[#fafafa] hover:bg-[#2a2a2a] cursor-pointer'
+          : 'text-foreground hover:bg-muted cursor-pointer'
       )}
       role="listitem"
       aria-label={`${label} - ${completed ? 'completed' : 'pending'}`}
@@ -28,7 +28,7 @@ export function StepItem({ icon: Icon, label, completed, href, onClick }: StepIt
       <div
         className={cn(
           'flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300',
-          completed ? 'bg-teal-500' : 'border border-[#3a3a3a]'
+          completed ? 'bg-teal-500' : 'border border-muted'
         )}
       >
         {completed ? (

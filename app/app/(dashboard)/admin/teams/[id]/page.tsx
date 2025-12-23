@@ -95,12 +95,12 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
         {/* Left column - Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Members section */}
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-6">
+          <div className="rounded-lg border border-border bg-background p-6">
             <TeamMembersList members={members} />
           </div>
 
           {/* Projects section */}
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-6">
+          <div className="rounded-lg border border-border bg-background p-6">
             <TeamProjectsList projects={projects} />
           </div>
         </div>

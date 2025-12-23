@@ -50,7 +50,7 @@ export function AnalysisQueueStatus({ data }: AnalysisQueueStatusProps) {
   const errorColors = getHealthStatusColors(errorStatus);
 
   return (
-    <Card className="bg-[#0f0f0f] border-[#2a2a2a]">
+    <Card className="bg-background border-border">
       <CardHeader>
         <CardTitle className="text-lg font-semibold flex items-center justify-between">
           <span>Analysis Queue</span>
@@ -61,7 +61,7 @@ export function AnalysisQueueStatus({ data }: AnalysisQueueStatusProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Summary stats */}
-        <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#2a2a2a]">
+        <div className="grid grid-cols-2 gap-4 pb-4 border-b border-border">
           <div className="text-center">
             <div className="text-2xl font-bold text-foreground">{total}</div>
             <div className="text-xs text-muted-foreground">Total Prompts</div>

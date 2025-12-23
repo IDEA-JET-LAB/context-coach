@@ -88,7 +88,7 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
   return (
     <div className="space-y-6" data-testid="analytics-dashboard">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[#fafafa]">Your Progress</h2>
+        <h2 className="text-lg font-semibold text-foreground">Your Progress</h2>
         <TimeRangeSelector value={timeRange} onChange={handleTimeRangeChange} />
       </div>
 
@@ -101,12 +101,12 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4">
-          <h3 className="mb-4 font-medium text-[#fafafa]">Score Trend</h3>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h3 className="mb-4 font-medium text-foreground">Score Trend</h3>
           <ScoreTrendChart data={data.trendData} trend={data.trend} />
         </div>
 
-        <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
           <DimensionBreakdown dimensions={data.dimensions} />
         </div>
       </div>
@@ -118,17 +118,17 @@ function AnalyticsLoadingSkeleton() {
   return (
     <div className="space-y-6" data-testid="analytics-loading">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-7 w-32 bg-[#2a2a2a]" />
-        <Skeleton className="h-10 w-[140px] bg-[#2a2a2a]" />
+        <Skeleton className="h-7 w-32 bg-muted" />
+        <Skeleton className="h-10 w-[140px] bg-muted" />
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <Skeleton className="h-24 bg-[#2a2a2a]" />
-        <Skeleton className="h-24 bg-[#2a2a2a]" />
-        <Skeleton className="h-24 bg-[#2a2a2a]" />
+        <Skeleton className="h-24 bg-muted" />
+        <Skeleton className="h-24 bg-muted" />
+        <Skeleton className="h-24 bg-muted" />
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
-        <Skeleton className="h-[350px] bg-[#2a2a2a]" />
-        <Skeleton className="h-[350px] bg-[#2a2a2a]" />
+        <Skeleton className="h-[350px] bg-muted" />
+        <Skeleton className="h-[350px] bg-muted" />
       </div>
     </div>
   );

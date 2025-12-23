@@ -12,12 +12,12 @@ function TeamAnalyticsSkeleton() {
   return (
     <div className="space-y-6" data-testid="team-analytics-skeleton">
       <div className="grid grid-cols-3 gap-4">
-        <Skeleton className="h-24 bg-[#1a1a1a]" />
-        <Skeleton className="h-24 bg-[#1a1a1a]" />
-        <Skeleton className="h-24 bg-[#1a1a1a]" />
+        <Skeleton className="h-24 bg-card" />
+        <Skeleton className="h-24 bg-card" />
+        <Skeleton className="h-24 bg-card" />
       </div>
-      <Skeleton className="h-[250px] w-full bg-[#1a1a1a]" />
-      <Skeleton className="h-[250px] w-full bg-[#1a1a1a]" />
+      <Skeleton className="h-[250px] w-full bg-card" />
+      <Skeleton className="h-[250px] w-full bg-card" />
     </div>
   );
 }
@@ -32,7 +32,7 @@ export default function TeamPage() {
   if (isPending) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-[#fafafa]">Team Analytics</h1>
+        <h1 className="text-2xl font-bold text-foreground">Team Analytics</h1>
         <TeamAnalyticsSkeleton />
       </div>
     );
@@ -41,9 +41,9 @@ export default function TeamPage() {
   if (!team) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-[#fafafa]">Team Analytics</h1>
+        <h1 className="text-2xl font-bold text-foreground">Team Analytics</h1>
         <div
-          className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8 text-center"
+          className="rounded-lg border border-border bg-card p-8 text-center"
           data-testid="no-team-state"
         >
           <p className="text-muted-foreground">
@@ -57,7 +57,7 @@ export default function TeamPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-[#fafafa]">Team Analytics</h1>
+        <h1 className="text-2xl font-bold text-foreground">Team Analytics</h1>
         <div
           className="rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center"
           data-testid="team-analytics-error"
@@ -79,7 +79,7 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#fafafa]" data-testid="team-analytics-title">
+      <h1 className="text-2xl font-bold text-foreground" data-testid="team-analytics-title">
         Team Analytics
       </h1>
 

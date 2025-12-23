@@ -267,7 +267,7 @@ function DeleteAccountDialog({
             value={confirmEmail}
             onChange={(e) => setConfirmEmail(e.target.value)}
             placeholder="Enter user's email"
-            className="bg-[#0f0f0f] border-[#2a2a2a]"
+            className="bg-background border-border"
           />
         </div>
         <AlertDialogFooter>

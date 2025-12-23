@@ -85,12 +85,12 @@ export function UsersFilters({ search = '', status = 'all' }: UsersFiltersProps)
           placeholder="Search by email or name..."
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-9 bg-[#0f0f0f] border-[#2a2a2a]"
+          className="pl-9 bg-background border-border"
         />
       </div>
 
       <Select value={status} onValueChange={handleStatusChange}>
-        <SelectTrigger data-testid="status-filter" className="w-32 bg-[#0f0f0f] border-[#2a2a2a]">
+        <SelectTrigger data-testid="status-filter" className="w-32 bg-background border-border">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>

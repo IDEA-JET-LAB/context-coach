@@ -51,6 +51,19 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        // Semantic surface colors for layered UI
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          hover: "hsl(var(--surface-hover))",
+        },
+        // Score colors - growth-oriented palette (no red for low scores)
+        score: {
+          high: "hsl(var(--score-high))",
+          medium: "hsl(var(--score-medium))",
+          growth: "hsl(var(--score-growth))",
+        },
+        // Info color for informational elements
+        info: "hsl(var(--info))",
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -26,13 +26,13 @@ export function StatCard({
     return (
       <div
         className={cn(
-          'rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4',
+          'rounded-lg border border-border bg-surface p-4',
           className
         )}
         data-testid="stat-card-loading"
       >
-        <div className="h-4 w-20 animate-pulse rounded bg-[#2a2a2a] mb-2" />
-        <div className="h-8 w-16 animate-pulse rounded bg-[#2a2a2a]" />
+        <div className="h-4 w-20 animate-pulse rounded bg-muted mb-2" />
+        <div className="h-8 w-16 animate-pulse rounded bg-muted" />
       </div>
     );
   }
@@ -41,15 +41,15 @@ export function StatCard({
     trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
   const trendColor =
     trend === 'up'
-      ? 'text-teal-500'
+      ? 'text-score-high'
       : trend === 'down'
-        ? 'text-red-400'
+        ? 'text-score-growth'
         : 'text-muted-foreground';
 
   return (
     <div
       className={cn(
-        'rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4',
+        'rounded-lg border border-border bg-surface p-4',
         className
       )}
       data-testid="stat-card"
@@ -60,7 +60,7 @@ export function StatCard({
       </p>
       <div className="mt-1 flex items-baseline gap-2">
         <span
-          className="text-2xl font-bold text-[#fafafa]"
+          className="text-2xl font-bold text-foreground"
           data-testid="stat-card-value"
         >
           {value}

@@ -23,7 +23,7 @@ export function AdminSidebar() {
 
   return (
     <aside
-      className="flex w-16 flex-col items-center border-r border-[#2a2a2a] bg-[#0f0f0f] py-4"
+      className="flex w-16 flex-col items-center border-r border-border bg-background py-4"
       data-testid="admin-sidebar"
     >
       {/* Back to dashboard link */}
@@ -36,7 +36,7 @@ export function AdminSidebar() {
             className={cn(
               'flex h-10 w-10 items-center justify-center rounded-lg transition-colors mb-4',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-              'text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground'
+              'text-muted-foreground hover:bg-card hover:text-foreground'
             )}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -48,7 +48,7 @@ export function AdminSidebar() {
       </Tooltip>
 
       {/* Divider */}
-      <div className="w-8 border-t border-[#2a2a2a] mb-4" />
+      <div className="w-8 border-t border-border mb-4" />
 
       {/* Admin navigation */}
       <nav role="navigation" aria-label="Admin navigation" className="flex flex-col gap-2">
@@ -71,7 +71,7 @@ export function AdminSidebar() {
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     isActive
                       ? 'bg-amber-500/20 text-amber-500'
-                      : 'text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground'
+                      : 'text-muted-foreground hover:bg-card hover:text-foreground'
                   )}
                 >
                   <item.icon className="h-5 w-5" />

@@ -41,7 +41,7 @@ export function ScoreComparison({
 
       {isPending ? (
         <div
-          className="h-4 w-12 animate-pulse rounded bg-[#2a2a2a]"
+          className="h-4 w-12 animate-pulse rounded bg-muted"
           data-testid="comparison-loading"
         />
       ) : hasMultiplePrompts && data.average !== null ? (

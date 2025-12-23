@@ -18,7 +18,7 @@ interface TeamSettingsReadonlyProps {
 
 export function TeamSettingsReadonly({ team }: TeamSettingsReadonlyProps) {
   return (
-    <Card className="bg-[#0f0f0f] border-[#2a2a2a]" data-testid="team-settings-section">
+    <Card className="bg-background border-border" data-testid="team-settings-section">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           Team Settings

@@ -8,7 +8,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = await getAdminStatus();
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a]">
+    <div className="flex h-screen bg-background">
       <Sidebar isAdmin={isAdmin ?? false} />
       <div className="flex flex-1 flex-col">
         <Header />

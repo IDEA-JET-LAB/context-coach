@@ -25,13 +25,13 @@ function SimplePromptRow({ prompt }: { prompt: MemberPrompt }) {
       : (prompt.text || '');
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-3">
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
       <ScoreBadge
         score={prompt.analysis?.overall_score}
         status={prompt.analysis_status}
       />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-[#fafafa] line-clamp-1">{truncatedText}</p>
+        <p className="text-sm text-foreground line-clamp-1">{truncatedText}</p>
         <p className="mt-1 text-xs text-muted-foreground">
           {formatDistanceToNow(new Date(prompt.created_at), { addSuffix: true })}
         </p>
@@ -44,11 +44,11 @@ function MemberDetailSkeleton() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <Skeleton className="h-20 bg-[#1a1a1a]" />
-        <Skeleton className="h-20 bg-[#1a1a1a]" />
+        <Skeleton className="h-20 bg-card" />
+        <Skeleton className="h-20 bg-card" />
       </div>
-      <Skeleton className="h-32 bg-[#1a1a1a]" />
-      <Skeleton className="h-48 bg-[#1a1a1a]" />
+      <Skeleton className="h-32 bg-card" />
+      <Skeleton className="h-48 bg-card" />
     </div>
   );
 }
@@ -67,11 +67,11 @@ export function MemberDetail({ memberId, teamId, onClose }: MemberDetailProps) {
   return (
     <Sheet open={!!memberId} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
-        className="w-full sm:max-w-xl bg-[#0a0a0a] border-[#2a2a2a] overflow-y-auto"
+        className="w-full sm:max-w-xl bg-background border-border overflow-y-auto"
         data-testid="member-detail-panel"
       >
         <SheetHeader>
-          <SheetTitle className="text-[#fafafa]">
+          <SheetTitle className="text-foreground">
             {data?.member.name ? `${data.member.name}'s Analytics` : 'Member Analytics'}
           </SheetTitle>
         </SheetHeader>
@@ -88,13 +88,13 @@ export function MemberDetail({ memberId, teamId, onClose }: MemberDetailProps) {
           <div className="mt-6 space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-[#1a1a1a] p-4 border border-[#2a2a2a]">
+              <div className="rounded-lg bg-card p-4 border border-border">
                 <p className="text-sm text-muted-foreground">Prompts</p>
-                <p className="text-2xl font-bold text-[#fafafa]" data-testid="member-prompt-count">
+                <p className="text-2xl font-bold text-foreground" data-testid="member-prompt-count">
                   {data.promptCount}
                 </p>
               </div>
-              <div className="rounded-lg bg-[#1a1a1a] p-4 border border-[#2a2a2a]">
+              <div className="rounded-lg bg-card p-4 border border-border">
                 <p className="text-sm text-muted-foreground">Avg Score</p>
                 <p className={`text-2xl font-bold ${
                   data.avgScore >= SCORE_THRESHOLDS.GOOD ? 'text-teal-500' :
@@ -125,14 +125,14 @@ export function MemberDetail({ memberId, teamId, onClose }: MemberDetailProps) {
             {/* Dimension Breakdown */}
             {data.dimensions && data.dimensions.length > 0 && (
               <div>
-                <h3 className="font-medium text-[#fafafa] mb-3">Dimension Scores</h3>
+                <h3 className="font-medium text-foreground mb-3">Dimension Scores</h3>
                 <MemberDimensionBreakdown dimensions={data.dimensions} />
               </div>
             )}
 
             {/* Recent Prompts */}
             <div>
-              <h3 className="font-medium text-[#fafafa] mb-3">Recent Prompts</h3>
+              <h3 className="font-medium text-foreground mb-3">Recent Prompts</h3>
               <div className="space-y-2" data-testid="member-recent-prompts">
                 {data.recentPrompts && data.recentPrompts.slice(0, RECENT_PROMPTS_DISPLAY_COUNT).map((prompt) => (
                   <SimplePromptRow key={prompt.id} prompt={prompt} />

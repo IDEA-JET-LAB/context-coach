@@ -41,7 +41,7 @@ export function ScoreBadge({ score, status = 'complete', size = 'md' }: ScoreBad
     return (
       <div
         className={cn(
-          'flex items-center justify-center rounded-full bg-[#2a2a2a]',
+          'flex items-center justify-center rounded-full bg-muted',
           sizeClass
         )}
         data-testid="score-badge-loading"
@@ -74,7 +74,7 @@ export function ScoreBadge({ score, status = 'complete', size = 'md' }: ScoreBad
     return (
       <div
         className={cn(
-          'flex items-center justify-center rounded-full bg-[#2a2a2a]',
+          'flex items-center justify-center rounded-full bg-muted',
           sizeClass
         )}
         data-testid="score-badge-skipped"

@@ -52,7 +52,7 @@ export default async function UserDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
-          <Link href="/admin/users">
+          <Link href="/admin/users" aria-label="Back to users list">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
@@ -66,7 +66,7 @@ export default async function UserDetailPage({ params }: PageProps) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* User Info Card */}
-        <Card className="lg:col-span-2 bg-[#0f0f0f] border-[#2a2a2a]">
+        <Card className="lg:col-span-2 bg-background border-border">
           <CardHeader>
             <CardTitle className="text-foreground">Account Information</CardTitle>
             <CardDescription>Basic user details and account status.</CardDescription>
@@ -143,7 +143,7 @@ export default async function UserDetailPage({ params }: PageProps) {
         </Card>
 
         {/* Actions Card */}
-        <Card className="bg-[#0f0f0f] border-[#2a2a2a]">
+        <Card className="bg-background border-border">
           <CardHeader>
             <CardTitle className="text-foreground">Actions</CardTitle>
             <CardDescription>Manage this user account.</CardDescription>
@@ -160,7 +160,7 @@ export default async function UserDetailPage({ params }: PageProps) {
       </div>
 
       {/* Teams Card */}
-      <Card data-testid="user-teams" className="bg-[#0f0f0f] border-[#2a2a2a]">
+      <Card data-testid="user-teams" className="bg-background border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Team Memberships</CardTitle>
           <CardDescription>Teams this user belongs to.</CardDescription>
@@ -173,7 +173,7 @@ export default async function UserDetailPage({ params }: PageProps) {
               {teams.map((membership) => (
                 <div
                   key={membership.team.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-[#1a1a1a]"
+                  className="flex items-center justify-between p-3 rounded-lg bg-card"
                 >
                   <div>
                     <p className="font-medium text-foreground">{membership.team.name}</p>
@@ -190,14 +190,14 @@ export default async function UserDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Stats Card */}
-      <Card className="bg-[#0f0f0f] border-[#2a2a2a]">
+      <Card className="bg-background border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Activity Statistics</CardTitle>
           <CardDescription>User activity and usage statistics.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 rounded-lg bg-[#1a1a1a]">
+            <div className="p-4 rounded-lg bg-card">
               <div className="flex items-center gap-3">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -208,7 +208,7 @@ export default async function UserDetailPage({ params }: PageProps) {
                 </div>
               </div>
             </div>
-            <div className="p-4 rounded-lg bg-[#1a1a1a]">
+            <div className="p-4 rounded-lg bg-card">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <div>

@@ -26,7 +26,7 @@ export function TeamActivitySummary({
         : 0;
 
   return (
-    <Card className="bg-[#0f0f0f] border-[#2a2a2a]" data-testid="team-activity-section">
+    <Card className="bg-background border-border" data-testid="team-activity-section">
       <CardHeader>
         <CardTitle className="text-lg">Activity (Last 7 Days)</CardTitle>
       </CardHeader>
@@ -80,7 +80,7 @@ export function TeamActivitySummary({
         )}
 
         {lastPromptAt && (
-          <div className="pt-2 border-t border-[#2a2a2a]">
+          <div className="pt-2 border-t border-border">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Last prompt</span>
               <span className="text-foreground">

@@ -40,7 +40,7 @@ export function AnalysisFailed({ promptId, errorMessage }: AnalysisFailedProps) 
           href="https://docs.contextor.com/troubleshooting/analysis-failures"
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-[#fafafa]"
+          className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           Learn more
           <ExternalLink className="h-3 w-3" aria-hidden="true" />

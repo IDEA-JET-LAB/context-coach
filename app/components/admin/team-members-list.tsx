@@ -53,7 +53,7 @@ export function TeamMembersList({ members }: TeamMembersListProps) {
       </h3>
       <Table aria-label="Team members">
         <TableHeader>
-          <TableRow className="border-[#2a2a2a] hover:bg-transparent">
+          <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Name</TableHead>
             <TableHead className="text-muted-foreground">Email</TableHead>
             <TableHead className="text-muted-foreground">Role</TableHead>
@@ -62,7 +62,7 @@ export function TeamMembersList({ members }: TeamMembersListProps) {
         </TableHeader>
         <TableBody>
           {members.map((member, index) => (
-            <TableRow key={member.user?.id || index} className="border-[#2a2a2a]">
+            <TableRow key={member.user?.id || index} className="border-border">
               <TableCell className="font-medium">
                 {member.user?.name ?? 'No name'}
               </TableCell>

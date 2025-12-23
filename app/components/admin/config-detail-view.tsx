@@ -242,7 +242,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
       )}
 
       {/* System Prompt */}
-      <Card className="border-[#2a2a2a] bg-[#0f0f0f]">
+      <Card className="border-border bg-background">
         <CardHeader>
           <CardTitle className="text-lg">System Prompt</CardTitle>
         </CardHeader>
@@ -255,7 +255,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
                   <Input
                     id="name"
                     {...form.register('name')}
-                    className="bg-[#1a1a1a]"
+                    className="bg-card"
                   />
                   {form.formState.errors.name && (
                     <p className="text-xs text-destructive">
@@ -271,7 +271,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
                       form.setValue('model', value as AnalysisConfigFormInput['model'])
                     }
                   >
-                    <SelectTrigger id="model" className="bg-[#1a1a1a]">
+                    <SelectTrigger id="model" className="bg-card">
                       <SelectValue placeholder="Select a model" />
                     </SelectTrigger>
                     <SelectContent>
@@ -294,7 +294,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
                 id="system_prompt"
                 {...form.register('system_prompt')}
                 rows={6}
-                className="bg-[#1a1a1a]"
+                className="bg-card"
               />
               {form.formState.errors.system_prompt && (
                 <p className="text-xs text-destructive">
@@ -305,7 +305,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
           ) : (
             <pre
               data-testid="config-system-prompt"
-              className="whitespace-pre-wrap font-mono text-sm text-muted-foreground bg-[#1a1a1a] p-4 rounded-lg"
+              className="whitespace-pre-wrap font-mono text-sm text-muted-foreground bg-card p-4 rounded-lg"
             >
               {config.system_prompt}
             </pre>
@@ -314,7 +314,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
       </Card>
 
       {/* Dimensions */}
-      <Card className="border-[#2a2a2a] bg-[#0f0f0f]">
+      <Card className="border-border bg-background">
         <CardContent className="pt-6">
           {isEditing ? (
             <>
@@ -340,7 +340,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
 
               <div className="space-y-4">
                 {config.analysis_dimensions.map((dim) => (
-                  <Card key={dim.id} className="border-[#2a2a2a] bg-[#1a1a1a]">
+                  <Card key={dim.id} className="border-border bg-card">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base">{dim.name}</CardTitle>
@@ -355,7 +355,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
                         <Label className="text-xs text-muted-foreground">
                           Prompt Template
                         </Label>
-                        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs bg-[#0f0f0f] p-2 rounded">
+                        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs bg-background p-2 rounded">
                           {dim.prompt_template}
                         </pre>
                       </div>
@@ -363,7 +363,7 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
                         <Label className="text-xs text-muted-foreground">
                           Scoring Criteria
                         </Label>
-                        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs bg-[#0f0f0f] p-2 rounded">
+                        <pre className="mt-1 whitespace-pre-wrap font-mono text-xs bg-background p-2 rounded">
                           {dim.scoring_criteria}
                         </pre>
                       </div>

@@ -43,7 +43,7 @@ export function StatCard({
     return (
       <Card
         data-testid={testId}
-        className="border-[#2a2a2a] bg-[#0f0f0f]"
+        className="border-border bg-background"
         role="status"
         aria-label={`Loading ${title}`}
       >
@@ -78,7 +78,7 @@ export function StatCard({
   return (
     <Card
       data-testid={testId}
-      className="border-[#2a2a2a] bg-[#0f0f0f]"
+      className="border-border bg-background"
       role="status"
       aria-label={`${title}: ${formattedValue}`}
     >
@@ -111,7 +111,7 @@ export function StatCard({
  */
 export function StatCardSkeleton() {
   return (
-    <Card className="border-[#2a2a2a] bg-[#0f0f0f]">
+    <Card className="border-border bg-background">
       <CardHeader className="pb-2">
         <Skeleton className="h-4 w-24" />
       </CardHeader>

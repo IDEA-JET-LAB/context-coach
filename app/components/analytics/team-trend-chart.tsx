@@ -119,7 +119,7 @@ export function TeamTrendChart({ teamId }: TeamTrendChartProps) {
       </div>
 
       {isPending ? (
-        <Skeleton className="h-[200px] w-full bg-[#1a1a1a]" />
+        <Skeleton className="h-[200px] w-full bg-card" />
       ) : !data || data.length === 0 ? (
         <div
           className="flex h-[200px] items-center justify-center text-muted-foreground"

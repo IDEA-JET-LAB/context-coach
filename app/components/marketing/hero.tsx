@@ -14,7 +14,7 @@ export function MarketingHero({ isAuthenticated = false }: MarketingHeroProps) {
       </h1>
 
       {/* Subheadline */}
-      <p className="text-lg md:text-xl text-[#a1a1aa] max-w-2xl mx-auto mb-10 leading-relaxed">
+      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
         Help your team master AI prompting. Capture, analyze, and improve
         every prompt with real-time feedback and scoring.
       </p>
@@ -25,7 +25,7 @@ export function MarketingHero({ isAuthenticated = false }: MarketingHeroProps) {
           <Button
             asChild
             size="lg"
-            className="bg-[#14b8a6] hover:bg-[#0d9488] text-white px-8 py-6 text-base font-medium transition-all transform hover:scale-105"
+            className="bg-primary hover:bg-primary/80 text-white px-8 py-6 text-base font-medium transition-all transform hover:scale-105"
           >
             <Link href="/prompts">Go to Dashboard</Link>
           </Button>
@@ -33,7 +33,7 @@ export function MarketingHero({ isAuthenticated = false }: MarketingHeroProps) {
           <Button
             asChild
             size="lg"
-            className="bg-[#14b8a6] hover:bg-[#0d9488] text-white px-8 py-6 text-base font-medium transition-all transform hover:scale-105"
+            className="bg-primary hover:bg-primary/80 text-white px-8 py-6 text-base font-medium transition-all transform hover:scale-105"
           >
             <Link href="/signup">Get Started Free</Link>
           </Button>
@@ -41,16 +41,16 @@ export function MarketingHero({ isAuthenticated = false }: MarketingHeroProps) {
         <Button
           variant="outline"
           size="lg"
-          className="bg-transparent border-[#27272a] text-white px-8 py-6 text-base font-medium hover:bg-white/5"
+          className="bg-transparent border-border text-white px-8 py-6 text-base font-medium hover:bg-white/5"
         >
           See Demo
         </Button>
       </div>
 
       {/* Dashboard Preview Mockup */}
-      <div className="mt-20 max-w-5xl mx-auto border border-[#27272a] rounded-xl overflow-hidden shadow-2xl shadow-[#14b8a6]/10 bg-[#141414] p-2">
-        <div className="rounded-lg bg-[#141414] aspect-video flex items-center justify-center">
-          <div className="text-center text-[#52525b]">
+      <div className="mt-20 max-w-5xl mx-auto border border-border rounded-xl overflow-hidden shadow-2xl shadow-primary/10 bg-card p-2">
+        <div className="rounded-lg bg-card aspect-video flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
             <p className="text-2xl font-medium mb-2">Dashboard Preview</p>
             <p className="text-sm">Your prompts and analytics will appear here</p>
           </div>

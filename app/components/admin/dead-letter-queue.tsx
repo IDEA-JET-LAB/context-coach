@@ -81,7 +81,7 @@ export function DeadLetterQueue({ data, onRefresh }: DeadLetterQueueProps) {
   };
 
   return (
-    <Card className="bg-[#0f0f0f] border-[#2a2a2a]">
+    <Card className="bg-background border-border">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export function DeadLetterQueue({ data, onRefresh }: DeadLetterQueueProps) {
           <div className="overflow-x-auto">
             <Table data-testid="dead-letter-table">
               <TableHeader>
-                <TableRow className="border-[#2a2a2a]">
+                <TableRow className="border-border">
                   <TableHead className="text-muted-foreground">Prompt</TableHead>
                   <TableHead className="text-muted-foreground">Attempts</TableHead>
                   <TableHead className="text-muted-foreground">Failed</TableHead>
@@ -161,7 +161,7 @@ export function DeadLetterQueue({ data, onRefresh }: DeadLetterQueueProps) {
                 {items.map((item) => (
                   <TableRow
                     key={item.id}
-                    className="border-[#2a2a2a] hover:bg-[#1a1a1a]"
+                    className="border-border hover:bg-card"
                     tabIndex={0}
                   >
                     <TableCell className="max-w-xs">

@@ -42,7 +42,7 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
   if (members.length === 0) {
     return (
       <div
-        className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8 text-center"
+        className="rounded-lg border border-border bg-card p-8 text-center"
         data-testid="member-breakdown-empty"
       >
         <p className="text-muted-foreground">No team member activity yet</p>
@@ -53,11 +53,11 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
   return (
     <>
       <div
-        className="rounded-lg border border-[#2a2a2a] overflow-hidden"
+        className="rounded-lg border border-border overflow-hidden"
         data-testid="member-breakdown"
       >
         <table className="w-full">
-          <thead className="bg-[#1a1a1a]">
+          <thead className="bg-card">
             <tr>
               <th className="text-left p-3 text-sm font-medium text-muted-foreground">
                 <Button
@@ -66,7 +66,7 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
                   onClick={() => setSortBy('name')}
                   className={cn(
                     'h-auto py-1 px-2',
-                    sortBy === 'name' && 'text-[#fafafa]'
+                    sortBy === 'name' && 'text-foreground'
                   )}
                 >
                   Member
@@ -80,7 +80,7 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
                   onClick={() => setSortBy('count')}
                   className={cn(
                     'h-auto py-1 px-2',
-                    sortBy === 'count' && 'text-[#fafafa]'
+                    sortBy === 'count' && 'text-foreground'
                   )}
                 >
                   Prompts
@@ -94,7 +94,7 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
                   onClick={() => setSortBy('score')}
                   className={cn(
                     'h-auto py-1 px-2',
-                    sortBy === 'score' && 'text-[#fafafa]'
+                    sortBy === 'score' && 'text-foreground'
                   )}
                 >
                   Avg Score
@@ -111,15 +111,15 @@ export function MemberBreakdown({ members, teamId }: MemberBreakdownProps) {
               <tr
                 key={member.userId}
                 onClick={() => setSelectedMember(member.userId)}
-                className="border-t border-[#2a2a2a] cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+                className="border-t border-border cursor-pointer hover:bg-card transition-colors"
                 data-testid={`member-row-${member.userId}`}
               >
                 <td className="p-3">
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-[#2a2a2a] flex items-center justify-center text-sm text-[#fafafa]">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm text-foreground">
                       {member.name.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-[#fafafa]">{member.name}</span>
+                    <span className="text-foreground">{member.name}</span>
                   </div>
                 </td>
                 <td className="p-3 text-muted-foreground">{member.promptCount}</td>

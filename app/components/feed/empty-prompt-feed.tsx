@@ -16,7 +16,7 @@ export function EmptyPromptFeed({ hasProjects }: EmptyPromptFeedProps) {
         data-testid="empty-feed-no-projects"
       >
         <FolderPlus className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium text-[#fafafa]">No projects yet</h3>
+        <h3 className="text-lg font-medium text-foreground">No projects yet</h3>
         <p className="text-sm text-muted-foreground mt-2 max-w-md">
           Create a project to start capturing prompts from your AI-assisted development.
         </p>
@@ -33,13 +33,13 @@ export function EmptyPromptFeed({ hasProjects }: EmptyPromptFeedProps) {
       data-testid="empty-feed-no-prompts"
     >
       <Terminal className="h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-medium text-[#fafafa]">Waiting for your first prompt</h3>
+      <h3 className="text-lg font-medium text-foreground">Waiting for your first prompt</h3>
       <p className="text-sm text-muted-foreground mt-2 max-w-md">
         Install Contextor in your project to start capturing prompts automatically.
       </p>
-      <div className="mt-6 p-4 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-left">
+      <div className="mt-6 p-4 rounded-lg bg-card border border-border text-left">
         <p className="text-xs text-muted-foreground mb-2">Run in your project:</p>
-        <code className="text-sm text-[#fafafa] font-mono">
+        <code className="text-sm text-foreground font-mono">
           npx @contextor/cli init
         </code>
       </div>

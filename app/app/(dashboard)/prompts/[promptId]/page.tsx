@@ -24,7 +24,7 @@ export default function PromptDetailPage({ params }: PromptDetailPageProps) {
     return (
       <div className="max-w-3xl mx-auto text-center py-12" data-testid="prompt-error">
         <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-        <h2 className="text-lg font-medium text-[#fafafa] mb-2">Failed to load prompt</h2>
+        <h2 className="text-lg font-medium text-foreground mb-2">Failed to load prompt</h2>
         <p className="text-muted-foreground mb-6">{error.message}</p>
         <Button asChild variant="ghost">
           <Link href="/prompts">
@@ -40,7 +40,7 @@ export default function PromptDetailPage({ params }: PromptDetailPageProps) {
     return (
       <div className="max-w-3xl mx-auto text-center py-12" data-testid="prompt-not-found">
         <AlertCircle className="h-12 w-12 text-amber-400 mx-auto mb-4" />
-        <h2 className="text-lg font-medium text-[#fafafa] mb-2">Prompt not found</h2>
+        <h2 className="text-lg font-medium text-foreground mb-2">Prompt not found</h2>
         <p className="text-muted-foreground mb-6">
           This prompt may have been deleted or you don&apos;t have access to it.
         </p>

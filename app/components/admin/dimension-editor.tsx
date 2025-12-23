@@ -105,7 +105,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
       )}
 
       {fields.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[#2a2a2a] bg-[#0f0f0f] p-8 text-center">
+        <div className="rounded-lg border border-dashed border-border bg-background p-8 text-center">
           <p className="text-muted-foreground">
             No dimensions defined. {!readOnly && 'Click "Add Dimension" to get started.'}
           </p>
@@ -116,7 +116,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
             <Card
               key={field.id}
               data-testid="dimension-card"
-              className="border-[#2a2a2a] bg-[#0f0f0f]"
+              className="border-border bg-background"
             >
               <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-3">
                 {!readOnly && (
@@ -136,7 +136,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
                         placeholder="Dimension name (e.g., Clarity)"
                         {...form.register(`dimensions.${index}.name`)}
                         disabled={readOnly}
-                        className="bg-[#1a1a1a]"
+                        className="bg-card"
                       />
                       {form.formState.errors.dimensions?.[index]?.name && (
                         <p className="mt-1 text-xs text-destructive">
@@ -167,7 +167,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
                             )
                           }
                           disabled={readOnly}
-                          className="w-16 bg-[#1a1a1a] text-center"
+                          className="w-16 bg-card text-center"
                           min={0}
                           max={100}
                         />
@@ -198,7 +198,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
                     placeholder="Brief description of what this dimension measures"
                     {...form.register(`dimensions.${index}.description`)}
                     disabled={readOnly}
-                    className="mt-1.5 bg-[#1a1a1a]"
+                    className="mt-1.5 bg-card"
                   />
                 </div>
                 <div>
@@ -212,7 +212,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
                     {...form.register(`dimensions.${index}.prompt_template`)}
                     disabled={readOnly}
                     rows={3}
-                    className="mt-1.5 bg-[#1a1a1a]"
+                    className="mt-1.5 bg-card"
                   />
                   {form.formState.errors.dimensions?.[index]?.prompt_template && (
                     <p className="mt-1 text-xs text-destructive">
@@ -231,7 +231,7 @@ export function DimensionEditor({ form, readOnly = false }: DimensionEditorProps
                     {...form.register(`dimensions.${index}.scoring_criteria`)}
                     disabled={readOnly}
                     rows={3}
-                    className="mt-1.5 bg-[#1a1a1a]"
+                    className="mt-1.5 bg-card"
                   />
                   {form.formState.errors.dimensions?.[index]?.scoring_criteria && (
                     <p className="mt-1 text-xs text-destructive">

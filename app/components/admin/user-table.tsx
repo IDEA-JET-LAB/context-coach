@@ -45,10 +45,10 @@ export function UserTable({ users }: UserTableProps) {
   }
 
   return (
-    <div data-testid="users-table" className="rounded-lg border border-[#2a2a2a]">
+    <div data-testid="users-table" className="rounded-lg border border-border">
       <Table>
         <TableHeader>
-          <TableRow className="border-[#2a2a2a] hover:bg-transparent">
+          <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Email</TableHead>
             <TableHead className="text-muted-foreground">Name</TableHead>
             <TableHead className="text-muted-foreground">Status</TableHead>
@@ -68,7 +68,7 @@ export function UserTable({ users }: UserTableProps) {
               <TableRow
                 key={user.id}
                 onClick={() => handleRowClick(user.id)}
-                className="cursor-pointer border-[#2a2a2a] hover:bg-[#1a1a1a]"
+                className="cursor-pointer border-border hover:bg-card"
               >
                 <TableCell className="font-medium text-foreground">
                   {user.email}

@@ -14,7 +14,7 @@ export function FilteredEmptyState({ onClearFilters }: FilteredEmptyStateProps) 
       data-testid="filtered-empty-state"
     >
       <Search className="h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-medium text-[#fafafa] mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         No prompts match your filters
       </h3>
       <p className="text-muted-foreground mb-4">

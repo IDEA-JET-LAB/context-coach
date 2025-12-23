@@ -123,7 +123,7 @@ export default function AdminTeamsPage() {
             placeholder="Search teams..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-[#0f0f0f] border-[#2a2a2a]"
+            className="pl-9 bg-background border-border"
           />
         </div>
         {meta.count > 0 && (
@@ -141,7 +141,7 @@ export default function AdminTeamsPage() {
       )}
 
       {/* Teams table */}
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f]">
+      <div className="rounded-lg border border-border bg-background">
         {isPending ? (
           <TeamsTableSkeleton />
         ) : (
@@ -161,7 +161,7 @@ export default function AdminTeamsPage() {
               size="sm"
               onClick={() => handlePageChange(meta.page - 1)}
               disabled={meta.page <= 1 || isPending}
-              className="border-[#2a2a2a] bg-[#0f0f0f]"
+              className="border-border bg-background"
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
@@ -171,7 +171,7 @@ export default function AdminTeamsPage() {
               size="sm"
               onClick={() => handlePageChange(meta.page + 1)}
               disabled={meta.page >= meta.totalPages || isPending}
-              className="border-[#2a2a2a] bg-[#0f0f0f]"
+              className="border-border bg-background"
             >
               Next
               <ChevronRight className="h-4 w-4" />
