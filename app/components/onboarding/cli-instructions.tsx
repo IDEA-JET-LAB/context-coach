@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Check, ExternalLink } from 'lucide-react';
+import { Copy, Check, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useInstallToken } from '@/lib/hooks/use-install-token';
@@ -12,11 +12,13 @@ interface CliInstructionsProps {
 
 export function CliInstructions({ projectId }: CliInstructionsProps) {
   const [copied, setCopied] = useState(false);
-  const { data: token, isPending } = useInstallToken(projectId);
+  const { data, isPending, error } = useInstallToken(projectId);
 
-  const command = `npx @contextor/cli init ${token ?? '<YOUR_TOKEN>'}`;
+  const token = data?.token;
+  const command = token ? `npx @contextor/cli init "${token}"` : null;
 
   const copyCommand = async () => {
+    if (!command) return;
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
@@ -27,6 +29,25 @@ export function CliInstructions({ projectId }: CliInstructionsProps) {
     }
   };
 
+  // Handle error state
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-destructive">
+              Unable to generate install token
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {error.message}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-sm text-muted-foreground mb-3">
@@ -36,7 +57,7 @@ export function CliInstructions({ projectId }: CliInstructionsProps) {
       <div className="flex items-center gap-2 rounded-md bg-background p-3 font-mono text-sm">
         {isPending ? (
           <div className="h-5 w-full animate-pulse rounded bg-muted" />
-        ) : (
+        ) : command ? (
           <>
             <code className="flex-1 text-teal-500 overflow-x-auto">
               {command}
@@ -55,8 +76,16 @@ export function CliInstructions({ projectId }: CliInstructionsProps) {
               )}
             </Button>
           </>
+        ) : (
+          <span className="text-muted-foreground">Loading...</span>
         )}
       </div>
+
+      {data?.expiresAt && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Token expires at {new Date(data.expiresAt).toLocaleTimeString()}
+        </p>
+      )}
 
       <a
         href="https://docs.contextor.com/cli"

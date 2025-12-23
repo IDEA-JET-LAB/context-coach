@@ -24,6 +24,7 @@ fi
 SUPABASE_URL="https://ddskanjiobrjphscskog.supabase.co"
 SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkc2thbmppb2JyanBoc2Nza29nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMTMzNTIsImV4cCI6MjA4MTg4OTM1Mn0.lB5CtFZunXFR6QbE2OvKRaMWVhZ-zOEb1GmAVqdtKTA"
 APP_URL="https://contextor.co"
+GA_MEASUREMENT_ID="G-PPFJMVVMGD"
 GCP_PROJECT="ideajetlab-website"
 IMAGE_NAME="gcr.io/${GCP_PROJECT}/contextor"
 
@@ -44,6 +45,7 @@ docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL} \
   --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY} \
   --build-arg NEXT_PUBLIC_APP_URL=${APP_URL} \
+  --build-arg NEXT_PUBLIC_GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID} \
   -t ${IMAGE_NAME}:${VERSION} \
   .
 

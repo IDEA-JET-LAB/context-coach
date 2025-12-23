@@ -180,3 +180,200 @@ development_status:
   10-5-local-development-configuration: backlog
   10-6-branch-merge-deployment-workflow: backlog
   epic-10-retrospective: optional
+
+  # =============================================================================
+  # Epic 11: Bug Fixes & UX Polish ✅ COMPLETED
+  # Fix critical bugs and UX issues discovered during production usage.
+  # Story files at: _bmad-output/stories/11-*.md
+  # Completed: 2025-12-22
+  # =============================================================================
+  epic-11: done
+  11-1-fix-team-analysis-page-error: done  # FK migration for PostgREST joins
+  11-2-debug-analytics-cards-data: done     # Empty state handling improved
+  11-3-improve-team-invitations-discoverability: done  # Sidebar + URL invite links
+  11-4-add-google-analytics: done           # GA4 component integrated
+  epic-11-retrospective: optional
+
+  # =============================================================================
+  # Epic 12: UX/UI Rework (DEFERRED)
+  # Major UX/UI overhaul - needs detailed planning discussion.
+  # =============================================================================
+  epic-12: deferred
+  epic-12-retrospective: optional
+
+  # =============================================================================
+  # Epic 13: Account Management (P2)
+  # User self-service: delete account, change email, change password.
+  # Story files ready at: _bmad-output/stories/13-*.md
+  # =============================================================================
+  epic-13: backlog
+  13-1-account-deletion: ready-for-dev        # 3-4 hours - Delete account with confirmation
+  13-2-email-change: ready-for-dev            # 2-3 hours - Change email with verification
+  13-3-password-change-in-app: ready-for-dev  # 2-3 hours - In-app password change
+  epic-13-retrospective: optional
+
+  # =============================================================================
+  # Epic 14: Documentation Section (P2)
+  # In-app documentation and help section for authenticated users.
+  # Story files ready at: _bmad-output/stories/14-*.md
+  # =============================================================================
+  epic-14: backlog
+  14-1-documentation-page-structure: ready-for-dev  # 4-6 hours - Docs layout & routing
+  14-2-core-documentation-content: ready-for-dev    # 3-4 hours - Write 5 doc sections
+  14-3-documentation-search: future                  # Low priority - implement when docs grow
+  epic-14-retrospective: optional
+
+  # =============================================================================
+  # PHASE 2 EPICS (Advanced Features)
+  # =============================================================================
+
+  # =============================================================================
+  # Epic 14.5: Privacy & Security Enhancements (P1)
+  # Local redaction, privacy controls, encryption, data minimization.
+  # Story files at: _bmad-output/stories/14.5-*.md
+  # =============================================================================
+  epic-14.5: backlog
+  14.5-1-local-redaction-engine: ready-for-dev
+  14.5-2-privacy-consent-dialog: ready-for-dev
+  14.5-3-user-privacy-controls: ready-for-dev
+  14.5-4-column-level-encryption: ready-for-dev
+  14.5-5-data-minimization-pipeline: ready-for-dev
+  14.5-6-privacy-preferences-database: ready-for-dev
+  epic-14.5-retrospective: optional
+
+  # =============================================================================
+  # Epic 15: Response Capture & Context Extraction (P1)
+  # Capture Claude's responses from JSONL transcripts for full conversation analysis.
+  # Story files at: _bmad-output/stories/15-*.md
+  # =============================================================================
+  epic-15: backlog
+  15-1-transcript-file-discovery: ready-for-dev
+  15-2-jsonl-parser-implementation: ready-for-dev
+  15-3-user-message-extraction: ready-for-dev
+  15-4-assistant-response-extraction: ready-for-dev
+  15-5-prompt-response-pairing: ready-for-dev
+  15-6-response-storage-schema: ready-for-dev
+  15-7-tool-execution-capture: ready-for-dev
+  epic-15-retrospective: optional
+
+  # =============================================================================
+  # Epic 16: Session Management (P1)
+  # Group prompts into sessions for conversation-level analytics.
+  # Story files at: _bmad-output/stories/16-*.md
+  # =============================================================================
+  epic-16: backlog
+  16-1-sessions-database-schema: ready-for-dev
+  16-2-session-detection-logic: ready-for-dev
+  16-3-session-metadata-capture: ready-for-dev
+  16-4-conversation-threading: ready-for-dev
+  16-5-multi-terminal-awareness: ready-for-dev
+  16-6-session-duration-calculation: ready-for-dev
+  epic-16-retrospective: optional
+
+  # =============================================================================
+  # Epic 17: Transcript Import Experience (P2)
+  # Import historical Claude Code transcripts into Contextor.
+  # Story files at: _bmad-output/stories/17-*.md
+  # =============================================================================
+  epic-17: backlog
+  17-1-transcript-discovery-service: ready-for-dev
+  17-2-import-preview-ui: ready-for-dev
+  17-3-batch-import-processing: ready-for-dev
+  17-4-deduplication-logic: ready-for-dev
+  17-5-import-progress-tracking: ready-for-dev
+  17-6-import-history-rollback: ready-for-dev
+  epic-17-retrospective: optional
+
+  # =============================================================================
+  # Epic 18: Session Recovery (P2)
+  # Detect interrupted sessions and help users resume their work.
+  # Story files at: _bmad-output/stories/18-*.md
+  # =============================================================================
+  epic-18: backlog
+  18-1-interrupted-session-detection: ready-for-dev
+  18-2-session-state-snapshot: ready-for-dev
+  18-3-recovery-prompt-generator: ready-for-dev
+  18-4-recovery-notification-ui: ready-for-dev
+  18-5-one-click-resume: ready-for-dev
+  epic-18-retrospective: optional
+
+  # =============================================================================
+  # Epic 19: VS Code Extension (P1)
+  # Bring Contextor analytics directly into the developer's IDE.
+  # Story files at: _bmad-output/stories/19-*.md
+  # =============================================================================
+  epic-19: backlog
+  19-1-extension-scaffold: ready-for-dev
+  19-2-authentication-flow: ready-for-dev
+  19-3-sidebar-panel: ready-for-dev
+  19-4-realtime-analytics-display: ready-for-dev
+  19-5-quick-coaching-tips: ready-for-dev
+  19-6-extension-settings: ready-for-dev
+  19-7-marketplace-publishing: ready-for-dev
+  epic-19-retrospective: optional
+
+  # =============================================================================
+  # Epic 20: Real-time Coaching (P1)
+  # Instant feedback on prompts before they're sent to Claude.
+  # Story files at: _bmad-output/stories/20-*.md
+  # =============================================================================
+  epic-20: backlog
+  20-1-blocking-hook-implementation: ready-for-dev
+  20-2-fast-heuristics-engine: ready-for-dev
+  20-3-improvement-suggestions-display: ready-for-dev
+  20-4-user-override-flow: ready-for-dev
+  20-5-coaching-preferences: ready-for-dev
+  epic-20-retrospective: optional
+
+  # =============================================================================
+  # Epic 21: Advanced Analytics (P2)
+  # Deep insights into developer-AI interaction patterns.
+  # Story files at: _bmad-output/stories/21-*.md
+  # =============================================================================
+  epic-21: backlog
+  21-1-context-window-management: ready-for-dev
+  21-2-work-style-categorization: ready-for-dev
+  21-3-sentiment-analysis: ready-for-dev
+  21-4-prompt-complexity-metrics: ready-for-dev
+  21-5-interaction-timing-analysis: ready-for-dev
+  21-6-tool-usage-profiling: ready-for-dev
+  21-7-session-health-score: ready-for-dev
+  21-8-technical-depth-profile: ready-for-dev
+  21-9-learning-progression-tracking: ready-for-dev
+  21-10-workflow-efficiency-metrics: ready-for-dev
+  21-11-interactive-insights-dashboard: ready-for-dev
+  21-12-team-intelligence-analytics: ready-for-dev
+  epic-21-retrospective: optional
+
+  # =============================================================================
+  # Epic 22: Analysis Configuration & A/B Testing (P3)
+  # Admin control over analysis prompts, scoring weights, experimentation.
+  # Story files at: _bmad-output/stories/22-*.md
+  # =============================================================================
+  epic-22: backlog
+  22-1-analysis-prompt-templates: ready-for-dev
+  22-2-classification-rule-editor: ready-for-dev
+  22-3-scoring-weight-configuration: ready-for-dev
+  22-4-team-level-weight-overrides: ready-for-dev
+  22-5-configuration-version-control: ready-for-dev
+  22-6-ab-experiment-creation: ready-for-dev
+  22-7-ab-traffic-splitting: ready-for-dev
+  22-8-statistical-significance-calculation: ready-for-dev
+  22-9-experiment-results-dashboard: ready-for-dev
+  22-10-configuration-audit-trail: ready-for-dev
+  epic-22-retrospective: optional
+
+  # =============================================================================
+  # Epic D: Phase 2 Design Foundation
+  # Design system audit, UI polish, and component library for Phase 2 features.
+  # Story files at: _bmad-output/stories/D-*.md
+  # =============================================================================
+  epic-D: in-progress
+  D-1-design-system-audit: done            # Design system tokens and patterns
+  D-2-existing-ui-refactoring: done        # Hardcoded colors → semantic tokens
+  D-3-component-library-expansion: done    # 30+ components with /design showcase
+  D-4-vscode-extension-design: ready-for-dev
+  D-5-import-recovery-ui-design: ready-for-dev
+  D-6-advanced-analytics-design: ready-for-dev
+  D-7-admin-config-ui-design: ready-for-dev
+  epic-D-retrospective: optional

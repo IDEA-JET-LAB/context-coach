@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { createProjectSchema } from '@/lib/validations/project';
 import { generateApiKey, hashApiKey, getApiKeyPrefix } from '@/lib/utils/api-key';
 import { generateInstallToken, getApiEndpoint, TOKEN_EXPIRATION_HOURS } from '@/lib/utils/install-token';
+import { encryptApiKey } from '@/lib/utils/encryption';
 import { ZodError } from 'zod';
 
 export async function POST(request: Request) {
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
     const apiKey = generateApiKey();
     const apiKeyHash = hashApiKey(apiKey);
     const apiKeyPrefix = getApiKeyPrefix(apiKey);
+    const apiKeyEncrypted = encryptApiKey(apiKey);
 
     // Create project
     const { data: project, error: createError } = await supabase
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
         description: validated.description || null,
         api_key_hash: apiKeyHash,
         api_key_prefix: apiKeyPrefix,
+        api_key_encrypted: apiKeyEncrypted,
         created_by: user.id,
       })
       .select('id, team_id, name, description, api_key_prefix, created_at, created_by, is_archived')

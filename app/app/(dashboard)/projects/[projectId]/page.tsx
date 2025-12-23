@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Key, Terminal, Clock, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { maskApiKey } from '@/lib/utils/api-key';
+import { CliInstructions } from '@/components/onboarding/cli-instructions';
 
 interface PageProps {
   params: Promise<{ projectId: string }>;
@@ -123,20 +124,14 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             <CardTitle>Installation</CardTitle>
           </div>
           <CardDescription>
-            To install Contextor in your repository, you&apos;ll need the install token from when the project was created.
+            Generate an install token to set up Contextor in your repository.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-slate-900 text-slate-100 p-4 rounded-md">
-            <p className="font-mono text-sm">
-              <span className="text-green-400">$</span> npx @contextor/cli init &quot;YOUR_INSTALL_TOKEN&quot;
-            </p>
-          </div>
+          <CliInstructions projectId={project.id} />
           <p className="text-sm text-muted-foreground">
             The install token contains your API key and project configuration.
-            {isAdmin
-              ? " If you've lost it, you can regenerate the API key in Settings to get a new install token."
-              : " If you've lost it, contact a team admin to regenerate the API key."}
+            Tokens expire after 1 hour for security.
           </p>
         </CardContent>
       </Card>

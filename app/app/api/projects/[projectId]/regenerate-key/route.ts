@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { generateApiKey, hashApiKey, getApiKeyPrefix } from '@/lib/utils/api-key';
 import { generateInstallToken, getApiEndpoint, TOKEN_EXPIRATION_HOURS } from '@/lib/utils/install-token';
+import { encryptApiKey } from '@/lib/utils/encryption';
 import { isValidUuid } from '@/lib/utils/uuid';
 
 interface RouteContext {
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const apiKey = generateApiKey();
     const apiKeyHash = hashApiKey(apiKey);
     const apiKeyPrefix = getApiKeyPrefix(apiKey);
+    const apiKeyEncrypted = encryptApiKey(apiKey);
 
     // Update project with new key
     const { data: updated, error: updateError } = await supabase
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .update({
         api_key_hash: apiKeyHash,
         api_key_prefix: apiKeyPrefix,
+        api_key_encrypted: apiKeyEncrypted,
       })
       .eq('id', projectId)
       .select('id, team_id, name, description, api_key_prefix, created_at, created_by, is_archived')
