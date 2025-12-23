@@ -13,7 +13,8 @@ import { calculateWordCount } from "./word-count";
 import { classifyPrompt, PromptType } from "./classify-prompt";
 import { createScopedLogger } from "@/lib/utils/logger";
 import { MAX_ANALYZED_TEXT_LENGTH } from "./constants";
-import { analyzeComplexity, classifyWorkStyle } from "@/lib/analysis";
+import { analyzeComplexity, classifyWorkStyle, analyzeSentiment, toSentimentScoresJson } from "@/lib/analysis";
+import { generatePromptFingerprint } from "@/lib/import/fingerprint";
 
 // Create a scoped logger for storage operations
 const logger = createScopedLogger("STORE");
@@ -89,6 +90,13 @@ export interface StorePromptInput {
   text: string;
   /** Optional metadata from the CLI hook */
   metadata?: Record<string, unknown>;
+  /**
+   * Optional timestamp for when the prompt was created.
+   * Used for historical imports to preserve original timestamps.
+   * Defaults to now() if not provided.
+   * Story 17-4: Required for consistent fingerprint generation
+   */
+  created_at?: Date | string;
 }
 
 /**
@@ -165,6 +173,24 @@ export async function storePrompt(
   // Uses the analyzed text for classification (promptPart for commands with prompts)
   const workStyle = classifyWorkStyle(textForCounts);
 
+  // Analyze sentiment (Story 21-3)
+  // Uses the analyzed text for sentiment classification
+  // Runs in parallel with other classifiers and is <2ms per prompt
+  const sentiment = analyzeSentiment(textForCounts);
+  const sentimentScores = toSentimentScoresJson(sentiment);
+
+  // Generate timestamp for fingerprint and created_at
+  // Use provided timestamp (for historical import) or current time (for real-time capture)
+  // Story 17-4: Consistent timestamp ensures identical fingerprints for deduplication
+  const createdAt = input.created_at
+    ? (typeof input.created_at === 'string' ? new Date(input.created_at) : input.created_at)
+    : new Date();
+
+  // Generate fingerprint for deduplication (Story 17-4)
+  // The fingerprint is computed from: user_id + timestamp (minute precision) + text (first 200 chars)
+  // This ensures the same prompt captured via hook and imported from transcript will match
+  const fingerprint = generatePromptFingerprint(input.user_id, createdAt, input.text);
+
   // Build insert data
   //
   // Note on text vs analyzed_text:
@@ -186,6 +212,9 @@ export async function storePrompt(
     metadata: input.metadata ?? null,
     prompt_type: classification.type,
     analysis_status: classification.analysisStatus,
+    created_at: createdAt.toISOString(),
+    // Deduplication fingerprint (Story 17-4)
+    fingerprint,
     // Complexity metrics (Story 21-4)
     sentence_count: complexity.sentenceCount,
     has_code: complexity.hasCode,
@@ -197,6 +226,10 @@ export async function storePrompt(
     // Work style classification (Story 21-2)
     work_style_category: workStyle.category,
     work_style_confidence: workStyle.confidence,
+    // Sentiment analysis (Story 21-3)
+    sentiment: sentiment.sentiment,
+    sentiment_confidence: sentiment.confidence,
+    sentiment_scores: sentimentScores,
   };
 
   // For command_with_prompt, store the extracted text that will be analyzed

@@ -1,6 +1,6 @@
 # BMM Workflow Status - Contextor
 # Generated: 2025-12-19
-# Updated: 2025-12-23 (Phase 2 Implementation Progress - Epics 13-16, D complete)
+# Updated: 2025-12-23 (Phase 2 Session 2 - Epics 17, 19, 21 in progress)
 # Track: BMad Method (Greenfield)
 
 project_name: contextor
@@ -78,7 +78,7 @@ phases:
 current_phase: 4
 current_workflow: phase2-implementation
 next_agent: pm
-next_command: "Epics 13-16 and D complete. PM to create stories for Epic 17+. CRITICAL: All stories MUST include Design System Requirements section per DESIGN-SYSTEM-MANDATE.md"
+next_command: "Epic 21: 10/12 complete. Epic 17: 1/6 complete. Epic 19: 1/7 complete. Continue parallel story development with Opus 4.5 subagents."
 
 # Design System Mandate (MANDATORY for Epic 17+)
 design_system:
@@ -227,24 +227,56 @@ epics:
     stories_done: 6
     note: "Design system audit, semantic tokens, component library with 30+ Phase 2 components. D-5/D-6 design-only stories."
 
-  # Phase 2 Epics (Architecture Complete 2025-12-23)
+  # Phase 2 Epics (In Progress 2025-12-23)
+  epic-17:
+    name: "Historical Import"
+    status: in-progress
+    priority: P1
+    stories: 6
+    stories_done: 1
+    note: "17-1 Transcript Discovery complete (62 tests). Remaining: 17-2 Import Preview UI, 17-3 to 17-6."
+
+  epic-18:
+    name: "Crash Recovery"
+    status: ready
+    priority: P2
+    stories: 5
+    stories_done: 0
+    note: "Depends on Epic 19-1 (complete). Ready to start."
+
+  epic-19:
+    name: "VS Code Extension"
+    status: in-progress
+    priority: P1
+    stories: 7
+    stories_done: 1
+    note: "19-1 Extension Scaffold complete. Remaining: 19-2 Auth Flow, 19-3 to 19-7."
+
+  epic-20:
+    name: "Pre-Submission Coaching"
+    status: ready
+    priority: P2
+    stories: 5
+    stories_done: 0
+    note: "Depends on Epic 19-1 (complete). Ready to start."
+
   epic-21:
     name: "Enhanced Analysis Framework"
-    status: ready-for-stories
+    status: in-progress
     priority: P1
-    stories: 0
-    stories_done: 0
+    stories: 12
+    stories_done: 10
     architecture: "_bmad-output/architecture-epic21.md"
-    note: "25+ analysis dimensions, regex classifiers, aggregation pipeline. PM to create stories."
+    note: "10/12 complete. Remaining: 21-8 Technical Depth Profile, 21-11 Interactive Dashboard."
 
   epic-22:
     name: "Configurable Analysis Engine"
     status: ready-for-stories
     priority: P1
-    stories: 0
+    stories: 10
     stories_done: 0
     architecture: "_bmad-output/architecture-phase2.md#epic-22"
-    note: "Admin UI, A/B testing, config versioning. PM to create stories."
+    note: "Admin UI, A/B testing, config versioning. Stories ready."
 
 # Completed workflows
 completed_workflows:

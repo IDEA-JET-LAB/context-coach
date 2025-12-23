@@ -1,0 +1,490 @@
+/* ============================================
+   Contextor Analytics Webview Styles
+   ============================================
+
+   These styles follow the Contextor design system while
+   maintaining compatibility with VS Code themes.
+
+   Color System:
+   - Primary Blue: #3B82F6
+   - Success Green: #22C55E
+   - Warning Orange: #F59E0B
+   - Error Red: #EF4444
+
+   Typography:
+   - Font: Inter, or VS Code font family fallback
+   - Base size: 13px (VS Code default)
+   - Small: 11px
+   - Heading: 14px
+
+   Spacing: 4px grid (4, 8, 12, 16, 20, 24px)
+   Border radius: 4px (buttons), 8px (cards)
+   ============================================ */
+
+/* CSS Variables - VS Code Theme Integration */
+:root {
+  /* Contextor brand colors */
+  --ctx-primary: #3B82F6;
+  --ctx-primary-hover: #2563EB;
+  --ctx-success: #22C55E;
+  --ctx-warning: #F59E0B;
+  --ctx-error: #EF4444;
+
+  /* Map to VS Code theme */
+  --ctx-background: var(--vscode-sideBar-background, #1E1E1E);
+  --ctx-surface: var(--vscode-editor-background, #252526);
+  --ctx-surface-hover: var(--vscode-list-hoverBackground, #2A2D2E);
+  --ctx-border: var(--vscode-panel-border, #454545);
+  --ctx-border-subtle: var(--vscode-widget-border, #303030);
+  --ctx-foreground: var(--vscode-foreground, #CCCCCC);
+  --ctx-foreground-muted: var(--vscode-descriptionForeground, #858585);
+  --ctx-foreground-subtle: var(--vscode-disabledForeground, #6B6B6B);
+
+  /* Font */
+  --ctx-font: var(--vscode-font-family, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  --ctx-font-mono: var(--vscode-editor-font-family, 'SF Mono', Monaco, Consolas, monospace);
+  --ctx-font-size: var(--vscode-font-size, 13px);
+}
+
+/* Reset and base styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--ctx-font);
+  font-size: var(--ctx-font-size);
+  color: var(--ctx-foreground);
+  background-color: var(--ctx-background);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+}
+
+/* ============================================
+   Loading State
+   ============================================ */
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--ctx-border);
+  border-top-color: var(--ctx-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ctx-foreground-muted);
+}
+
+/* ============================================
+   Error State
+   ============================================ */
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+
+.error-icon {
+  color: var(--ctx-error);
+  margin-bottom: 16px;
+}
+
+.error-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.error-message {
+  font-size: 12px;
+  color: var(--ctx-foreground-muted);
+  margin-bottom: 16px;
+  max-width: 200px;
+}
+
+.retry-button {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  background-color: var(--ctx-primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.retry-button:hover {
+  background-color: var(--ctx-primary-hover);
+}
+
+.retry-button:focus {
+  outline: 2px solid var(--ctx-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Welcome / Empty State
+   ============================================ */
+
+.welcome-container,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+
+.empty-icon {
+  color: var(--ctx-foreground-muted);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.empty-description {
+  font-size: 12px;
+  color: var(--ctx-foreground-muted);
+  max-width: 180px;
+}
+
+/* ============================================
+   Dashboard Layout
+   ============================================ */
+
+.dashboard {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.user-greeting {
+  font-size: 11px;
+  color: var(--ctx-foreground-muted);
+}
+
+.refresh-button {
+  padding: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--ctx-foreground-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+}
+
+.refresh-button:hover {
+  color: var(--ctx-foreground);
+  background-color: var(--ctx-surface-hover);
+}
+
+/* Section */
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ctx-foreground-muted);
+  margin-bottom: 12px;
+}
+
+/* ============================================
+   Score Card
+   ============================================ */
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--ctx-surface);
+  border: 1px solid var(--ctx-border-subtle);
+  border-radius: 8px;
+}
+
+.score-gauge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.score-value {
+  position: absolute;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--ctx-font-mono);
+  bottom: -4px;
+}
+
+.score-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-label {
+  font-size: 12px;
+  color: var(--ctx-foreground-muted);
+}
+
+.score-trend {
+  display: flex;
+  align-items: center;
+}
+
+.score-trend.up {
+  color: var(--ctx-success);
+}
+
+.score-trend.down {
+  color: var(--ctx-error);
+}
+
+/* ============================================
+   Stats Grid
+   ============================================ */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background-color: var(--ctx-surface);
+  border: 1px solid var(--ctx-border-subtle);
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  font-family: var(--ctx-font-mono);
+  color: var(--ctx-foreground);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--ctx-foreground-muted);
+}
+
+/* ============================================
+   Metrics List
+   ============================================ */
+
+.metrics-list {
+  background-color: var(--ctx-surface);
+  border: 1px solid var(--ctx-border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ctx-border-subtle);
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--ctx-foreground-muted);
+}
+
+.metric-value {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--ctx-font-mono);
+  color: var(--ctx-foreground);
+}
+
+/* ============================================
+   Recent Activity
+   ============================================ */
+
+.recent-prompts {
+  margin-bottom: 20px;
+}
+
+.activity-list {
+  list-style: none;
+  background-color: var(--ctx-surface);
+  border: 1px solid var(--ctx-border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ctx-border-subtle);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.activity-icon.prompt {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--ctx-primary);
+}
+
+.activity-icon.session_start {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: var(--ctx-success);
+}
+
+.activity-icon.session_end {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: var(--ctx-warning);
+}
+
+.activity-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.activity-description {
+  font-size: 12px;
+  color: var(--ctx-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-time {
+  font-size: 10px;
+  color: var(--ctx-foreground-muted);
+}
+
+/* ============================================
+   Responsive adjustments for narrow sidebar
+   ============================================ */
+
+@media (max-width: 250px) {
+  .dashboard {
+    padding: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-value {
+    font-size: 20px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+}

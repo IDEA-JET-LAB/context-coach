@@ -113,9 +113,19 @@ cd app && npm run dev -- -p 3050
 
 **Important for agents:** Always check if a port is available before starting a dev server. If not available, use an uncommon port (3050, 3051, etc.) to avoid conflicts.
 
-## Local Development Test User
+## CRITICAL: Cloud Supabase Only
 
-A persistent test user is seeded into the local Supabase database. **Use this for all local testing and development:**
+**This project uses Cloud Supabase for ALL development - local Supabase is NOT used.**
+
+- **Cloud Supabase URL:** `https://ddskanjiobrjphscskog.supabase.co`
+- **No local Supabase instance** - Do NOT run `supabase start` or `supabase stop`
+- **All developers connect to the same Cloud database** for consistency
+
+The `.env.local` file contains Cloud Supabase credentials. See `app/.env.local` for the current configuration.
+
+### Test User (Cloud Database)
+
+A test user exists in the Cloud Supabase database for development:
 
 | Field | Value |
 |-------|-------|
@@ -127,39 +137,36 @@ A persistent test user is seeded into the local Supabase database. **Use this fo
 | **Team ID** | `22222222-2222-2222-2222-222222222222` |
 | **Project ID** | `44444444-4444-4444-4444-444444444444` |
 
-This data is created by `app/supabase/seed.sql` and persists across `supabase stop/start`.
-
 ## CRITICAL: Database Operations - DO NOT WIPE DATA
 
 **NEVER use `supabase db reset` unless explicitly requested by the user.** It wipes ALL data including test prompts, user-created teams, and any manual testing data.
 
-### Applying New Migrations (Non-Destructive)
+### Applying New Migrations to Cloud Supabase
 
-When you create a new migration file, use these commands to apply it WITHOUT wiping data:
+Since we use Cloud Supabase only, migrations are applied directly to the cloud database:
 
 ```bash
-# PREFERRED: Apply pending migrations without data loss
-cd app && npx supabase db push
+# Apply migrations to Cloud Supabase (requires access token)
+cd app && SUPABASE_ACCESS_TOKEN=<token> npx supabase db push
 
-# Alternative: Apply migrations to running local instance
-cd app && npx supabase migration up
+# The access token is stored in root .env file
 ```
+
+**Note:** The project is already linked to `ddskanjiobrjphscskog` via `supabase link`, so no `--project-ref` flag is needed.
 
 ### Database Commands Reference
 
 | Command | Effect | When to Use |
 |---------|--------|-------------|
-| `supabase db push` | Applies new migrations, preserves data | **Default choice for new migrations** |
-| `supabase migration up` | Same as push, applies pending migrations | Alternative to push |
-| `supabase stop` / `start` | Preserves all data | Restarting Supabase |
-| `supabase db reset` | **WIPES EVERYTHING**, re-runs migrations + seed | Only when explicitly asked |
+| `SUPABASE_ACCESS_TOKEN=... npx supabase db push` | Applies migrations to Cloud | **Default choice for new migrations** |
+| `supabase db reset` | **WIPES EVERYTHING** | **NEVER use without explicit user permission** |
 
 ### Why This Matters
 
-- The user may have test data, captured prompts, or manual configurations
+- The Cloud database contains real development/test data
 - `db reset` destroys hours of testing work
-- The seed recreates only the base test user/team/project, not user-generated data
 - Always ask before running destructive database operations
+- Migrations are pushed directly to Cloud - there is no local database to test against
 
 ## Testing
 
@@ -186,10 +193,11 @@ cd app && npm test -- e2e/auth.spec.ts
 cd app && npm test -- --grep "Login"
 ```
 
-### Mailpit API (for testing email flows)
-- Mailpit URL: http://127.0.0.1:54324
-- API: http://127.0.0.1:54324/api/v1/messages
-- Use this to fetch emails and extract verification/reset links in tests
+### Email Testing (Cloud Supabase)
+
+Since we use Cloud Supabase, emails are sent via the configured email provider (Amazon SES in production).
+
+**For E2E tests:** Tests use real email flows. For signup/password reset tests, use test accounts that can receive emails or mock the email verification step.
 
 ### Production Smoke Tests
 
@@ -284,10 +292,9 @@ Add this rule to an agent's `<rules>` section:
 
 ### Domain Consistency (Critical)
 
-**Always use `127.0.0.1` instead of `localhost` for local development.** These are treated as different origins for cookie purposes:
+**For local development server:** Use `127.0.0.1:3050` consistently (not `localhost`). These are treated as different origins for cookie purposes:
 
 - Cookies set on `127.0.0.1` are NOT accessible from `localhost`
-- Supabase config, Playwright config, and all redirects must use the same domain
 - The callback route normalizes `localhost` to `127.0.0.1` to maintain cookie consistency
 
 ```typescript
@@ -297,6 +304,8 @@ if (origin.includes('localhost')) {
   normalizedOrigin = origin.replace('localhost', '127.0.0.1');
 }
 ```
+
+**Note:** This applies to the local Next.js dev server, NOT Supabase. We use Cloud Supabase (`https://ddskanjiobrjphscskog.supabase.co`) for all database operations.
 
 ### PKCE Flow Cookie Handling
 
@@ -427,23 +436,20 @@ Local Development → Test Locally → User Confirms → Production Deploy
 - ❌ Staging Environment: **NOT SET UP** (TODO: Create staging Supabase project + Cloud Run service)
 - ✅ Production: https://contextor.co
 
-### Database Migrations - Automation IS Possible!
+### Database Migrations - Cloud Supabase Only
 
-**Why it seemed manual:** Earlier sessions ran SQL directly via API instead of using proper migration flow.
+**Important:** We use Cloud Supabase for ALL development. There is no local Supabase instance.
 
-**Correct automated approach:**
+**Applying migrations:**
 
 ```bash
-# LOCAL - Apply to local Supabase (no auth needed)
-cd app && npx supabase db push
-
-# PRODUCTION - Apply to remote (needs access token)
+# Apply migrations to Cloud Supabase (requires access token)
 cd app && SUPABASE_ACCESS_TOKEN=<token> npx supabase db push
 ```
 
 The `SUPABASE_ACCESS_TOKEN` is stored in root `.env` file.
 
-**Key insight:** The project is already linked (`supabase link` was run), so migrations CAN be pushed automatically without `--project-ref`.
+**Key insight:** The project is already linked to `ddskanjiobrjphscskog` via `supabase link`, so migrations CAN be pushed automatically without `--project-ref`.
 
 ### Pre-Deployment Checklist
 

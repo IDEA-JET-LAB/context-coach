@@ -90,8 +90,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh session - CRITICAL for security
-  const { data, error } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error) {
     console.error("[AUTH] session-refresh-error:", error.message);
@@ -114,7 +113,7 @@ export async function updateSession(request: NextRequest) {
   // Admin route protection with signed cookie verification
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
   if (isAdminRoute && user) {
-    const userId = user.sub as string;
+    const userId = user.id;
 
     // Check cached admin status with cryptographic verification
     const cachedAdminStatus = request.cookies.get("ctx_admin_status")?.value;

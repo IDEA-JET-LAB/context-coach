@@ -1,6 +1,6 @@
 # Story 17.2: Import Preview UI
 
-Status: 🔲 Ready
+Status: ✅ Done
 
 ## Dependencies
 
@@ -55,49 +55,49 @@ The PRD (Section 9.3) refers to this as "Import Consent and Project Selection UI
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create ImportPreview component** (AC: #1, #2, #6)
-  - [ ] Create `components/import/import-preview.tsx` component
-  - [ ] Display welcome message with summary statistics
-  - [ ] Show total prompts, date range, project count
-  - [ ] Add privacy information text explaining data handling
-  - [ ] Include link to privacy policy
-  - [ ] Style with dark mode colors matching dashboard
+- [x] **Task 1: Create ImportPreview component** (AC: #1, #2, #6)
+  - [x] Create `components/import/import-preview.tsx` component
+  - [x] Display welcome message with summary statistics
+  - [x] Show total prompts, date range, project count
+  - [x] Add privacy information text explaining data handling
+  - [x] Include link to privacy policy
+  - [x] Style with dark mode colors matching dashboard
 
-- [ ] **Task 2: Create ProjectList component** (AC: #2, #3)
-  - [ ] Create `components/import/project-list.tsx` component
-  - [ ] Display expandable list of discovered projects
-  - [ ] Show project path, session count, prompt count, date range
-  - [ ] Add checkbox for selecting/deselecting projects
-  - [ ] Implement select all / deselect all functionality
+- [x] **Task 2: Create ProjectList component** (AC: #2, #3)
+  - [x] Create `components/import/project-list.tsx` component
+  - [x] Display expandable list of discovered projects
+  - [x] Show project path, session count, prompt count, date range
+  - [x] Add checkbox for selecting/deselecting projects
+  - [x] Implement select all / deselect all functionality
 
-- [ ] **Task 3: Implement selection state management** (AC: #3)
-  - [ ] Create `lib/hooks/use-import-selection.ts` hook
-  - [ ] Track selected projects in local state
-  - [ ] Calculate running totals based on selection
-  - [ ] Persist selection in session storage for page refreshes
+- [x] **Task 3: Implement selection state management** (AC: #3)
+  - [x] Create `lib/hooks/use-import-selection.ts` hook
+  - [x] Track selected projects in local state
+  - [x] Calculate running totals based on selection
+  - [x] Persist selection in session storage for page refreshes
 
-- [ ] **Task 4: Create action buttons** (AC: #4, #5)
-  - [ ] Add "Import All" primary button
-  - [ ] Add "Select Projects" secondary button
-  - [ ] Add "Skip for Now" tertiary/link button
-  - [ ] Handle button states (loading, disabled)
+- [x] **Task 4: Create action buttons** (AC: #4, #5)
+  - [x] Add "Import All" primary button
+  - [x] Add "Select Projects" secondary button
+  - [x] Add "Skip for Now" tertiary/link button
+  - [x] Handle button states (loading, disabled)
 
-- [ ] **Task 5: Create import state machine** (AC: #4)
-  - [ ] Define ImportState type from architecture
-  - [ ] Create `lib/hooks/use-import-state.ts` hook
-  - [ ] Implement state transitions: discovery -> selection -> importing -> complete
-  - [ ] Handle "skipped" state for users who skip
+- [x] **Task 5: Create import state machine** (AC: #4)
+  - [x] Define ImportState type from architecture
+  - [x] Create `lib/hooks/use-import-state.ts` hook
+  - [x] Implement state transitions: discovery -> selection -> importing -> complete
+  - [x] Handle "skipped" state for users who skip
 
-- [ ] **Task 6: Create import preview page** (AC: #1, #5)
-  - [ ] Create `app/(dashboard)/import/page.tsx`
-  - [ ] Integrate ImportPreview component
-  - [ ] Handle loading state while fetching discovery data
-  - [ ] Redirect to dashboard if no discovery data
+- [x] **Task 6: Create import preview page** (AC: #1, #5)
+  - [x] Create `app/(dashboard)/import/page.tsx`
+  - [x] Integrate ImportPreview component
+  - [x] Handle loading state while fetching discovery data
+  - [x] Redirect to dashboard if no discovery data
 
-- [ ] **Task 7: Add import entry point** (AC: #5)
-  - [ ] Add "Import History" option to settings menu
-  - [ ] Show in onboarding flow for new users
-  - [ ] Display notification badge if unimported history detected
+- [x] **Task 7: Add import entry point** (AC: #5)
+  - [x] Add "Import History" option to settings menu
+  - [x] Show in onboarding flow for new users
+  - [x] Display notification badge if unimported history detected
 
 ## Dev Notes
 
@@ -631,17 +631,31 @@ After completing this story, verify:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created full Import Preview UI with welcome screen and project selection
+- Implemented state machine for import flow (discovery → selection → importing → complete)
+- Added session storage persistence for selection state
+- Privacy information displayed with policy link
+- 18 E2E tests passing covering all acceptance criteria
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-23 | Initial implementation | Dev Agent |
+| 2025-12-23 | Marked complete after verification | Amelia (Dev Agent) |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+- `app/components/import/import-preview.tsx` - Main preview component
+- `app/components/import/project-list.tsx` - Project selection list
+- `app/components/import/import-progress.tsx` - Progress indicator
+- `app/components/import/import-modal.tsx` - Modal wrapper
+- `app/components/import/discovery-import-preview.tsx` - Discovery preview
+- `app/lib/hooks/use-import-selection.ts` - Selection state hook
+- `app/lib/hooks/use-import-state.ts` - Import state machine hook
+- `app/app/(dashboard)/import/page.tsx` - Import page route
+- `app/e2e/import-preview.spec.ts` - E2E tests (18 passing)

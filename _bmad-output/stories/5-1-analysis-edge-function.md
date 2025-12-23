@@ -2,6 +2,8 @@
 
 Status: ✅ Done
 
+> **⚠️ OUTDATED DOCUMENTATION:** This story references local Supabase development (`supabase start`, `localhost:54321`). As of December 2025, **this project uses Cloud Supabase only**. See `CLAUDE.md` for current setup.
+
 ## Story
 **As a** system,
 **I want** an Edge Function to process prompts,

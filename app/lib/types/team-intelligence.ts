@@ -3,8 +3,6 @@
  * Story 21-12: Team Intelligence Analytics
  */
 
-import { WorkStyle } from '@/components/analytics/work-style-badge';
-
 /**
  * Work style categories for team analysis
  */

@@ -1,6 +1,6 @@
 # Story 21.10: Workflow Efficiency Metrics
 
-Status: Ready
+Status: Complete
 
 ## Story
 
@@ -40,44 +40,44 @@ Status: Ready
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Define Team Benchmarks** (AC: #3, #4, #5, #7)
-  - [ ] Define default benchmark values in configuration
-  - [ ] promptsPerTask baseline: 5.8
-  - [ ] contextResetsPerSession baseline: 0.5
-  - [ ] debuggingLoopAverage baseline: 3.0
-  - [ ] Allow team-specific benchmark overrides (future)
+- [x] **Task 1: Define Team Benchmarks** (AC: #3, #4, #5, #7)
+  - [x] Define default benchmark values in configuration
+  - [x] promptsPerTask baseline: 5.8
+  - [x] contextResetsPerSession baseline: 0.5
+  - [x] debuggingLoopAverage baseline: 3.0
+  - [ ] Allow team-specific benchmark overrides (future - deferred)
 
-- [ ] **Task 2: Implement Efficiency Calculator** (AC: #1, #2)
-  - [ ] Create `/app/lib/analysis/workflow-efficiency.ts`
-  - [ ] Define `EfficiencyMetrics` interface
-  - [ ] Implement `calculateEfficiency(userMetrics)` function
-  - [ ] Calculate each efficiency metric from input data
+- [x] **Task 2: Implement Efficiency Calculator** (AC: #1, #2)
+  - [x] Create `/app/lib/analysis/workflow-efficiency.ts`
+  - [x] Define `EfficiencyMetrics` interface
+  - [x] Implement `calculateEfficiency(userMetrics)` function
+  - [x] Calculate each efficiency metric from input data
 
-- [ ] **Task 3: Implement Scoring Algorithm** (AC: #2, #3, #4, #5, #6, #7)
-  - [ ] Start with baseline score of 50
-  - [ ] Add/subtract points based on metric comparisons
-  - [ ] Cap score between 0 and 100
-  - [ ] Determine benchmark level from score
+- [x] **Task 3: Implement Scoring Algorithm** (AC: #2, #3, #4, #5, #6, #7)
+  - [x] Start with baseline score of 50
+  - [x] Add/subtract points based on metric comparisons
+  - [x] Cap score between 0 and 100
+  - [x] Determine benchmark level from score
 
-- [ ] **Task 4: Implement Metric Calculations** (AC: #1)
-  - [ ] promptsPerTask = totalPrompts / completedTasks
-  - [ ] contextResetsPerSession = contextResets / totalSessions
-  - [ ] debuggingLoopAverage = debuggingPrompts / debuggingResolutions
-  - [ ] timeToResolutionMinutes = totalTimeMinutes / completedTasks
-  - [ ] Handle zero denominators gracefully
+- [x] **Task 4: Implement Metric Calculations** (AC: #1)
+  - [x] promptsPerTask = totalPrompts / completedTasks
+  - [x] contextResetsPerSession = contextResets / totalSessions
+  - [x] debuggingLoopAverage = debuggingPrompts / debuggingResolutions
+  - [x] timeToResolutionMinutes = totalTimeMinutes / completedTasks
+  - [x] Handle zero denominators gracefully
 
-- [ ] **Task 5: Integrate into Analytics APIs** (AC: #1, #2)
-  - [ ] Add efficiency metrics to personal insights API
-  - [ ] Add efficiency metrics to team intelligence API
-  - [ ] Calculate from aggregated analytics data
-  - [ ] Cache results appropriately
+- [x] **Task 5: Integrate into Analytics APIs** (AC: #1, #2)
+  - [x] Add efficiency metrics to personal insights API
+  - [ ] Add efficiency metrics to team intelligence API (future)
+  - [x] Calculate from aggregated analytics data
+  - [ ] Cache results appropriately (future)
 
-- [ ] **Task 6: Testing** (AC: #2, #3, #4, #5, #6, #7)
-  - [ ] Write unit tests for each metric calculation
-  - [ ] Write unit tests for scoring algorithm
-  - [ ] Write unit tests for benchmark level determination
-  - [ ] Test edge cases (zero tasks, zero sessions)
-  - [ ] Test boundary conditions for scoring
+- [x] **Task 6: Testing** (AC: #2, #3, #4, #5, #6, #7)
+  - [x] Write unit tests for each metric calculation
+  - [x] Write unit tests for scoring algorithm
+  - [x] Write unit tests for benchmark level determination
+  - [x] Test edge cases (zero tasks, zero sessions)
+  - [x] Test boundary conditions for scoring
 
 ## Dev Notes
 

@@ -1,0 +1,10 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Contextor logo: stylized "C" with analytics bars -->
+  <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C14.76 22 17.27 20.88 19.05 19.05" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <!-- Analytics bars inside -->
+  <rect x="8" y="14" width="2" height="4" rx="1" fill="currentColor"/>
+  <rect x="11" y="11" width="2" height="7" rx="1" fill="currentColor"/>
+  <rect x="14" y="8" width="2" height="10" rx="1" fill="currentColor"/>
+  <!-- Upward arrow indicating improvement -->
+  <path d="M17 7L20 4M20 4L23 7M20 4V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

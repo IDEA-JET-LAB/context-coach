@@ -20,6 +20,8 @@ total_stories: 76
 
 # Contextor - Epic Breakdown
 
+> **⚠️ OUTDATED DOCUMENTATION:** This epic breakdown references "local Supabase" in several acceptance criteria. As of December 2025, **this project uses Cloud Supabase only** for all development. Do NOT follow local Supabase instructions. See `CLAUDE.md` for current setup.
+
 ## Overview
 
 This document provides the complete epic and story breakdown for Contextor, decomposing the requirements from the PRD, Architecture, and UX Design into implementable stories.

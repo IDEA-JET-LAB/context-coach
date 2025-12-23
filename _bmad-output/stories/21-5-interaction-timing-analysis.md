@@ -1,6 +1,6 @@
 # Story 21.5: Interaction Timing Analysis
 
-Status: Ready
+Status: Complete
 
 ## Story
 
@@ -52,64 +52,64 @@ Status: Ready
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Database Schema Updates** (AC: #1, #2, #3, #4, #5)
-  - [ ] Add `time_since_previous_seconds INTEGER` to prompts table
-  - [ ] Add `is_rapid_fire BOOLEAN DEFAULT false` to prompts table
-  - [ ] Add `is_long_pause BOOLEAN DEFAULT false` to prompts table
-  - [ ] Add `is_follow_up BOOLEAN DEFAULT false` to prompts table
-  - [ ] Add `sequence_number INTEGER` to prompts table
-  - [ ] Add composite index on (session_id, sequence_number)
-  - [ ] Add partial index for rapid_fire queries
+- [x] **Task 1: Database Schema Updates** (AC: #1, #2, #3, #4, #5)
+  - [x] Add `time_since_previous_seconds INTEGER` to prompts table
+  - [x] Add `is_rapid_fire BOOLEAN DEFAULT false` to prompts table
+  - [x] Add `is_long_pause BOOLEAN DEFAULT false` to prompts table
+  - [x] Add `is_follow_up BOOLEAN DEFAULT false` to prompts table
+  - [x] Add `sequence_number INTEGER` to prompts table
+  - [x] Add composite index on (session_id, sequence_number)
+  - [x] Add partial index for rapid_fire queries
 
-- [ ] **Task 2: Implement Timing Analyzer** (AC: #1, #2, #3, #4, #6, #7)
-  - [ ] Create `/app/lib/analysis/timing-analyzer.ts`
-  - [ ] Define `TimingMetrics` interface
-  - [ ] Define timing constants (RAPID_FIRE_THRESHOLD = 30, LONG_PAUSE_THRESHOLD = 300)
-  - [ ] Implement `analyzeTimingWithContext()` function
-  - [ ] Implement follow-up detection with pattern matching
+- [x] **Task 2: Implement Timing Analyzer** (AC: #1, #2, #3, #4, #6, #7)
+  - [x] Create `/app/lib/analysis/timing-analyzer.ts`
+  - [x] Define `TimingMetrics` interface
+  - [x] Define timing constants (RAPID_FIRE_THRESHOLD = 30, LONG_PAUSE_THRESHOLD = 300)
+  - [x] Implement `analyzeTimingWithContext()` function
+  - [x] Implement follow-up detection with pattern matching
 
-- [ ] **Task 3: Define Follow-up Patterns** (AC: #4)
-  - [ ] Pattern: /^(also|and|additionally|furthermore)/i
-  - [ ] Pattern: /^(now|next|then)/i
-  - [ ] Pattern: /^(one more thing|another thing)/i
-  - [ ] Pattern: /^(oh|wait)/i
+- [x] **Task 3: Define Follow-up Patterns** (AC: #4)
+  - [x] Pattern: /^(also|and|additionally|furthermore)/i
+  - [x] Pattern: /^(now|next|then)/i
+  - [x] Pattern: /^(one more thing|another thing)/i
+  - [x] Pattern: /^(oh|wait)/i
 
-- [ ] **Task 4: Integrate into Capture Flow** (AC: #1, #5, #6)
-  - [ ] Query previous prompt timestamp in session before insert
-  - [ ] Calculate time difference in seconds
-  - [ ] Determine sequence_number from MAX(sequence_number) + 1 in session
-  - [ ] Handle first prompt case (null previous, sequence = 1)
-  - [ ] Store all timing metrics
+- [x] **Task 4: Integrate into Capture Flow** (AC: #1, #5, #6)
+  - [x] Query previous prompt timestamp in session before insert
+  - [x] Calculate time difference in seconds
+  - [x] Determine sequence_number from MAX(sequence_number) + 1 in session
+  - [x] Handle first prompt case (null previous, sequence = 1)
+  - [x] Store all timing metrics
 
-- [ ] **Task 5: Database Trigger (Optional Optimization)** (AC: #1, #5)
-  - [ ] Create `analyze_prompt_timing()` trigger function
-  - [ ] Calculate timing metrics in BEFORE INSERT trigger
-  - [ ] Ensure idempotency for re-inserts
+- [x] **Task 5: Database Trigger (Optional Optimization)** (AC: #1, #5)
+  - [x] Create `analyze_prompt_timing()` trigger function
+  - [x] Calculate timing metrics in BEFORE INSERT trigger
+  - [x] Ensure idempotency for re-inserts
 
-- [ ] **Task 6: Implement Interval Aggregations** (AC: #8, #9)
-  - [ ] Create `calculateAverageInterval()` function for user/session
-  - [ ] Create `calculateMedianInterval()` function for user/session
-  - [ ] Add SQL functions for AVG and percentile_cont calculations
-  - [ ] Create `/app/lib/analysis/interval-stats.ts`
-  - [ ] Add API endpoint for interval statistics
+- [x] **Task 6: Implement Interval Aggregations** (AC: #8, #9)
+  - [x] Create `calculateAverageInterval()` function for user/session
+  - [x] Create `calculateMedianInterval()` function for user/session
+  - [x] Add SQL functions for AVG and percentile_cont calculations
+  - [x] Create `/app/lib/analysis/interval-stats.ts`
+  - [x] Add API endpoint for interval statistics
 
-- [ ] **Task 7: Implement Productivity Patterns Analysis** (AC: #10)
-  - [ ] Create `analyzeTimeOfDayDistribution()` function
-  - [ ] Define time-of-day buckets (morning, afternoon, evening, night)
-  - [ ] Create SQL view/function for hourly distribution
-  - [ ] Calculate peak productivity hours
-  - [ ] Create `/app/lib/analysis/productivity-patterns.ts`
+- [x] **Task 7: Implement Productivity Patterns Analysis** (AC: #10)
+  - [x] Create `analyzeTimeOfDayDistribution()` function
+  - [x] Define time-of-day buckets (morning, afternoon, evening, night)
+  - [x] Create SQL view/function for hourly distribution
+  - [x] Calculate peak productivity hours
+  - [x] Create `/app/lib/analysis/productivity-patterns.ts`
 
-- [ ] **Task 8: Testing** (AC: #2, #3, #4, #6, #7, #8, #9, #10)
-  - [ ] Write unit tests for rapid-fire detection (< 30s)
-  - [ ] Write unit tests for long-pause detection (> 300s)
-  - [ ] Write unit tests for follow-up pattern matching
-  - [ ] Write unit tests for sequence numbering
-  - [ ] Write unit tests for first prompt in session
-  - [ ] Write unit tests for average interval calculation
-  - [ ] Write unit tests for median interval calculation
-  - [ ] Write unit tests for time-of-day distribution
-  - [ ] Write performance tests ensuring <1ms
+- [x] **Task 8: Testing** (AC: #2, #3, #4, #6, #7, #8, #9, #10)
+  - [x] Write unit tests for rapid-fire detection (< 30s)
+  - [x] Write unit tests for long-pause detection (> 300s)
+  - [x] Write unit tests for follow-up pattern matching
+  - [x] Write unit tests for sequence numbering
+  - [x] Write unit tests for first prompt in session
+  - [x] Write unit tests for average interval calculation
+  - [x] Write unit tests for median interval calculation
+  - [x] Write unit tests for time-of-day distribution
+  - [x] Write performance tests ensuring <1ms
 
 ## Dev Notes
 
@@ -432,14 +432,35 @@ $$ LANGUAGE plpgsql STABLE;
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+- Implemented complete interaction timing analysis system
+- Created 4 database migrations for schema updates, triggers, and SQL functions
+- Implemented 3 TypeScript analysis modules with full test coverage
+- All 115 new unit tests passing (584 total in analysis module)
+- Performance requirement met: all timing operations complete in under 1ms
+- Database trigger automatically calculates timing metrics on prompt insert
+- Interval statistics support both client-side (TypeScript) and server-side (SQL) calculation
+- Time-of-day distribution analysis supports user-level and team-level aggregation
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-23 | Initial implementation of Story 21-5 | Claude Opus 4.5 |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/supabase/migrations/20251223210000_add_interaction_timing.sql` - Schema updates for timing columns
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/supabase/migrations/20251223220000_add_timing_trigger.sql` - BEFORE INSERT trigger for timing calculation
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/supabase/migrations/20251223230000_add_interval_stats_function.sql` - SQL functions for interval statistics
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/supabase/migrations/20251223240000_add_time_of_day_function.sql` - SQL functions for time-of-day distribution
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/timing-analyzer.ts` - Core timing analyzer (53 tests)
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/__tests__/timing-analyzer.test.ts` - Timing analyzer tests
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/interval-stats.ts` - Interval statistics calculator (25 tests)
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/__tests__/interval-stats.test.ts` - Interval stats tests
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/productivity-patterns.ts` - Time-of-day distribution analyzer (37 tests)
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/__tests__/productivity-patterns.test.ts` - Productivity patterns tests
+
+**Modified:**
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/analysis/index.ts` - Added exports for new timing modules

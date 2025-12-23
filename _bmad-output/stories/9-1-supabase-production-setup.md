@@ -5,6 +5,8 @@ Solo Dev: Yes
 Epic: 9 - Production Deployment & Infrastructure
 Depends On: Epics 1-8 complete
 
+> **ℹ️ NOTE:** As of December 2025, **this project uses Cloud Supabase for ALL development** (not just production). See `CLAUDE.md` for current setup.
+
 ## Story
 
 **As a** solo developer,

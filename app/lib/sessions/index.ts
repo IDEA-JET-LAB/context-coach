@@ -73,6 +73,10 @@ export {
   updateSessionTiming,
   incrementSessionTokens,
   getOrCreateSession,
+  // Story 21-1: Context Exhaustion
+  markContextExhausted,
+  updateContextUsageEstimate,
+  getSessionDurationMinutes,
 } from './session-update';
 
 // Story 16-4: Conversation Threading - Thread Linking
@@ -202,3 +206,22 @@ export {
   getSessionEfficiencyMetrics,
   getUserEfficiencyMetrics,
 } from './efficiency';
+
+// Story 21-6: Tool Usage Profiling
+export {
+  type SessionToolUsageRecord,
+  type RecordToolUsageOptions,
+  type GetUserToolDistributionOptions,
+  type TeamToolAveragesResult,
+  // Recording functions
+  recordToolUsage,
+  recordBatchToolUsage,
+  extractAndRecordToolUsage,
+  // Querying functions
+  getSessionToolUsage,
+  getUserToolDistribution,
+  getTeamToolAverages,
+  // Profile generation
+  getUserToolProfile,
+  getUserProfileClassification,
+} from './tool-usage';

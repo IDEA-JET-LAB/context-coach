@@ -323,3 +323,120 @@ export async function getOrCreateSession(
   logger.debug('Session created', { sessionId, uuid: newSession.id });
   return newSession.id;
 }
+
+// ============================================================================
+// Story 21-1: Context Exhaustion Updates
+// ============================================================================
+
+/**
+ * Update session to mark context exhaustion.
+ *
+ * This marks a session as context exhausted with the current timestamp.
+ * Once marked, subsequent calls will not update the timestamp (first detection wins).
+ *
+ * @param sessionUuid - The internal UUID of the session
+ * @throws Error if database update fails
+ *
+ * @example
+ * await markContextExhausted('session-uuid');
+ * // Sets context_exhausted = true and exhaustion_detected_at = now()
+ */
+export async function markContextExhausted(sessionUuid: string): Promise<void> {
+  const supabase = createAdminClient();
+
+  // Only update if not already marked (first detection wins)
+  const { data: session, error: fetchError } = await supabase
+    .from('sessions')
+    .select('context_exhausted')
+    .eq('id', sessionUuid)
+    .single();
+
+  if (fetchError) {
+    logger.error('Failed to fetch session for context exhaustion', fetchError, { sessionUuid });
+    throw new Error(`Failed to fetch session: ${fetchError.message}`);
+  }
+
+  // Already marked - don't update timestamp
+  if (session?.context_exhausted) {
+    logger.debug('Session already marked as context exhausted', { sessionUuid });
+    return;
+  }
+
+  const { error: updateError } = await supabase
+    .from('sessions')
+    .update({
+      context_exhausted: true,
+      exhaustion_detected_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', sessionUuid);
+
+  if (updateError) {
+    logger.error('Failed to mark session as context exhausted', updateError, { sessionUuid });
+    throw new Error(`Failed to mark context exhaustion: ${updateError.message}`);
+  }
+
+  logger.log('Session marked as context exhausted', { sessionUuid });
+}
+
+/**
+ * Update the context usage estimate for a session.
+ *
+ * @param sessionUuid - The internal UUID of the session
+ * @param usageEstimate - Estimated context usage (0.00 to 1.00)
+ * @throws Error if value is out of range or database update fails
+ */
+export async function updateContextUsageEstimate(
+  sessionUuid: string,
+  usageEstimate: number
+): Promise<void> {
+  // Validate range
+  if (usageEstimate < 0 || usageEstimate > 1) {
+    throw new Error(`Context usage estimate must be between 0 and 1, got ${usageEstimate}`);
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from('sessions')
+    .update({
+      context_usage_estimate: usageEstimate,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', sessionUuid);
+
+  if (error) {
+    logger.error('Failed to update context usage estimate', error, { sessionUuid, usageEstimate });
+    throw new Error(`Failed to update context usage estimate: ${error.message}`);
+  }
+
+  logger.debug('Context usage estimate updated', { sessionUuid, usageEstimate });
+}
+
+/**
+ * Get the session duration in minutes from started_at to now.
+ *
+ * @param sessionUuid - The internal UUID of the session
+ * @returns Duration in minutes, or 0 if session not found
+ */
+export async function getSessionDurationMinutes(sessionUuid: string): Promise<number> {
+  const supabase = createAdminClient();
+
+  const { data: session, error } = await supabase
+    .from('sessions')
+    .select('started_at')
+    .eq('id', sessionUuid)
+    .single();
+
+  if (error || !session) {
+    logger.debug('Could not get session duration', { sessionUuid, error: error?.message });
+    return 0;
+  }
+
+  const startedAt = new Date(session.started_at);
+  const now = new Date();
+  const durationMs = now.getTime() - startedAt.getTime();
+  const durationMinutes = Math.floor(durationMs / (1000 * 60));
+
+  return durationMinutes;
+}

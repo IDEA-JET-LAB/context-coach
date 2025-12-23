@@ -1,6 +1,6 @@
 # Story 17.1: Transcript Discovery Service
 
-Status: 🔲 Ready
+Status: ✅ Complete
 
 ## Story
 
@@ -55,41 +55,41 @@ Status: 🔲 Ready
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create discover.ts module** (AC: #1, #3, #5, #6, #7, #8, #9)
-  - [ ] Create `lib/import/discover.ts` file
-  - [ ] Implement `discoverProjects()` function that scans `~/.claude/projects/`
-  - [ ] Add optional `DiscoveryOptions` parameter with `startDate` and `endDate` fields
-  - [ ] Default to 30-day window when no date range specified
-  - [ ] Handle the normalized path format (`-Users-edgars-project` style)
-  - [ ] Denormalize paths for display (convert `-` to `/`, remove leading dash)
-  - [ ] Filter out directories with no JSONL files
-  - [ ] Filter out files outside the configured date range
-  - [ ] Return `DiscoveredProject[]` array
+- [x] **Task 1: Create discover.ts module** (AC: #1, #3, #5, #6, #7, #8, #9)
+  - [x] Create `lib/import/discover.ts` file
+  - [x] Implement `discoverProjects()` function that scans `~/.claude/projects/`
+  - [x] Add optional `DiscoveryOptions` parameter with `startDate` and `endDate` fields
+  - [x] Default to 30-day window when no date range specified
+  - [x] Handle the normalized path format (`-Users-edgars-project` style)
+  - [x] Denormalize paths for display (convert `-` to `/`, remove leading dash)
+  - [x] Filter out directories with no JSONL files
+  - [x] Filter out files outside the configured date range
+  - [x] Return `DiscoveredProject[]` array
 
-- [ ] **Task 2: Implement session counting** (AC: #2)
-  - [ ] Count JSONL files in each project directory
-  - [ ] Use file stat to get modification dates for date range
-  - [ ] Track oldest and newest session dates per project
+- [x] **Task 2: Implement session counting** (AC: #2)
+  - [x] Count JSONL files in each project directory
+  - [x] Use file stat to get modification dates for date range
+  - [x] Track oldest and newest session dates per project
 
-- [ ] **Task 3: Implement prompt counting** (AC: #2)
-  - [ ] Read JSONL files line by line (streaming for large files)
-  - [ ] Count lines with `"type":"user"` to estimate prompt count
-  - [ ] Use efficient regex matching for quick counting
+- [x] **Task 3: Implement prompt counting** (AC: #2)
+  - [x] Read JSONL files line by line (streaming for large files)
+  - [x] Count lines with `"type":"user"` to estimate prompt count
+  - [x] Use efficient regex matching for quick counting
 
-- [ ] **Task 4: Add error handling** (AC: #4, #7, #8, #9)
-  - [ ] Wrap directory reads in try/catch
-  - [ ] Return empty result when Claude projects directory doesn't exist (ENOENT)
-  - [ ] Add permission denied errors to skipped directories list
-  - [ ] Throw error for invalid path format with descriptive message
-  - [ ] Continue discovery when individual directories fail
-  - [ ] Collect and return list of skipped directories with reasons
-  - [ ] Log errors appropriately
+- [x] **Task 4: Add error handling** (AC: #4, #7, #8, #9)
+  - [x] Wrap directory reads in try/catch
+  - [x] Return empty result when Claude projects directory doesn't exist (ENOENT)
+  - [x] Add permission denied errors to skipped directories list
+  - [x] Throw error for invalid path format with descriptive message
+  - [x] Continue discovery when individual directories fail
+  - [x] Collect and return list of skipped directories with reasons
+  - [x] Log errors appropriately
 
-- [ ] **Task 5: Create DiscoveredProject type** (AC: #2, #5)
-  - [ ] Define TypeScript interface in `lib/import/types.ts`
-  - [ ] Include all required fields per architecture
+- [x] **Task 5: Create DiscoveredProject type** (AC: #2, #5)
+  - [x] Define TypeScript interface in `lib/import/types.ts`
+  - [x] Include all required fields per architecture
 
-- [ ] **Task 6: Create discovery API endpoint** (AC: #1, #2)
+- [ ] **Task 6: Create discovery API endpoint** (AC: #1, #2) - *Deferred to Story 17-2*
   - [ ] Create `app/api/import/discover/route.ts`
   - [ ] Accept discovery results from CLI/extension
   - [ ] Validate and store discovery state for user session
@@ -433,20 +433,20 @@ const displayPath = normalizedPath.replace(/^-/, '/').replace(/-/g, '/');
 ### Verification Checklist
 
 After completing this story, verify:
-- [ ] Discovery scans `~/.claude/projects/` directory
-- [ ] Projects with no JSONL files are excluded
-- [ ] Path denormalization works correctly
-- [ ] Session count matches number of JSONL files
-- [ ] Prompt count approximately matches user messages
-- [ ] Date range reflects oldest and newest session files
-- [ ] Permission errors are logged but don't stop discovery
-- [ ] Skipped directories are reported to user
-- [ ] Empty result returned if Claude directory doesn't exist (not an error)
-- [ ] Large files don't cause memory issues
-- [ ] Only files modified within last 30 days are included by default
-- [ ] Custom date range parameters work correctly
-- [ ] `appliedDateRange` is included in the result
-- [ ] Invalid path format throws error with descriptive message
+- [x] Discovery scans `~/.claude/projects/` directory
+- [x] Projects with no JSONL files are excluded
+- [x] Path denormalization works correctly
+- [x] Session count matches number of JSONL files
+- [x] Prompt count approximately matches user messages
+- [x] Date range reflects oldest and newest session files
+- [x] Permission errors are logged but don't stop discovery
+- [x] Skipped directories are reported to user
+- [x] Empty result returned if Claude directory doesn't exist (not an error)
+- [x] Large files don't cause memory issues
+- [x] Only files modified within last 30 days are included by default
+- [x] Custom date range parameters work correctly
+- [x] `appliedDateRange` is included in the result
+- [x] Invalid path format throws error with descriptive message
 
 ## Design System Requirements
 
@@ -473,17 +473,34 @@ After completing this story, verify:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+1. **Implementation Complete**: Created `lib/import/discover.ts` with full discovery functionality
+2. **Types Defined**: Created `lib/import/types.ts` with all required interfaces
+3. **Streaming Support**: Implemented streaming prompt counting for large files (100MB+ size limit)
+4. **Date Filtering**: Default 30-day window with configurable start/end dates
+5. **Error Handling**: Graceful handling of missing directories, permission errors, and invalid paths
+6. **Path Validation**: Security measures against path traversal and malformed paths
+7. **Test Coverage**: 62 unit tests covering all acceptance criteria and edge cases
+8. **API Endpoint Deferred**: Task 6 (API endpoint) deferred to Story 17-2 as discovery runs locally
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-23 | Initial implementation of discover.ts and types.ts | Claude Opus 4.5 |
+| 2025-12-23 | Added comprehensive unit tests (62 tests) | Claude Opus 4.5 |
+| 2025-12-23 | Story marked complete | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/import/types.ts` - TypeScript interfaces
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/import/discover.ts` - Discovery service implementation
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/import/index.ts` - Module exports
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/app/lib/import/__tests__/discover.test.ts` - Unit tests (62 tests)
+
+**Modified:**
+- `/Users/edgars/My-projects/2025-projects/DEV/context-coach/_bmad-output/stories/17-1-transcript-discovery-service.md` - Story file updated with completion status

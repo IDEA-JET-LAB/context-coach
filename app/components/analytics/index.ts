@@ -123,6 +123,11 @@ export {
   type CoachingOpportunity,
 } from './team-intelligence';
 
+// Team Intelligence Dashboard (Story 21-12)
+export {
+  TeamIntelligenceDashboard,
+} from './team-intelligence-dashboard';
+
 // Filter and Export Controls
 export {
   AnalyticsFilters,

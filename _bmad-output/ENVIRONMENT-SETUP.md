@@ -3,54 +3,60 @@
 **Last verified:** December 2025
 **Status:** Production running at https://contextor.co
 
-## Overview
+## CRITICAL: Cloud Supabase Only
 
-Contextor uses different configurations for local development and production:
+**This project uses Cloud Supabase for ALL development - local Supabase is NOT used.**
 
-| Service | Local Development | Production |
-|---------|------------------|------------|
-| Supabase | Local (127.0.0.1:54321) | Cloud (ddskanjiobrjphscskog.supabase.co) |
-| Email | Mailpit (127.0.0.1:54324) | Amazon SES |
-| Redis | Not required | Upstash Redis |
-| App URL | Not required | contextor.co |
-| OAuth | Not configured | Google OAuth enabled |
+| Service | Development & Production |
+|---------|-------------------------|
+| Supabase | Cloud (ddskanjiobrjphscskog.supabase.co) |
+| Email | Amazon SES (via Supabase) |
+| Redis | Upstash Redis (rate limiting) |
+| App URL | Production: contextor.co / Local dev server: 127.0.0.1:3050 |
+| OAuth | Google OAuth enabled |
+
+**Why Cloud-only:**
+- Consistent data across all development
+- No need to sync local/production schemas
+- Real OAuth and email flows during development
+- Simplified setup (no Docker containers for Supabase)
 
 ---
 
 ## Local Development Setup
 
-### 1. Start Supabase
+### 1. Prerequisites
+
+- Node.js 18+
+- Access to the Cloud Supabase credentials (in `app/.env.local`)
+
+### 2. Environment File
+
+The `.env.local` file should already contain Cloud Supabase credentials:
 
 ```bash
-cd app
-supabase start
+# Cloud Supabase (used for ALL development)
+NEXT_PUBLIC_SUPABASE_URL=https://ddskanjiobrjphscskog.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>
+SUPABASE_SERVICE_ROLE_KEY=<service role key>
 ```
 
-This starts local Supabase with Mailpit for email testing.
-
-### 2. Copy Environment File
-
-```bash
-cp .env.example .env.local
-```
-
-Update `.env.local` with values from `supabase status`:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon key from supabase status>
-SUPABASE_SERVICE_ROLE_KEY=<service_role key from supabase status>
-```
+If you need to set up a fresh environment, copy from `.env.example` and get the Cloud credentials from the team.
 
 ### 3. Run Development Server
 
 ```bash
+cd app
 npm run dev -- -p 3050
 ```
 
-### 4. Test Emails
+Access the app at: http://127.0.0.1:3050
 
-View emails at: http://127.0.0.1:54324 (Mailpit)
+### 4. Emails
+
+Emails are sent via Amazon SES (configured in Supabase Dashboard). For testing, use email addresses that can actually receive emails.
+
+**Note:** Do NOT run `supabase start` or any local Supabase commands.
 
 ---
 

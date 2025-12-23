@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required for CSS-in-JS and Tailwind
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co https://contextor.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://contextor.co",
               "frame-ancestors 'none'",
             ].join("; "),
           },

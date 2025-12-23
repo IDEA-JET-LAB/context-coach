@@ -2,6 +2,8 @@
 
 Status: ✅ Done
 
+> **⚠️ OUTDATED DOCUMENTATION:** This story references local Supabase email testing (Inbucket/Mailpit at `127.0.0.1:54324`). As of December 2025, **this project uses Cloud Supabase only**. Emails are sent via Amazon SES. See `CLAUDE.md` for current setup.
+
 ## Story
 
 **As a** user who forgot my password,

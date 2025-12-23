@@ -175,7 +175,10 @@ export async function getTeamSummary(
   const activeUsers = new Set(promptData?.map((p) => p.user_id) ?? []).size;
   const scores = promptData
     ?.flatMap((p) => {
-      const analyses = p.prompt_analyses;
+      const analyses = p.prompt_analyses as
+        | Array<{ overall_score?: number | null }>
+        | { overall_score?: number | null }
+        | null;
       // Handle both array and object cases from Supabase join
       if (Array.isArray(analyses)) {
         return analyses.map((a) => a?.overall_score);
@@ -189,7 +192,6 @@ export async function getTeamSummary(
 
   // Get previous period for comparison
   const prevStartDate = new Date(startDate);
-  const prevEndDate = new Date(startDate);
   const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   prevStartDate.setDate(prevStartDate.getDate() - daysDiff);
 
@@ -204,7 +206,10 @@ export async function getTeamSummary(
 
   const prevScores = prevPromptData
     ?.flatMap((p) => {
-      const analyses = p.prompt_analyses;
+      const analyses = p.prompt_analyses as
+        | Array<{ overall_score?: number | null }>
+        | { overall_score?: number | null }
+        | null;
       // Handle both array and object cases from Supabase join
       if (Array.isArray(analyses)) {
         return analyses.map((a) => a?.overall_score);
@@ -328,7 +333,13 @@ export async function getPersonaDistribution(
 /**
  * Determine a user's technical persona based on their prompt patterns
  */
-function determinePersona(prompts: Array<{ classification: unknown; prompt_analyses: { overall_score: number } | null }>): TechnicalPersona {
+function determinePersona(prompts: Array<{
+  classification: unknown;
+  prompt_analyses:
+    | Array<{ overall_score?: number | null }>
+    | { overall_score?: number | null }
+    | null;
+}>): TechnicalPersona {
   const styles: Record<string, number> = {};
   let totalScore = 0;
   let scoreCount = 0;
@@ -339,8 +350,17 @@ function determinePersona(prompts: Array<{ classification: unknown; prompt_analy
       const style = String(classification.work_style);
       styles[style] = (styles[style] || 0) + 1;
     }
-    if (p.prompt_analyses?.overall_score) {
-      totalScore += p.prompt_analyses.overall_score;
+    // Handle both array and object cases from Supabase join
+    const analyses = p.prompt_analyses;
+    if (Array.isArray(analyses)) {
+      analyses.forEach((a) => {
+        if (a?.overall_score) {
+          totalScore += a.overall_score;
+          scoreCount++;
+        }
+      });
+    } else if (analyses?.overall_score) {
+      totalScore += analyses.overall_score;
       scoreCount++;
     }
   });
@@ -349,10 +369,10 @@ function determinePersona(prompts: Array<{ classification: unknown; prompt_analy
   const primaryStyle = Object.entries(styles).sort((a, b) => b[1] - a[1])[0]?.[0];
 
   // Classification logic
-  if (primaryStyle === 'architect' || styles.architect > prompts.length * 0.3) {
+  if (primaryStyle === 'architect' || (styles.architect ?? 0) > prompts.length * 0.3) {
     return 'architect';
   }
-  if (primaryStyle === 'rapid' || styles.rapid > prompts.length * 0.4) {
+  if (primaryStyle === 'rapid' || (styles.rapid ?? 0) > prompts.length * 0.4) {
     return 'firefighter';
   }
   if (avgScore >= 7 && (primaryStyle === 'focused' || primaryStyle === 'iterative')) {
@@ -480,7 +500,7 @@ export async function getTeamSessionHealth(
   let healthySessions = 0;
 
   sessions.forEach((session) => {
-    // Health score based on: completion, duration, and prompt count
+    // Health score based on: completion, duration, prompt count, and context exhaustion
     let healthScore = 5; // Base score
 
     // Completed sessions get bonus
@@ -505,6 +525,12 @@ export async function getTeamSessionHealth(
       if (durationMinutes >= 15 && durationMinutes <= 120) {
         healthScore += 1;
       }
+    }
+
+    // Story 21-1: Context exhaustion penalty
+    // Sessions that hit context limits get a health score reduction
+    if (session.context_exhausted) {
+      healthScore -= 2;
     }
 
     totalHealthScore += Math.min(10, Math.max(1, healthScore));
@@ -561,7 +587,11 @@ export async function getTopPerformers(
   // Calculate metrics for each member
   for (const member of members) {
     const userId = member.user_id;
-    const user = member.users as { id: string; name: string | null; avatar_url: string | null };
+    const usersData = member.users as unknown;
+    // Handle both array and single object cases from Supabase join
+    const user = (Array.isArray(usersData) ? usersData[0] : usersData) as
+      | { id: string; name: string | null; avatar_url: string | null }
+      | undefined;
 
     // Get prompt scores
     const { data: prompts } = await supabase
@@ -578,7 +608,17 @@ export async function getTopPerformers(
     if (!prompts || prompts.length === 0) continue;
 
     const scores = prompts
-      .map((p) => p.prompt_analyses?.overall_score)
+      .flatMap((p) => {
+        const analyses = p.prompt_analyses as
+          | Array<{ overall_score?: number | null }>
+          | { overall_score?: number | null }
+          | null;
+        // Handle both array and object cases from Supabase join
+        if (Array.isArray(analyses)) {
+          return analyses.map((a) => a?.overall_score);
+        }
+        return [analyses?.overall_score];
+      })
       .filter((s): s is number => s !== null && s !== undefined);
 
     const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
@@ -606,8 +646,8 @@ export async function getTopPerformers(
     const efficiency = totalSessionMinutes > 0 ? (prompts.length / totalSessionMinutes) * 60 : 0;
 
     userMetrics.set(userId, {
-      name: user.name || 'Unknown User',
-      avatarUrl: user.avatar_url || undefined,
+      name: user?.name || 'Unknown User',
+      avatarUrl: user?.avatar_url || undefined,
       score: avgScore,
       efficiency,
       health: healthRate * 10, // Scale to 0-10
@@ -706,10 +746,23 @@ export async function detectCommonStruggles(
           frustratedCount++;
         }
       }
-      if (p.prompt_analyses?.overall_score) {
-        totalScore += p.prompt_analyses.overall_score;
+      // Handle both array and object cases from Supabase join
+      const analyses = p.prompt_analyses as
+        | Array<{ overall_score?: number | null }>
+        | { overall_score?: number | null }
+        | null;
+      if (Array.isArray(analyses)) {
+        analyses.forEach((a) => {
+          if (a?.overall_score) {
+            totalScore += a.overall_score;
+            scoreCount++;
+            clarityTotal += a.overall_score;
+          }
+        });
+      } else if (analyses?.overall_score) {
+        totalScore += analyses.overall_score;
         scoreCount++;
-        clarityTotal += p.prompt_analyses.overall_score; // Using overall score as clarity proxy
+        clarityTotal += analyses.overall_score;
       }
     });
 
@@ -820,8 +873,20 @@ export async function extractBestPractices(
     let totalWithSentiment = 0;
 
     prompts.forEach((p) => {
-      if (p.prompt_analyses?.overall_score) {
-        totalScore += p.prompt_analyses.overall_score;
+      // Handle both array and object cases from Supabase join
+      const analyses = p.prompt_analyses as
+        | Array<{ overall_score?: number | null }>
+        | { overall_score?: number | null }
+        | null;
+      if (Array.isArray(analyses)) {
+        analyses.forEach((a) => {
+          if (a?.overall_score) {
+            totalScore += a.overall_score;
+            scoreCount++;
+          }
+        });
+      } else if (analyses?.overall_score) {
+        totalScore += analyses.overall_score;
         scoreCount++;
       }
       const classification = p.classification as Record<string, unknown> | null;
@@ -852,7 +917,11 @@ export async function extractBestPractices(
 
     userMetricsList.push({
       userId: member.user_id,
-      userName: (member.users as { name: string | null }).name || 'Unknown',
+      userName: (() => {
+        const usersData = member.users as unknown;
+        const user = (Array.isArray(usersData) ? usersData[0] : usersData) as { name: string | null } | undefined;
+        return user?.name || 'Unknown';
+      })(),
       avgPromptScore: avgScore,
       promptCount: prompts.length,
       sessionCount: sessions?.length ?? 0,
@@ -945,13 +1014,29 @@ export async function getWeekOverWeekChanges(
     .gte('started_at', prevStartDate.toISOString())
     .lt('started_at', startDate.toISOString());
 
+  // Helper to extract scores from Supabase join result
+  const extractScores = (
+    prompts: Array<{ prompt_analyses: unknown }> | null
+  ): number[] => {
+    return (
+      prompts
+        ?.flatMap((p) => {
+          const analyses = p.prompt_analyses as
+            | Array<{ overall_score?: number | null }>
+            | { overall_score?: number | null }
+            | null;
+          if (Array.isArray(analyses)) {
+            return analyses.map((a) => a?.overall_score);
+          }
+          return [analyses?.overall_score];
+        })
+        .filter((s): s is number => s !== null && s !== undefined) ?? []
+    );
+  };
+
   // Calculate score change
-  const currentScores = currentPrompts
-    ?.map((p) => p.prompt_analyses?.overall_score)
-    .filter((s): s is number => s !== null && s !== undefined) ?? [];
-  const prevScores = prevPrompts
-    ?.map((p) => p.prompt_analyses?.overall_score)
-    .filter((s): s is number => s !== null && s !== undefined) ?? [];
+  const currentScores = extractScores(currentPrompts);
+  const prevScores = extractScores(prevPrompts);
 
   const currentAvgScore = currentScores.length > 0
     ? currentScores.reduce((a, b) => a + b, 0) / currentScores.length

@@ -3,18 +3,15 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useTeamIntelligence } from '@/lib/hooks/use-team-intelligence';
-import {
+import type {
   AnalyticsTimeRange,
   TopPerformer,
   CommonStruggle,
   BestPractice,
 } from '@/lib/types/team-intelligence';
+import type { CoachingOpportunity } from '@/components/analytics/team-intelligence';
 import { MetricCard } from '@/components/analytics/metric-card';
 import { TrendIndicator } from '@/components/analytics/trend-indicator';
-import { WorkStyleBadge, WorkStyle } from '@/components/analytics/work-style-badge';
-import { SessionHealth } from '@/components/analytics/session-health';
-import { SentimentIndicator } from '@/components/analytics/sentiment-timeline';
-import { TeamIntelligence, CoachingOpportunity } from '@/components/analytics/team-intelligence';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users,
@@ -29,7 +26,6 @@ import {
   Award,
   UserCircle,
   Crown,
-  ChevronRight,
   RefreshCw,
   Calendar,
 } from 'lucide-react';
@@ -157,21 +153,6 @@ export function TeamIntelligenceDashboard({
       value: count,
       fill: PERSONA_COLORS[persona] || 'hsl(var(--primary))',
     }));
-
-  // Get primary work style
-  const primaryStyle = Object.entries(styleDistribution)
-    .sort((a, b) => b[1] - a[1])[0]?.[0] as WorkStyle | undefined;
-
-  // Map struggles to coaching opportunities format
-  const coachingOpportunities: CoachingOpportunity[] = commonStruggles.map((struggle, index) => ({
-    id: `struggle-${index}`,
-    type: struggle.severity === 'high' ? 'skill_gap' : 'improvement',
-    title: struggle.issue,
-    description: `Affects ${struggle.affectedPercent}% of team members`,
-    affectedMembers: Math.ceil((struggle.affectedPercent / 100) * summary.teamSize),
-    priority: struggle.severity,
-    suggestedAction: struggle.suggestion,
-  }));
 
   return (
     <div className={cn('space-y-6', className)} data-testid="team-intelligence-dashboard">

@@ -1,0 +1,46 @@
+# Source files (bundled into dist)
+src/**
+
+# Webview source files (keep dist)
+webviews/**/src/**
+webviews/**/node_modules/**
+webviews/**/package*.json
+webviews/**/tsconfig.json
+webviews/**/vite.config.ts
+webviews/**/index.html
+!webviews/**/dist/**
+
+# Config files
+.vscode/**
+.eslintrc*
+tsconfig.json
+vite.config.ts
+
+# Development files
+*.map
+.gitignore
+**/*.ts
+!dist/**/*.d.ts
+
+# Build artifacts
+node_modules/**
+*.vsix
+
+# Test files
+**/*.test.ts
+**/__tests__/**
+
+# Documentation
+*.md
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/**
+*.swp
+*.swo

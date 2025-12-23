@@ -1,6 +1,6 @@
 # Story 21.12: Team Intelligence Analytics
 
-Status: Ready
+Status: Complete
 
 ## Story
 
@@ -52,72 +52,72 @@ Status: Ready
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Database Schema** (AC: #1, #2, #4, #5)
-  - [ ] Create `team_daily_analytics` table
-  - [ ] Add columns: team_id, date, total_prompts, total_sessions, avg_prompt_score, avg_session_health, work_style_distribution, sentiment_distribution, active_users
-  - [ ] Add unique constraint on (team_id, date)
-  - [ ] Add indexes and enable RLS
+- [x] **Task 1: Database Schema** (AC: #1, #2, #4, #5)
+  - [x] Create `team_daily_analytics` table
+  - [x] Add columns: team_id, date, total_prompts, total_sessions, avg_prompt_score, avg_session_health, work_style_distribution, sentiment_distribution, active_users
+  - [x] Add unique constraint on (team_id, date)
+  - [x] Add indexes and enable RLS
 
-- [ ] **Task 2: Create Team Aggregation Function** (AC: #1)
-  - [ ] Create SQL function `aggregate_team_daily_analytics(target_date)`
-  - [ ] Aggregate from user_daily_analytics for team members
-  - [ ] Sum counts, average scores
-  - [ ] Aggregate JSONB distributions
-  - [ ] Schedule daily cron job (00:10 UTC)
+- [x] **Task 2: Create Team Aggregation Function** (AC: #1)
+  - [x] Create SQL function `aggregate_team_daily_analytics(target_date)`
+  - [x] Aggregate from user_daily_analytics for team members
+  - [x] Sum counts, average scores
+  - [x] Aggregate JSONB distributions
+  - [x] Schedule daily cron job (00:10 UTC)
 
-- [ ] **Task 3: Create Team Intelligence API** (AC: #1-9)
-  - [ ] Create `GET /api/analytics/team/:teamId/intelligence` endpoint
-  - [ ] Accept timeRange query param
-  - [ ] Return TeamIntelligenceResponse
-  - [ ] Implement 15-minute cache
+- [x] **Task 3: Create Team Intelligence API** (AC: #1-9)
+  - [x] Create `GET /api/analytics/team/:teamId/intelligence` endpoint
+  - [x] Accept timeRange query param
+  - [x] Return TeamIntelligenceResponse
+  - [x] Implement 15-minute cache
 
-- [ ] **Task 4: Implement Team Summary Calculation** (AC: #1)
-  - [ ] Calculate team size from team_members
-  - [ ] Calculate active users from analytics
-  - [ ] Sum totals and calculate averages
-  - [ ] Calculate week-over-week changes
+- [x] **Task 4: Implement Team Summary Calculation** (AC: #1)
+  - [x] Calculate team size from team_members
+  - [x] Calculate active users from analytics
+  - [x] Sum totals and calculate averages
+  - [x] Calculate week-over-week changes
 
-- [ ] **Task 5: Implement Style and Persona Distribution** (AC: #2, #3)
-  - [ ] Aggregate work style counts from team members
-  - [ ] Calculate persona distribution from individual profiles
-  - [ ] Return as chart-ready data structures
+- [x] **Task 5: Implement Style and Persona Distribution** (AC: #2, #3)
+  - [x] Aggregate work style counts from team members
+  - [x] Calculate persona distribution from individual profiles
+  - [x] Return as chart-ready data structures
 
-- [ ] **Task 6: Implement Top Performers Identification** (AC: #6)
-  - [ ] Query user_daily_analytics for team members
-  - [ ] Rank by prompt quality, efficiency, session health
-  - [ ] Return top 5 for each metric (with user names)
-  - [ ] Respect privacy settings (admin only)
+- [x] **Task 6: Implement Top Performers Identification** (AC: #6)
+  - [x] Query user_daily_analytics for team members
+  - [x] Rank by prompt quality, efficiency, session health
+  - [x] Return top 5 for each metric (with user names)
+  - [x] Respect privacy settings (admin only)
 
-- [ ] **Task 7: Implement Common Struggles Detection** (AC: #7)
-  - [ ] Analyze patterns across team members
-  - [ ] Identify issues affecting >20% of team
-  - [ ] Generate severity levels (low, medium, high)
-  - [ ] Provide actionable suggestions
+- [x] **Task 7: Implement Common Struggles Detection** (AC: #7)
+  - [x] Analyze patterns across team members
+  - [x] Identify issues affecting >20% of team
+  - [x] Generate severity levels (low, medium, high)
+  - [x] Provide actionable suggestions
 
-- [ ] **Task 8: Implement Best Practices Extraction** (AC: #8)
-  - [ ] Identify patterns from top performers
-  - [ ] Correlate patterns with high scores
-  - [ ] Generate impact descriptions
-  - [ ] Include example counts
+- [x] **Task 8: Implement Best Practices Extraction** (AC: #8)
+  - [x] Identify patterns from top performers
+  - [x] Correlate patterns with high scores
+  - [x] Generate impact descriptions
+  - [x] Include example counts
 
-- [ ] **Task 9: RLS Policies** (AC: #10)
-  - [ ] Team members can view aggregated team stats
-  - [ ] Team admins can view individual member data
-  - [ ] Non-members cannot access team data
-  - [ ] Service role bypasses for aggregation
+- [x] **Task 9: RLS Policies** (AC: #10)
+  - [x] Team members can view aggregated team stats
+  - [x] Team admins can view individual member data
+  - [x] Non-members cannot access team data
+  - [x] Service role bypasses for aggregation
 
-- [ ] **Task 10: Create Team Intelligence Dashboard** (AC: #1-9)
-  - [ ] Create `/app/app/(app)/team/[teamId]/analytics/page.tsx`
-  - [ ] Create team-specific chart components
-  - [ ] Implement time range filter
-  - [ ] Handle admin vs member view
+- [x] **Task 10: Create Team Intelligence Dashboard** (AC: #1-9)
+  - [x] Integrated into `/app/(dashboard)/team/page.tsx` with view toggle
+  - [x] Create team-specific chart components
+  - [x] Implement time range filter
+  - [x] Handle admin vs member view
 
-- [ ] **Task 11: Testing** (AC: #1-10)
-  - [ ] Write unit tests for aggregation logic
-  - [ ] Write unit tests for top performers calculation
-  - [ ] Write unit tests for struggles detection
-  - [ ] Write E2E tests for dashboard
-  - [ ] Test RLS policies for different roles
+- [x] **Task 11: Testing** (AC: #1-10)
+  - [x] Write unit tests for aggregation logic (47 tests)
+  - [x] Write unit tests for top performers calculation
+  - [x] Write unit tests for struggles detection
+  - [x] Write E2E tests for dashboard
+  - [x] Test RLS policies for different roles
 
 ## Dev Notes
 
@@ -351,33 +351,53 @@ const CACHE_CONFIG = {
 **MANDATORY:** This story MUST use existing design system components exclusively.
 
 ### Pre-Implementation Checklist
-- [ ] Reviewed `_bmad-output/DESIGN-SYSTEM-MANDATE.md` for component inventory
-- [ ] Checked `/design` route for component examples
-- [ ] Identified required components from the inventory below
-- [ ] Confirmed no hardcoded colors - using semantic tokens only
-- [ ] No new UI patterns needed (or Design Epic story created)
+- [x] Reviewed `_bmad-output/DESIGN-SYSTEM-MANDATE.md` for component inventory
+- [x] Checked `/design` route for component examples
+- [x] Identified required components from the inventory below
+- [x] Confirmed no hardcoded colors - using semantic tokens only
+- [x] No new UI patterns needed (or Design Epic story created)
 
 ### Required Components
-<!-- Dev agent: Fill in specific components needed from DESIGN-SYSTEM-MANDATE.md -->
-- Review `/design` route and `components/` directory before implementation
-- Use semantic tokens: `bg-surface-*`, `text-content-*`, `border-border-*`
+- MetricCard from `components/analytics/metric-card`
+- TrendIndicator from `components/analytics/trend-indicator`
+- Skeleton from `components/ui/skeleton`
+- Recharts BarChart, PieChart for visualizations
+- Semantic tokens: `bg-card`, `border-border`, `text-foreground`, `text-muted-foreground`
 
 ### Styling Rules
-- NO hardcoded colors (no `bg-zinc-*`, `text-gray-*`, etc.)
-- Use existing components from `components/` directory
-- Extend existing components before creating new ones
+- [x] NO hardcoded colors (no `bg-zinc-*`, `text-gray-*`, etc.)
+- [x] Use existing components from `components/` directory
+- [x] Extend existing components before creating new ones
 
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+1. Created full team intelligence analytics system with 47 unit tests passing
+2. Integrated into team page with view mode toggle (Intelligence vs Standard)
+3. Dashboard shows summary stats, work style distribution, persona pie chart, sentiment/session health, top performers (admin only), common struggles, and best practices
+4. API endpoint at `/api/analytics/team/[teamId]/intelligence` with 15-minute cache
+5. E2E tests created covering view toggle, navigation, API responses, and dashboard content
+6. All lint and TypeScript checks pass
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-23 | Initial implementation of Story 21-12 | Claude Opus 4.5 |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+**Created:**
+- `app/supabase/migrations/20251223200000_create_team_daily_analytics.sql` - Database schema and aggregation functions
+- `app/lib/types/team-intelligence.ts` - TypeScript interfaces
+- `app/lib/analytics/team-intelligence.ts` - Service functions for team intelligence
+- `app/app/api/analytics/team/[teamId]/intelligence/route.ts` - API endpoint
+- `app/lib/hooks/use-team-intelligence.ts` - React Query hook
+- `app/components/analytics/team-intelligence-dashboard.tsx` - Dashboard component
+- `app/lib/analytics/__tests__/team-intelligence.test.ts` - Unit tests (47 tests)
+- `app/e2e/team-intelligence.spec.ts` - E2E tests
+
+**Modified:**
+- `app/app/(dashboard)/team/page.tsx` - Added view mode toggle for Intelligence/Standard
+- `app/components/analytics/index.ts` - Added TeamIntelligenceDashboard export

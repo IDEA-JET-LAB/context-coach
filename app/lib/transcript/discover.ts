@@ -92,10 +92,12 @@ async function denormalizePathRecursive(normalizedPath: string): Promise<string>
   let currentSegment = '';
 
   for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    if (!segment) continue;
     if (currentSegment) {
-      currentSegment += '-' + segments[i];
+      currentSegment += '-' + segment;
     } else {
-      currentSegment = segments[i];
+      currentSegment = segment;
     }
 
     const testPath = currentPath + '/' + currentSegment;

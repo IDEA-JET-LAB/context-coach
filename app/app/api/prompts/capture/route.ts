@@ -22,7 +22,10 @@ import {
   findOrCreateSession,
   linkPromptToSession,
   buildSessionContextFromKeyResult,
+  markContextExhausted,
+  getSessionDurationMinutes,
 } from "@/lib/sessions";
+import { detectContextExhaustion } from "@/lib/analysis";
 
 // Create a scoped logger for capture operations
 const logger = createScopedLogger("CAPTURE");
@@ -279,6 +282,32 @@ export async function POST(request: NextRequest) {
                 sessionDbId,
                 isNewSession: isNew,
               });
+
+              // Story 21-1: Context Exhaustion Detection
+              // Detect context exhaustion patterns in the prompt
+              try {
+                const sessionDurationMinutes = await getSessionDurationMinutes(sessionDbId);
+                const exhaustionResult = detectContextExhaustion(
+                  redactedText,
+                  sessionDurationMinutes
+                );
+
+                if (exhaustionResult.isExhausted) {
+                  await markContextExhausted(sessionDbId);
+                  logger.log("Context exhaustion detected", {
+                    sessionDbId,
+                    confidence: exhaustionResult.confidence,
+                    method: exhaustionResult.detectionMethod,
+                    sessionDurationMinutes,
+                  });
+                }
+              } catch (exhaustionErr) {
+                // Log but don't fail - exhaustion detection is non-critical
+                logger.warn("Context exhaustion detection failed", {
+                  sessionDbId,
+                  error: exhaustionErr instanceof Error ? exhaustionErr.message : String(exhaustionErr),
+                });
+              }
             }
           }
         } catch (err) {

@@ -30,3 +30,6 @@ build/
 
 # Contextor user configuration
 .contextor/.user
+
+# AgentVibes TTS audio files (prevents context bloat in git status)
+.claude/audio/
