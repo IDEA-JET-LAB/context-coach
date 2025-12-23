@@ -15,9 +15,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { ConfirmationModal, showToast } from '@/components/feedback';
 import { disableUser, enableUser, deleteUser } from '@/lib/services/admin-users';
-import { Ban, CheckCircle, Trash2, AlertTriangle } from 'lucide-react';
+import { Ban, CheckCircle, Trash2 } from 'lucide-react';
 
 interface UserActionsProps {
   userId: string;
@@ -49,13 +49,13 @@ export function UserActions({
   return (
     <div className="space-y-4">
       {isDisabled ? (
-        <EnableAccountDialog
+        <EnableAccountAction
           userId={userId}
           isPending={isPending}
           startTransition={startTransition}
         />
       ) : (
-        <DisableAccountDialog
+        <DisableAccountAction
           userId={userId}
           isPending={isPending}
           startTransition={startTransition}
@@ -73,8 +73,8 @@ export function UserActions({
   );
 }
 
-// Disable Account Dialog
-function DisableAccountDialog({
+// Disable Account Action with ConfirmationModal
+function DisableAccountAction({
   userId,
   isPending,
   startTransition,
@@ -89,55 +89,42 @@ function DisableAccountDialog({
     startTransition(async () => {
       const result = await disableUser(userId);
       if (result.error) {
-        toast.error(result.error.message);
+        showToast.error(result.error.message);
       } else {
-        toast.success('Account disabled successfully');
+        showToast.success('Account disabled successfully');
         setOpen(false);
       }
     });
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button
-          data-testid="disable-account-btn"
-          variant="outline"
-          className="w-full justify-start text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
-        >
-          <Ban className="mr-2 h-4 w-4" />
-          Disable Account
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent data-testid="disable-account-dialog">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Disable User Account
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            This will prevent the user from logging in. Their data will be preserved
-            but inaccessible. You can re-enable the account later.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            data-testid="confirm-disable-btn"
-            onClick={handleDisable}
-            disabled={isPending}
-            className="bg-amber-600 hover:bg-amber-700"
-          >
-            {isPending ? 'Disabling...' : 'Disable Account'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button
+        data-testid="disable-account-btn"
+        variant="outline"
+        className="w-full justify-start text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
+        onClick={() => setOpen(true)}
+      >
+        <Ban className="mr-2 h-4 w-4" />
+        Disable Account
+      </Button>
+      <ConfirmationModal
+        open={open}
+        onOpenChange={setOpen}
+        title="Disable User Account"
+        description="This will prevent the user from logging in. Their data will be preserved but inaccessible. You can re-enable the account later."
+        confirmLabel={isPending ? 'Disabling...' : 'Disable Account'}
+        onConfirm={handleDisable}
+        loading={isPending}
+        variant="warning"
+        icon={Ban}
+      />
+    </>
   );
 }
 
-// Enable Account Dialog
-function EnableAccountDialog({
+// Enable Account Action with ConfirmationModal
+function EnableAccountAction({
   userId,
   isPending,
   startTransition,
@@ -152,53 +139,41 @@ function EnableAccountDialog({
     startTransition(async () => {
       const result = await enableUser(userId);
       if (result.error) {
-        toast.error(result.error.message);
+        showToast.error(result.error.message);
       } else {
-        toast.success('Account enabled successfully');
+        showToast.success('Account enabled successfully');
         setOpen(false);
       }
     });
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button
-          data-testid="enable-account-btn"
-          variant="outline"
-          className="w-full justify-start text-green-500 border-green-500/30 hover:bg-green-500/10"
-        >
-          <CheckCircle className="mr-2 h-4 w-4" />
-          Enable Account
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent data-testid="enable-account-dialog">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Enable User Account
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            This will restore the user&apos;s ability to log in and access their data.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            data-testid="confirm-enable-btn"
-            onClick={handleEnable}
-            disabled={isPending}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isPending ? 'Enabling...' : 'Enable Account'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button
+        data-testid="enable-account-btn"
+        variant="outline"
+        className="w-full justify-start text-green-500 border-green-500/30 hover:bg-green-500/10"
+        onClick={() => setOpen(true)}
+      >
+        <CheckCircle className="mr-2 h-4 w-4" />
+        Enable Account
+      </Button>
+      <ConfirmationModal
+        open={open}
+        onOpenChange={setOpen}
+        title="Enable User Account"
+        description="This will restore the user's ability to log in and access their data."
+        confirmLabel={isPending ? 'Enabling...' : 'Enable Account'}
+        onConfirm={handleEnable}
+        loading={isPending}
+        variant="info"
+        icon={CheckCircle}
+      />
+    </>
   );
 }
 
-// Delete Account Dialog
+// Delete Account Dialog - keeps custom AlertDialog for email confirmation input
 function DeleteAccountDialog({
   userId,
   userEmail,
@@ -221,9 +196,9 @@ function DeleteAccountDialog({
     startTransition(async () => {
       const result = await deleteUser(userId, confirmEmail);
       if (result.error) {
-        toast.error(result.error.message);
+        showToast.error(result.error.message);
       } else {
-        toast.success('Account deleted successfully');
+        showToast.success('Account deleted successfully');
         setOpen(false);
         onSuccess();
       }

@@ -13,6 +13,7 @@ import {
   Settings2,
   Activity,
   UserCog,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -27,6 +28,7 @@ const navItems = [
   { icon: BarChart2, label: 'Analytics', href: '/analytics' },
   { icon: Users, label: 'Team', href: '/team' },
   { icon: FolderOpen, label: 'Projects', href: '/projects' },
+  { icon: BookOpen, label: 'Docs', href: '/docs' },
   { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 

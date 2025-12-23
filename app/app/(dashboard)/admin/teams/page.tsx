@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { TeamsTable, TeamsTableSkeleton } from '@/components/admin/teams-table';
 import { Button } from '@/components/ui/button';
+import { InlineAlert } from '@/components/feedback';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 
@@ -135,9 +136,10 @@ export default function AdminTeamsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-          <p className="text-red-500">{error}</p>
-        </div>
+        <InlineAlert
+          variant="error"
+          message={error}
+        />
       )}
 
       {/* Teams table */}

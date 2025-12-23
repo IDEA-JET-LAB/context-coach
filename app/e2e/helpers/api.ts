@@ -1,6 +1,31 @@
 import { createHash } from "crypto";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
+// Local Supabase configuration for E2E tests
+// These are the default local development keys - safe to commit
+const LOCAL_SUPABASE_URL = "http://127.0.0.1:54321";
+const LOCAL_SERVICE_KEY = "sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz";
+
+// Use local Supabase by default for tests, unless explicitly configured otherwise
+const isLocalDev = !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL.includes("127.0.0.1") ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL.includes("localhost");
+
+const SUPABASE_URL = isLocalDev ? LOCAL_SUPABASE_URL : process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+/**
+ * Gets the service role key for database operations.
+ * Uses local key for local development, env var for other environments.
+ */
+function getServiceRoleKey(): string {
+  if (isLocalDev) {
+    return LOCAL_SERVICE_KEY;
+  }
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for non-local environment");
+  }
+  return key;
+}
 
 /**
  * Creates a test project directly in the database for API testing.
@@ -22,10 +47,7 @@ export async function createTestProject(
   const apiKeyPrefix = apiKey.slice(0, 16);
 
   // Use service role key for direct DB access
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for test helper");
-  }
+  const serviceRoleKey = getServiceRoleKey();
 
   const response = await fetch(`${SUPABASE_URL}/rest/v1/projects`, {
     method: "POST",
@@ -68,10 +90,7 @@ export async function createTestTeam(
   userId: string,
   teamName: string = `Test Team ${Date.now()}`
 ): Promise<{ id: string; name: string }> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for test helper");
-  }
+  const serviceRoleKey = getServiceRoleKey();
 
   // Create team
   const teamResponse = await fetch(`${SUPABASE_URL}/rest/v1/teams`, {
@@ -126,10 +145,7 @@ export async function createTestUserDirect(
   email: string,
   password: string = "TestPassword123!"
 ): Promise<{ id: string; email: string }> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for test helper");
-  }
+  const serviceRoleKey = getServiceRoleKey();
 
   const response = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
     method: "POST",
@@ -158,8 +174,7 @@ export async function createTestUserDirect(
  * Clean up test data.
  */
 export async function deleteTestProject(projectId: string): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) return;
+  const serviceRoleKey = getServiceRoleKey();
 
   await fetch(`${SUPABASE_URL}/rest/v1/projects?id=eq.${projectId}`, {
     method: "DELETE",
@@ -171,8 +186,7 @@ export async function deleteTestProject(projectId: string): Promise<void> {
 }
 
 export async function deleteTestTeam(teamId: string): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) return;
+  const serviceRoleKey = getServiceRoleKey();
 
   await fetch(`${SUPABASE_URL}/rest/v1/teams?id=eq.${teamId}`, {
     method: "DELETE",
@@ -184,8 +198,7 @@ export async function deleteTestTeam(teamId: string): Promise<void> {
 }
 
 export async function deleteTestUser(userId: string): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) return;
+  const serviceRoleKey = getServiceRoleKey();
 
   await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
     method: "DELETE",
@@ -211,10 +224,7 @@ export async function getPromptById(promptId: string): Promise<{
   analysis_status: string;
   created_at: string;
 } | null> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for test helper");
-  }
+  const serviceRoleKey = getServiceRoleKey();
 
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/prompts?id=eq.${promptId}&select=*`,
@@ -240,8 +250,7 @@ export async function getPromptById(promptId: string): Promise<{
  * Deletes a prompt by ID for test cleanup.
  */
 export async function deletePrompt(promptId: string): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) return;
+  const serviceRoleKey = getServiceRoleKey();
 
   await fetch(`${SUPABASE_URL}/rest/v1/prompts?id=eq.${promptId}`, {
     method: "DELETE",
@@ -256,8 +265,7 @@ export async function deletePrompt(promptId: string): Promise<void> {
  * Deletes all prompts for a project (test cleanup).
  */
 export async function deletePromptsForProject(projectId: string): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) return;
+  const serviceRoleKey = getServiceRoleKey();
 
   await fetch(`${SUPABASE_URL}/rest/v1/prompts?project_id=eq.${projectId}`, {
     method: "DELETE",
@@ -284,10 +292,7 @@ export async function createTestPrompt(
   text: string;
   analysis_status: string;
 }> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for test helper");
-  }
+  const serviceRoleKey = getServiceRoleKey();
 
   const charCount = text.length;
   const wordCount = text.split(/\s+/).filter(Boolean).length;
@@ -353,10 +358,7 @@ export async function createTestPromptWithAnalysis(
     suggestions: unknown;
   };
 }> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set for test helper");
-  }
+  const serviceRoleKey = getServiceRoleKey();
 
   const text = options.text || "Test prompt for E2E testing with analysis";
   const charCount = text.length;

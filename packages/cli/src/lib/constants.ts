@@ -11,7 +11,7 @@ export const TIMEOUTS = {
 /**
  * Dashboard URL configuration
  */
-export const DASHBOARD_BASE_URL = 'https://app.contextor.co';
+export const DASHBOARD_BASE_URL = 'https://contextor.co';
 
 /**
  * Build dashboard URL for a specific project

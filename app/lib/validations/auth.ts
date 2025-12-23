@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { passwordSchema } from "./password";
 
 export const signupSchema = z
   .object({
@@ -6,12 +7,7 @@ export const signupSchema = z
       .string()
       .min(1, "Email is required")
       .email("Please enter a valid email address"),
-    password: z
-      .string()
-      .min(12, "Password must be at least 12 characters")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -42,12 +38,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(12, "Password must be at least 12 characters")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -56,3 +47,13 @@ export const resetPasswordSchema = z
   });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const emailChangeSchema = z.object({
+  newEmail: z
+    .string()
+    .min(1, "New email is required")
+    .email("Please enter a valid email address"),
+  currentPassword: z.string().min(1, "Current password is required"),
+});
+
+export type EmailChangeInput = z.infer<typeof emailChangeSchema>;

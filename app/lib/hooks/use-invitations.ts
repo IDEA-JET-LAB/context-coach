@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 
 export interface Invitation {
   id: string;
@@ -135,9 +135,9 @@ export function useInviteMember(teamId: string) {
       queryClient.invalidateQueries({ queryKey: ['invitations', teamId] });
 
       if (data.emailSent) {
-        toast.success('Invitation sent successfully');
+        showToast.success('Invitation sent successfully');
       } else {
-        toast.success('Invitation created (email delivery pending)');
+        showToast.success('Invitation created (email delivery pending)');
       }
     },
     onError: (error: Error & { code?: string }) => {
@@ -148,7 +148,7 @@ export function useInviteMember(teamId: string) {
         FORBIDDEN: 'Only team admins can invite members',
       };
 
-      toast.error(messageMap[error.code || ''] || error.message);
+      showToast.error(messageMap[error.code || ''] || error.message);
     },
   });
 }
@@ -161,10 +161,10 @@ export function useRevokeInvitation(teamId: string) {
     mutationFn: (invitationId: string) => revokeInvitation(teamId, invitationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations', teamId] });
-      toast.success('Invitation revoked');
+      showToast.success('Invitation revoked');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
     },
   });
 }
@@ -188,7 +188,7 @@ export function useAcceptInvitation() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       queryClient.invalidateQueries({ queryKey: ['current-team'] });
-      toast.success(`Welcome to ${data.team.name}!`);
+      showToast.success(`Welcome to ${data.team.name}!`);
     },
     onError: (error: Error & { code?: string }) => {
       const messageMap: Record<string, string> = {
@@ -197,7 +197,7 @@ export function useAcceptInvitation() {
         ALREADY_MEMBER: 'You are already a member of this team',
       };
 
-      toast.error(messageMap[error.code || ''] || error.message);
+      showToast.error(messageMap[error.code || ''] || error.message);
     },
   });
 }
@@ -298,7 +298,7 @@ export function useCreateLinkInvitation(teamId: string) {
       createLinkInvitation(teamId, options),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['link-invitations', teamId] });
-      toast.success('Invite link created successfully');
+      showToast.success('Invite link created successfully');
     },
     onError: (error: Error & { code?: string }) => {
       const messageMap: Record<string, string> = {
@@ -306,7 +306,7 @@ export function useCreateLinkInvitation(teamId: string) {
         VALIDATION_ERROR: 'Invalid parameters',
       };
 
-      toast.error(messageMap[error.code || ''] || error.message);
+      showToast.error(messageMap[error.code || ''] || error.message);
     },
   });
 }
@@ -319,10 +319,10 @@ export function useRevokeLinkInvitation(teamId: string) {
     mutationFn: (invitationId: string) => revokeLinkInvitation(teamId, invitationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['link-invitations', teamId] });
-      toast.success('Invite link revoked');
+      showToast.success('Invite link revoked');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
     },
   });
 }

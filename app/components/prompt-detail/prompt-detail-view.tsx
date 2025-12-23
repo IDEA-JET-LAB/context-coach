@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowLeft, Calendar, Folder, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScoreBadge } from '@/components/feed/score-badge';
+import { CodeBlock } from '@/components/forms';
+import { DimensionRadar, type RadarDimensionScore } from '@/components/analytics';
 import { DimensionCard } from './dimension-card';
 import type { PromptWithFullAnalysis } from '@/lib/hooks/use-prompt';
 
@@ -47,6 +49,17 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
     if (indexB === -1) return -1;
     return indexA - indexB;
   });
+
+  // Prepare data for DimensionRadar
+  const radarData: RadarDimensionScore[] = useMemo(() => {
+    return DIMENSION_ORDER.map((dimension) => ({
+      dimension,
+      score: dimensionScores[dimension]?.score ?? 0,
+      fullMark: 10,
+    }));
+  }, [dimensionScores]);
+
+  const hasAnalysis = prompt.analysis_status === 'complete' && Object.keys(dimensionScores).length > 0;
 
   return (
     <div className="max-w-3xl mx-auto" data-testid="prompt-detail-view">
@@ -96,22 +109,38 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
         </div>
       </div>
 
-      {/* Full prompt text */}
-      <div
-        className="rounded-lg border border-border bg-card p-4 mb-8"
-        data-testid="prompt-text-container"
-      >
-        <h2 className="text-sm font-medium text-muted-foreground mb-2">Prompt</h2>
-        <p
-          className="text-foreground whitespace-pre-wrap"
-          data-testid="prompt-full-text"
-        >
-          {prompt.text}
-        </p>
+      {/* Full prompt text using CodeBlock */}
+      <div data-testid="prompt-text-container">
+        <CodeBlock
+          code={prompt.text}
+          title="Prompt"
+          language="text"
+          copyable={true}
+          showLineNumbers={false}
+          maxHeight="300px"
+          className="mb-8"
+        />
+        {/* Hidden element for backwards compatibility with E2E tests */}
+        <span className="sr-only" data-testid="prompt-full-text">{prompt.text}</span>
       </div>
 
+      {/* Dimension Radar Visualization */}
+      {hasAnalysis && (
+        <div className="mb-8" data-testid="dimension-radar-section">
+          <h2 className="text-lg font-medium text-foreground mb-4">Dimension Overview</h2>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <DimensionRadar
+              data={radarData}
+              height={280}
+              showLegend={false}
+              userLabel="Score"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Dimension scores */}
-      {prompt.analysis_status === 'complete' && Object.keys(dimensionScores).length > 0 && (
+      {hasAnalysis && (
         <div data-testid="dimension-breakdown">
           <h2 className="text-lg font-medium text-foreground mb-4">Score Breakdown</h2>
           <div className="space-y-3">
@@ -153,7 +182,7 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
           data-testid="analysis-failed-state"
         >
           <ScoreBadge status="failed" size="lg" />
-          <p className="mt-4 text-red-400">Analysis could not be completed</p>
+          <p className="mt-4 text-score-growth">Analysis could not be completed</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Please try again later or contact support if the problem persists.
           </p>

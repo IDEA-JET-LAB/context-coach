@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfigList } from '@/components/admin/config-list';
+import { InlineAlert } from '@/components/feedback';
 import { getAnalysisConfigs } from '@/lib/services/admin-config';
 
 export const metadata: Metadata = {
@@ -33,9 +34,11 @@ export default async function AdminConfigPage() {
       {result.success ? (
         <ConfigList configs={result.data} />
       ) : (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-          Failed to load configurations: {result.error.message}
-        </div>
+        <InlineAlert
+          variant="error"
+          title="Failed to load configurations"
+          message={result.error.message}
+        />
       )}
     </div>
   );

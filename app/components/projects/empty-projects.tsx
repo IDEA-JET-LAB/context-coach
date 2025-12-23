@@ -1,16 +1,18 @@
 'use client';
 
-import { FolderOpen } from 'lucide-react';
-import { EmptyState } from '@/components/ui/empty-state';
+import { useRouter } from 'next/navigation';
+import { EmptyState } from '@/components/feedback';
 
 interface EmptyProjectsProps {
   isAdmin?: boolean;
 }
 
 export function EmptyProjects({ isAdmin = false }: EmptyProjectsProps) {
+  const router = useRouter();
+
   return (
     <EmptyState
-      icon={FolderOpen}
+      variant="folder"
       title="No projects yet"
       description={
         isAdmin
@@ -21,7 +23,7 @@ export function EmptyProjects({ isAdmin = false }: EmptyProjectsProps) {
         isAdmin
           ? {
               label: 'Create Project',
-              href: '/projects/new',
+              onClick: () => router.push('/projects/new'),
             }
           : undefined
       }

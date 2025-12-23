@@ -25,16 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmationModal } from '@/components/feedback';
 import { MoreHorizontal, Shield, User, Loader2, UserMinus } from 'lucide-react';
 
 interface TeamMembersListProps {
@@ -157,34 +148,17 @@ function MemberRow({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to remove <strong>{displayName}</strong> from the
-                    team? They will lose access to all team resources.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleRemove}
-                    disabled={isRemoving}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {isRemoving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Removing...
-                      </>
-                    ) : (
-                      'Remove Member'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmationModal
+              open={isRemoveDialogOpen}
+              onOpenChange={setIsRemoveDialogOpen}
+              title="Remove Team Member"
+              description={`Are you sure you want to remove ${displayName} from the team? They will lose access to all team resources.`}
+              variant="destructive"
+              confirmLabel={isRemoving ? 'Removing...' : 'Remove Member'}
+              onConfirm={handleRemove}
+              loading={isRemoving}
+              icon={UserMinus}
+            />
           </>
         )}
         {isCurrentUser && (

@@ -17,6 +17,12 @@ export type AnalysisStatus = 'pending' | 'processing' | 'complete' | 'failed' | 
 export type PromptType = 'prompt' | 'command' | 'command_with_prompt';
 
 /**
+ * Complexity level classification
+ * Story 21-4: Prompt Complexity Metrics
+ */
+export type ComplexityLevel = 'simple' | 'moderate' | 'complex';
+
+/**
  * Prompt record from the database
  */
 export interface Prompt {
@@ -31,6 +37,18 @@ export interface Prompt {
   word_count: number;
   created_at: string;
   analysis_status: AnalysisStatus;
+  // Session tracking (Story 16-1)
+  session_uuid: string | null;
+  sequence_number: number | null;
+  parent_prompt_id: string | null;
+  // Complexity metrics (Story 21-4)
+  sentence_count: number | null;
+  has_code: boolean;
+  has_file_refs: boolean;
+  code_block_count: number;
+  file_ref_count: number;
+  complexity_level: ComplexityLevel | null;
+  complexity_score: number | null;
 }
 
 /**

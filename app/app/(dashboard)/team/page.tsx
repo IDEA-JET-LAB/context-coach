@@ -1,12 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useTeamMembers } from '@/lib/hooks/use-team-members';
 import { useCurrentTeam } from '@/lib/hooks/use-current-team';
 import { TeamAdminAnalytics } from '@/components/analytics/team-admin-analytics';
 import { TeamSummary } from '@/components/analytics/team-summary';
+import { TeamIntelligenceDashboard } from '@/components/analytics/team-intelligence-dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, BarChart3, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+type ViewMode = 'standard' | 'intelligence';
 
 function TeamAnalyticsSkeleton() {
   return (
@@ -23,6 +28,7 @@ function TeamAnalyticsSkeleton() {
 }
 
 export default function TeamPage() {
+  const [viewMode, setViewMode] = useState<ViewMode>('intelligence');
   const { data: team, isPending: teamPending } = useCurrentTeam();
   const { data: teamData, isPending: rolePending, error, refetch } = useTeamMembers(team?.id ?? '');
 
@@ -59,11 +65,11 @@ export default function TeamPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Team Analytics</h1>
         <div
-          className="rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center"
+          className="rounded-lg border border-status-error/30 bg-status-error-subtle p-6 text-center"
           data-testid="team-analytics-error"
         >
-          <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
-          <p className="text-red-400 mb-4">Failed to load team data</p>
+          <AlertCircle className="h-8 w-8 text-status-error mx-auto mb-3" />
+          <p className="text-status-error mb-4">Failed to load team data</p>
           <Button
             variant="outline"
             onClick={() => refetch()}
@@ -79,11 +85,47 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground" data-testid="team-analytics-title">
-        Team Analytics
-      </h1>
+      {/* Header with View Toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-foreground" data-testid="team-analytics-title">
+          Team Analytics
+        </h1>
 
-      {isAdmin ? (
+        {/* View Mode Toggle */}
+        <div className="inline-flex items-center rounded-lg border border-border bg-muted/30 p-1">
+          <button
+            onClick={() => setViewMode('intelligence')}
+            className={cn(
+              'inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+              viewMode === 'intelligence'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            data-testid="view-mode-intelligence"
+          >
+            <Brain className="h-4 w-4" />
+            Intelligence
+          </button>
+          <button
+            onClick={() => setViewMode('standard')}
+            className={cn(
+              'inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+              viewMode === 'standard'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            data-testid="view-mode-standard"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Standard
+          </button>
+        </div>
+      </div>
+
+      {/* Content based on view mode */}
+      {viewMode === 'intelligence' ? (
+        <TeamIntelligenceDashboard teamId={team.id} isAdmin={isAdmin} />
+      ) : isAdmin ? (
         <TeamAdminAnalytics teamId={team.id} />
       ) : (
         <TeamSummary teamId={team.id} />

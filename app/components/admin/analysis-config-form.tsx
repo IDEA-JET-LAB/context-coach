@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -76,27 +76,27 @@ export function AnalysisConfigForm({ config, mode }: AnalysisConfigFormProps) {
         if (mode === 'create') {
           const result = await createAnalysisConfig(parsedData);
           if (result.success) {
-            toast.success('Configuration created successfully');
+            showToast.success('Configuration created successfully');
             router.push(`/admin/config/${result.data.id}`);
           } else {
             setError(result.error.message);
-            toast.error(result.error.message);
+            showToast.error(result.error.message);
           }
         } else if (config) {
           const result = await updateAnalysisConfig(config.id, parsedData);
           if (result.success) {
-            toast.success('Configuration updated successfully');
+            showToast.success('Configuration updated successfully');
             router.push(`/admin/config/${config.id}`);
             router.refresh();
           } else {
             setError(result.error.message);
-            toast.error(result.error.message);
+            showToast.error(result.error.message);
           }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'An unexpected error occurred';
         setError(message);
-        toast.error(message);
+        showToast.error(message);
       }
     });
   };

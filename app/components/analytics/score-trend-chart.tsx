@@ -11,7 +11,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendIndicator } from '@/components/analytics/trend-indicator';
 import type { TrendDataPoint, TrendDirection } from '@/lib/hooks/use-personal-analytics';
 import { CHART_HEIGHT, SCORE_DECIMAL_PLACES } from '@/lib/constants/analytics';
 
@@ -52,7 +52,7 @@ export function ScoreTrendChart({ data, trend }: ScoreTrendChartProps) {
   return (
     <div className="space-y-2" data-testid="score-trend-chart">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <TrendIndicator direction={trend} />
+        <TrendIndicator direction={trend} size="md" />
       </div>
       <div className={`h-[${CHART_HEIGHT.TREND}px] w-full`} data-testid="chart-container">
         <ResponsiveContainer width="100%" height="100%">
@@ -84,32 +84,6 @@ export function ScoreTrendChart({ data, trend }: ScoreTrendChartProps) {
       </div>
     </div>
   );
-}
-
-function TrendIndicator({ direction }: { direction: TrendDirection }) {
-  switch (direction) {
-    case 'up':
-      return (
-        <span className="flex items-center gap-1 text-teal-500" data-testid="trend-up">
-          <TrendingUp className="h-4 w-4" />
-          Improving
-        </span>
-      );
-    case 'down':
-      return (
-        <span className="flex items-center gap-1 text-red-500" data-testid="trend-down">
-          <TrendingDown className="h-4 w-4" />
-          Declining
-        </span>
-      );
-    default:
-      return (
-        <span className="flex items-center gap-1 text-zinc-400" data-testid="trend-stable">
-          <Minus className="h-4 w-4" />
-          Stable
-        </span>
-      );
-  }
 }
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {

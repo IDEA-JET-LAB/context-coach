@@ -1,7 +1,10 @@
 'use client';
 
-import { StatCard, TrendDirection } from '@/components/dashboard/stat-card';
+import { MetricCard } from '@/components/analytics/metric-card';
 import { SCORE_DECIMAL_PLACES } from '@/lib/constants/analytics';
+import { FileText, Target, TrendingUp as TrendingUpIcon } from 'lucide-react';
+
+export type TrendDirection = 'up' | 'down' | 'stable';
 
 interface SummaryStatsProps {
   totalPrompts: number;
@@ -43,6 +46,11 @@ export function SummaryStats({
       ? 'analysis in progress'
       : undefined;
 
+  // Calculate change string for improvement
+  const improvementChange = improvement !== null
+    ? `${improvement >= 0 ? '+' : ''}${improvement.toFixed(SCORE_DECIMAL_PLACES)}%`
+    : undefined;
+
   return (
     <div
       className="grid gap-4 md:grid-cols-3"
@@ -50,21 +58,25 @@ export function SummaryStats({
       aria-live="polite"
       aria-label="Summary statistics"
     >
-      <StatCard
-        label="Total Prompts"
+      <MetricCard
+        title="Total Prompts"
         value={totalPrompts}
-        trendValue={promptsHint}
+        subtitle={promptsHint}
+        icon={FileText}
       />
-      <StatCard
-        label="Average Score"
+      <MetricCard
+        title="Average Score"
         value={avgScoreDisplay}
-        trendValue={scoreHint}
+        subtitle={scoreHint}
+        icon={Target}
       />
-      <StatCard
-        label="Improvement"
+      <MetricCard
+        title="Improvement"
         value={improvementDisplay}
         trend={improvement !== null ? trend : undefined}
-        trendValue={improvementHint ?? (improvement !== null ? 'vs previous period' : undefined)}
+        change={improvementChange}
+        subtitle={improvementHint ?? (improvement !== null ? 'vs previous period' : undefined)}
+        icon={TrendingUpIcon}
       />
     </div>
   );

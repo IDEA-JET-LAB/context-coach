@@ -1,6 +1,6 @@
 # BMM Workflow Status - Contextor
 # Generated: 2025-12-19
-# Updated: 2025-12-23 (Phase 2 Architecture Complete)
+# Updated: 2025-12-23 (Phase 2 Implementation Progress - Epics 13-16, D complete)
 # Track: BMad Method (Greenfield)
 
 project_name: contextor
@@ -76,9 +76,20 @@ phases:
 
 # Current position
 current_phase: 4
-current_workflow: phase2-planning
+current_workflow: phase2-implementation
 next_agent: pm
-next_command: "Phase 2 Architecture complete. PM to create stories for Epic 21 (Enhanced Analysis) and Epic 22 (Config Engine). Use parallel subagents for implementation."
+next_command: "Epics 13-16 and D complete. PM to create stories for Epic 17+. CRITICAL: All stories MUST include Design System Requirements section per DESIGN-SYSTEM-MANDATE.md"
+
+# Design System Mandate (MANDATORY for Epic 17+)
+design_system:
+  mandate_doc: "_bmad-output/DESIGN-SYSTEM-MANDATE.md"
+  component_showcase: "/design"
+  tokens_config: "app/tailwind.config.ts"
+  rules:
+    - "Use existing components from /design route"
+    - "No hardcoded colors - use semantic tokens only"
+    - "All stories must include Design System Requirements section"
+    - "New UI patterns require separate Design Epic story"
 
 # Epic Implementation Status
 epics:
@@ -173,19 +184,48 @@ epics:
 
   epic-13:
     name: "Account Management"
-    status: backlog
+    status: completed
+    completed: "2025-12-23"
     priority: P2
     stories: 3
-    stories_done: 0
-    note: "User self-service: delete account, change email, change password"
+    stories_done: 3
+    note: "Account deletion, email change, password change - 33 E2E tests"
 
   epic-14:
     name: "Documentation Section"
-    status: backlog
+    status: completed
+    completed: "2025-12-23"
     priority: P2
-    stories: 3
-    stories_done: 0
-    note: "In-app documentation and help section"
+    stories: 2
+    stories_done: 2
+    note: "Docs section with sidebar, 5 content pages. Story 14-3 (search) deferred as future enhancement."
+
+  epic-15:
+    name: "Transcript Parsing"
+    status: completed
+    completed: "2025-12-23"
+    priority: P1
+    stories: 7
+    stories_done: 7
+    note: "JSONL parser, message extraction, pairing, tool results. 299 unit tests passing."
+
+  epic-16:
+    name: "Session Management"
+    status: completed
+    completed: "2025-12-23"
+    priority: P1
+    stories: 6
+    stories_done: 6
+    note: "Sessions schema, detection, metadata, threading, multi-terminal, duration analytics. 249 tests."
+
+  epic-D:
+    name: "Design System Epic"
+    status: completed
+    completed: "2025-12-23"
+    priority: P1
+    stories: 8
+    stories_done: 6
+    note: "Design system audit, semantic tokens, component library with 30+ Phase 2 components. D-5/D-6 design-only stories."
 
   # Phase 2 Epics (Architecture Complete 2025-12-23)
   epic-21:

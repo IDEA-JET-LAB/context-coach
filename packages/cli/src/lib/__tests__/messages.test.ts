@@ -45,12 +45,17 @@ describe('messages', () => {
 
     it('includes dashboard URL with project ID', () => {
       const message = formatSuccessMessage(sharedConfig, userConfig);
-      expect(message).toContain('https://app.contextor.co/projects/550e8400-e29b-41d4-a716-446655440000');
+      expect(message).toContain('https://contextor.co/projects/550e8400-e29b-41d4-a716-446655440000');
     });
 
     it('includes coaching-positive message', () => {
       const message = formatSuccessMessage(sharedConfig, userConfig);
-      expect(message).toContain('Your prompts will appear there');
+      expect(message).toContain('Your prompts will appear in the dashboard');
+    });
+
+    it('includes new terminal session note', () => {
+      const message = formatSuccessMessage(sharedConfig, userConfig);
+      expect(message).toContain('new terminal session');
     });
 
     it('includes success indication', () => {

@@ -4,6 +4,7 @@ import { getUserDetail } from '@/lib/services/admin-users';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserActions } from '@/components/admin/user-actions';
+import { MetricCard } from '@/components/analytics';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowLeft, Mail, Users, FileText, Clock, Shield } from 'lucide-react';
 import Link from 'next/link';
@@ -189,7 +190,7 @@ export default async function UserDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      {/* Stats Card */}
+      {/* Activity Statistics */}
       <Card className="bg-background border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Activity Statistics</CardTitle>
@@ -197,26 +198,17 @@ export default async function UserDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 rounded-lg bg-card">
-              <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Prompts</p>
-                  <p data-testid="user-prompts-count" className="text-2xl font-bold text-foreground">
-                    {promptsCount}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-card">
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Team Memberships</p>
-                  <p className="text-2xl font-bold text-foreground">{teams.length}</p>
-                </div>
-              </div>
-            </div>
+            <MetricCard
+              title="Total Prompts"
+              value={promptsCount}
+              icon={FileText}
+              data-testid="user-prompts-count"
+            />
+            <MetricCard
+              title="Team Memberships"
+              value={teams.length}
+              icon={Users}
+            />
           </div>
         </CardContent>
       </Card>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Copy, Check, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { useInstallToken } from '@/lib/hooks/use-install-token';
 
 interface CliInstructionsProps {
@@ -22,10 +22,10 @@ export function CliInstructions({ projectId }: CliInstructionsProps) {
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
-      toast.success('Command copied to clipboard');
+      showToast.success('Command copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Failed to copy command');
+      showToast.error('Failed to copy command');
     }
   };
 

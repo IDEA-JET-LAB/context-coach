@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { useRouter } from 'next/navigation';
 import type { CreateProjectInput } from '@/lib/validations/project';
 import type { CreateProjectResponse } from '@/types/project';
@@ -30,7 +30,7 @@ export function useCreateProject() {
       // Invalidate projects list
       queryClient.invalidateQueries({ queryKey: ['projects'] });
 
-      toast.success(`Project "${data.project.name}" created successfully!`);
+      showToast.success(`Project "${data.project.name}" created successfully!`);
 
       // Redirect to project success page with sensitive data
       // SECURITY NOTE: Using sessionStorage for one-time secret transfer
@@ -50,7 +50,7 @@ export function useCreateProject() {
       router.push(`/projects/${data.project.id}/created`);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
     },
   });
 }

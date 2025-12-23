@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { useRouter } from 'next/navigation';
 import type { CreateTeamInput } from '@/lib/validations/team';
 
@@ -42,20 +42,20 @@ export function useCreateTeam() {
 
       if (error) {
         console.error('[useCreateTeam] Error refreshing session:', error);
-        toast.error('Please refresh the page to complete team setup');
+        showToast.error('Please refresh the page to complete team setup');
       }
 
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       queryClient.invalidateQueries({ queryKey: ['current-team'] });
 
-      toast.success(`Team "${data.team.name}" created successfully!`);
+      showToast.success(`Team "${data.team.name}" created successfully!`);
 
       // Force page reload to refetch server data and go to dashboard
       window.location.href = '/home';
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
     },
   });
 }

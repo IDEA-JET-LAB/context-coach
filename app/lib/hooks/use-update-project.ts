@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import type { UpdateProjectInput } from '@/lib/validations/project';
 import type { Project } from '@/types/project';
 
@@ -44,11 +44,11 @@ export function useUpdateProject(options?: UseUpdateProjectOptions) {
       queryClient.invalidateQueries({ queryKey: ['project', data.project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
 
-      toast.success('Project updated successfully');
+      showToast.success('Project updated successfully');
       options?.onSuccess?.(data);
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
       options?.onError?.(error);
     },
   });

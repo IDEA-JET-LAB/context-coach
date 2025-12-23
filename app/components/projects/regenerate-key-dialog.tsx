@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useRegenerateKey } from '@/lib/hooks/use-regenerate-key';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 
 interface RegenerateKeyDialogProps {
   projectId: string;
@@ -37,7 +37,7 @@ export function RegenerateKeyDialog({ projectId }: RegenerateKeyDialogProps) {
       setDialogState('success');
     },
     onError: () => {
-      toast.error('Failed to regenerate API key. Please try again.');
+      showToast.error('Failed to regenerate API key. Please try again.');
       setDialogState('closed');
     },
   });
@@ -46,11 +46,11 @@ export function RegenerateKeyDialog({ projectId }: RegenerateKeyDialogProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(type);
-      toast.success(`${type === 'key' ? 'API Key' : 'Install Token'} copied to clipboard`);
+      showToast.success(`${type === 'key' ? 'API Key' : 'Install Token'} copied to clipboard`);
       setTimeout(() => setCopied(null), 2000);
     } catch {
       // Fallback for browsers/environments where clipboard API fails
-      toast.error('Failed to copy. Please select and copy manually.');
+      showToast.error('Failed to copy. Please select and copy manually.');
     }
   }, []);
 

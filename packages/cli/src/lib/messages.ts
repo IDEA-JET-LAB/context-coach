@@ -63,8 +63,10 @@ User: ${chalk.cyan(userConfig.user_name)}
 
 Dashboard: ${chalk.underline.blue(dashboardUrl)}
 
-${chalk.gray('Your prompts will appear there as you work.')}
-${chalk.gray('Start coding with Claude Code to begin capturing!')}
+${chalk.yellow('Note:')} Prompt logging will start in a ${chalk.bold('new terminal session')}.
+${chalk.gray('Close and reopen your terminal, or start a new Claude Code session.')}
+
+${chalk.gray('Your prompts will appear in the dashboard as you work.')}
 `;
 }
 

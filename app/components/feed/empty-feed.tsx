@@ -1,7 +1,6 @@
 'use client';
 
-import { Inbox } from 'lucide-react';
-import { EmptyState } from '@/components/ui/empty-state';
+import { NoPromptsEmptyState } from '@/components/feedback';
 import { CliInstructions } from '@/components/onboarding/cli-instructions';
 
 interface EmptyFeedProps {
@@ -10,12 +9,9 @@ interface EmptyFeedProps {
 
 export function EmptyFeed({ projectId }: EmptyFeedProps) {
   return (
-    <EmptyState
-      icon={Inbox}
-      title="Waiting for your first prompt"
-      description="Once you start using Claude with the Contextor CLI installed, your prompts will appear here with scores and insights."
-    >
+    <div className="space-y-6">
+      <NoPromptsEmptyState />
       <CliInstructions projectId={projectId} />
-    </EmptyState>
+    </div>
   );
 }

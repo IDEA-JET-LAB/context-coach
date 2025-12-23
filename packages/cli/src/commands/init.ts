@@ -80,9 +80,9 @@ export function registerInitCommand(program: Command): void {
 
       validationSpinner.succeed('Token validated');
 
-      // Detect installation state
+      // Detect installation state (pass API key to detect key changes)
       const detectionSpinner = ora('Checking existing configuration...').start();
-      const { state, existingConfig, warning } = await detectInstallState(cwd, token.project_id);
+      const { state, existingConfig, existingUserConfig, warning } = await detectInstallState(cwd, token.project_id, token.api_key);
       detectionSpinner.stop();
 
       if (warning) {
@@ -113,6 +113,13 @@ export function registerInitCommand(program: Command): void {
           console.log(`Project: ${existingConfig?.project_name}`);
           console.log('Run `npx @contextor/cli status` to check your configuration.');
           process.exit(0);
+          break;
+
+        case InstallState.KEY_CHANGED:
+          console.log(chalk.blue('API key has changed. Updating configuration...'));
+          sharedConfig = existingConfig;
+          createShared = false;
+          // Will create new user config with updated key below
           break;
 
         case InstallState.MISMATCH:

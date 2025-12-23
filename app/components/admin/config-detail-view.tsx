@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge } from '@/components/ui/badge';
@@ -89,10 +89,10 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
     setIsActivating(false);
 
     if (result.success) {
-      toast.success('Configuration activated');
+      showToast.success('Configuration activated');
       router.refresh();
     } else {
-      toast.error(result.error.message);
+      showToast.error(result.error.message);
     }
   };
 
@@ -100,10 +100,10 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
     startTransition(async () => {
       const result = await duplicateConfig(config.id);
       if (result.success) {
-        toast.success('Configuration duplicated');
+        showToast.success('Configuration duplicated');
         router.push(`/admin/config/${result.data.id}`);
       } else {
-        toast.error(result.error.message);
+        showToast.error(result.error.message);
       }
     });
   };
@@ -114,11 +114,11 @@ export function ConfigDetailView({ config, initialEditMode = false }: ConfigDeta
       const parsedData = analysisConfigSchema.parse(data);
       const result = await updateAnalysisConfig(config.id, parsedData);
       if (result.success) {
-        toast.success('Configuration updated');
+        showToast.success('Configuration updated');
         setIsEditing(false);
         router.refresh();
       } else {
-        toast.error(result.error.message);
+        showToast.error(result.error.message);
       }
     });
   };

@@ -117,6 +117,56 @@ describe('detection', () => {
       const result = await detectInstallState(testDir, differentProjectId);
       expect(result.state).toBe(InstallState.MISMATCH);
     });
+
+    it('returns KEY_CHANGED when API key differs from stored key', async () => {
+      const contextorDir = join(testDir, CONTEXTOR_DIR);
+      mkdirSync(contextorDir, { recursive: true });
+      writeFileSync(join(contextorDir, CONFIG_FILE), JSON.stringify(validConfig));
+      writeFileSync(join(contextorDir, USER_FILE), JSON.stringify({
+        user_id: 'test-user',
+        api_key: 'old-api-key-12345',
+        user_name: 'Test User',
+        configured_at: '2025-01-01T00:00:00.000Z'
+      }));
+
+      const newApiKey = 'new-api-key-67890';
+      const result = await detectInstallState(testDir, validConfig.project_id, newApiKey);
+      expect(result.state).toBe(InstallState.KEY_CHANGED);
+      expect(result.existingConfig).toEqual(validConfig);
+      expect(result.existingUserConfig?.api_key).toBe('old-api-key-12345');
+    });
+
+    it('returns CONFIGURED when API key matches stored key', async () => {
+      const contextorDir = join(testDir, CONTEXTOR_DIR);
+      mkdirSync(contextorDir, { recursive: true });
+      writeFileSync(join(contextorDir, CONFIG_FILE), JSON.stringify(validConfig));
+      const storedApiKey = 'same-api-key-12345';
+      writeFileSync(join(contextorDir, USER_FILE), JSON.stringify({
+        user_id: 'test-user',
+        api_key: storedApiKey,
+        user_name: 'Test User',
+        configured_at: '2025-01-01T00:00:00.000Z'
+      }));
+
+      const result = await detectInstallState(testDir, validConfig.project_id, storedApiKey);
+      expect(result.state).toBe(InstallState.CONFIGURED);
+    });
+
+    it('returns CONFIGURED when no API key provided (backwards compatibility)', async () => {
+      const contextorDir = join(testDir, CONTEXTOR_DIR);
+      mkdirSync(contextorDir, { recursive: true });
+      writeFileSync(join(contextorDir, CONFIG_FILE), JSON.stringify(validConfig));
+      writeFileSync(join(contextorDir, USER_FILE), JSON.stringify({
+        user_id: 'test-user',
+        api_key: 'any-key',
+        user_name: 'Test User',
+        configured_at: '2025-01-01T00:00:00.000Z'
+      }));
+
+      // No API key provided - should fall back to CONFIGURED (backwards compat)
+      const result = await detectInstallState(testDir, validConfig.project_id);
+      expect(result.state).toBe(InstallState.CONFIGURED);
+    });
   });
 
   describe('readConfigFile', () => {

@@ -152,6 +152,44 @@ test.describe('Dashboard Layout & Navigation', () => {
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL('/analytics');
     });
+
+    test('should display Team Settings link in sidebar and navigate to settings', async ({ page }) => {
+      const testEmail = generateTestEmail();
+      const teamName = `TestTeam-${Date.now()}`;
+
+      await createUserWithTeam(page, testEmail, testPassword, teamName);
+
+      // Team Settings link should be visible in sidebar
+      const teamSettingsLink = page.getByTestId('nav-team-settings');
+      await expect(teamSettingsLink).toBeVisible();
+
+      // Hover to show tooltip
+      await teamSettingsLink.hover();
+      await expect(page.getByText('Team Settings')).toBeVisible();
+
+      // Click to navigate
+      await teamSettingsLink.click();
+
+      // Should navigate to team settings page
+      await expect(page).toHaveURL(/\/teams\/.*\/settings/);
+    });
+
+    test('should highlight Team Settings when on team settings page', async ({ page }) => {
+      const testEmail = generateTestEmail();
+      const teamName = `TestTeam-${Date.now()}`;
+
+      await createUserWithTeam(page, testEmail, testPassword, teamName);
+
+      // Navigate to team settings via sidebar
+      await page.getByTestId('nav-team-settings').click();
+
+      // Wait for navigation
+      await expect(page).toHaveURL(/\/teams\/.*\/settings/);
+
+      // Team Settings should have aria-current
+      const teamSettingsLink = page.getByTestId('nav-team-settings');
+      await expect(teamSettingsLink).toHaveAttribute('aria-current', 'page');
+    });
   });
 
   test.describe('Header', () => {

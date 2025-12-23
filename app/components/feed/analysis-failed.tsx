@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { retryAnalysis } from '@/lib/actions/retry-analysis';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 
 interface AnalysisFailedProps {
   promptId: string;
@@ -18,9 +18,9 @@ export function AnalysisFailed({ promptId, errorMessage }: AnalysisFailedProps) 
     setRetrying(true);
     try {
       await retryAnalysis(promptId);
-      toast.success('Analysis retry queued');
+      showToast.success('Analysis retry queued');
     } catch {
-      toast.error('Failed to retry analysis');
+      showToast.error('Failed to retry analysis');
     } finally {
       setRetrying(false);
     }

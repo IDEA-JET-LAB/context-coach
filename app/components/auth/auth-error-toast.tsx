@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { toast } from "sonner";
+import { showToast } from "@/components/feedback";
 
 export function AuthErrorToast({ error }: { error?: string }) {
   useEffect(() => {
     if (error) {
-      toast.error(error);
+      showToast.error(error);
     }
   }, [error]);
 

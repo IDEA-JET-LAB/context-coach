@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 
 interface ArchiveProjectResponse {
   success: boolean;
@@ -39,7 +39,7 @@ export function useArchiveProject(options?: UseArchiveProjectOptions) {
       // Invalidate projects list to remove archived project from cache
       queryClient.invalidateQueries({ queryKey: ['projects'] });
 
-      toast.success('Project archived successfully');
+      showToast.success('Project archived successfully');
 
       // Redirect to projects list
       router.push('/projects');
@@ -47,7 +47,7 @@ export function useArchiveProject(options?: UseArchiveProjectOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
       options?.onError?.(error);
     },
   });

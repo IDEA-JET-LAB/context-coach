@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 
 export interface TeamMember {
   id: string;
@@ -96,14 +96,14 @@ export function useUpdateMemberRole(teamId: string) {
       }
 
       if (error.code === 'LAST_ADMIN') {
-        toast.error('You must assign another admin first');
+        showToast.error('You must assign another admin first');
       } else {
-        toast.error(error.message);
+        showToast.error(error.message);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members', teamId] });
-      toast.success('Role updated successfully');
+      showToast.success('Role updated successfully');
     },
   });
 }
@@ -130,13 +130,13 @@ export function useRemoveMember(teamId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members', teamId] });
-      toast.success('Member removed from team');
+      showToast.success('Member removed from team');
     },
     onError: (error: ApiError) => {
       if (error.code === 'LAST_ADMIN') {
-        toast.error('Cannot remove the last admin');
+        showToast.error('Cannot remove the last admin');
       } else {
-        toast.error(error.message);
+        showToast.error(error.message);
       }
     },
   });
@@ -172,13 +172,13 @@ export function useLeaveTeam(teamId: string) {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       queryClient.invalidateQueries({ queryKey: ['current-team'] });
       queryClient.invalidateQueries({ queryKey: ['team-members', teamId] });
-      toast.success('You have left the team');
+      showToast.success('You have left the team');
     },
     onError: (error: ApiError) => {
       if (error.code === 'LAST_ADMIN') {
-        toast.error('You must assign another admin before leaving');
+        showToast.error('You must assign another admin before leaving');
       } else {
-        toast.error(error.message);
+        showToast.error(error.message);
       }
     },
   });

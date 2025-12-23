@@ -1,10 +1,35 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import type { SharedConfig } from './config.js';
+import type { SharedConfig, UserConfig } from './config.js';
 
 export const CONTEXTOR_DIR = '.contextor';
 export const CONFIG_FILE = 'config.json';
 export const USER_FILE = '.user';
+
+/**
+ * Read and parse the user config file
+ * Returns null if file doesn't exist or is invalid
+ */
+export function readUserConfigFile(path: string): UserConfig | null {
+  if (!existsSync(path)) {
+    return null;
+  }
+
+  try {
+    const content = readFileSync(path, 'utf-8');
+    const parsed = JSON.parse(content) as UserConfig;
+
+    // Validate required fields
+    if (!parsed.user_id || !parsed.api_key) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    // JSON parse error or other read error
+    return null;
+  }
+}
 
 /**
  * Possible installation states for a project
@@ -18,6 +43,8 @@ export enum InstallState {
   CONFIGURED = 'configured',
   /** Token project_id doesn't match existing config */
   MISMATCH = 'mismatch',
+  /** Project matches but API key has changed (regenerated) */
+  KEY_CHANGED = 'key_changed',
 }
 
 /**
@@ -26,6 +53,7 @@ export enum InstallState {
 export interface DetectionResult {
   state: InstallState;
   existingConfig?: SharedConfig;
+  existingUserConfig?: UserConfig;
   warning?: string;
 }
 
@@ -67,10 +95,12 @@ export function userConfigExists(cwd: string): boolean {
  */
 export async function detectInstallState(
   cwd: string,
-  tokenProjectId: string
+  tokenProjectId: string,
+  tokenApiKey?: string
 ): Promise<DetectionResult> {
   const contextorDir = join(cwd, CONTEXTOR_DIR);
   const configPath = join(contextorDir, CONFIG_FILE);
+  const userConfigPath = join(contextorDir, USER_FILE);
 
   // Check if .contextor directory exists
   if (!existsSync(contextorDir)) {
@@ -104,6 +134,17 @@ export async function detectInstallState(
     return { state: InstallState.JOINING, existingConfig: config };
   }
 
-  // Both exist and match - already configured
-  return { state: InstallState.CONFIGURED, existingConfig: config };
+  // Both exist and match - check if API key has changed
+  const existingUserConfig = readUserConfigFile(userConfigPath);
+
+  if (tokenApiKey && existingUserConfig && existingUserConfig.api_key !== tokenApiKey) {
+    return {
+      state: InstallState.KEY_CHANGED,
+      existingConfig: config,
+      existingUserConfig: existingUserConfig ?? undefined
+    };
+  }
+
+  // Both exist and match with same key - already configured
+  return { state: InstallState.CONFIGURED, existingConfig: config, existingUserConfig: existingUserConfig ?? undefined };
 }

@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RefreshCw, X, AlertCircle, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { retryAnalysis, bulkRetryAnalysis } from '@/lib/api/admin/retry-analysis';
 import { dismissFailedAnalysis } from '@/lib/api/admin/dismiss-failed-analysis';
 import type { DeadLetterQueueResponse } from '@/lib/db/queries/system-metrics';
@@ -45,10 +45,10 @@ export function DeadLetterQueue({ data, onRefresh }: DeadLetterQueueProps) {
     startTransition(async () => {
       const result = await retryAnalysis(promptId);
       if (result.success) {
-        toast.success('Analysis queued for retry');
+        showToast.success('Analysis queued for retry');
         onRefresh();
       } else {
-        toast.error(result.error || 'Failed to retry analysis');
+        showToast.error(result.error || 'Failed to retry analysis');
       }
       setActionInProgress(null);
     });
@@ -59,10 +59,10 @@ export function DeadLetterQueue({ data, onRefresh }: DeadLetterQueueProps) {
     startTransition(async () => {
       const result = await dismissFailedAnalysis(promptId);
       if (result.success) {
-        toast.success('Failed analysis dismissed');
+        showToast.success('Failed analysis dismissed');
         onRefresh();
       } else {
-        toast.error(result.error || 'Failed to dismiss analysis');
+        showToast.error(result.error || 'Failed to dismiss analysis');
       }
       setActionInProgress(null);
     });
@@ -72,10 +72,10 @@ export function DeadLetterQueue({ data, onRefresh }: DeadLetterQueueProps) {
     startTransition(async () => {
       const result = await bulkRetryAnalysis();
       if (result.success) {
-        toast.success(`${result.count} analyses queued for retry`);
+        showToast.success(`${result.count} analyses queued for retry`);
         onRefresh();
       } else {
-        toast.error(result.error || 'Failed to bulk retry analyses');
+        showToast.error(result.error || 'Failed to bulk retry analyses');
       }
     });
   };

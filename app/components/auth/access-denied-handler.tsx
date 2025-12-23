@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 
 /**
  * Handles the access-denied error query parameter.
@@ -14,7 +14,7 @@ export function AccessDeniedHandler() {
 
   useEffect(() => {
     if (searchParams.get('error') === 'access-denied') {
-      toast.error('Access denied - Admin privileges required');
+      showToast.error('Access denied - Admin privileges required');
 
       // Remove the query param from URL
       const url = new URL(window.location.href);

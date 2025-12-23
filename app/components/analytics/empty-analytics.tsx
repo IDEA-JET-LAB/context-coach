@@ -1,7 +1,7 @@
 'use client';
 
-import { BarChart2 } from 'lucide-react';
-import { EmptyState } from '@/components/ui/empty-state';
+import { useRouter } from 'next/navigation';
+import { EmptyState } from '@/components/feedback';
 
 interface EmptyAnalyticsProps {
   promptCount: number;
@@ -12,11 +12,12 @@ export function EmptyAnalytics({
   promptCount,
   minimumRequired = 5,
 }: EmptyAnalyticsProps) {
+  const router = useRouter();
   const remaining = minimumRequired - promptCount;
 
   return (
     <EmptyState
-      icon={BarChart2}
+      variant="analytics"
       title="Not enough data yet"
       description={
         promptCount === 0
@@ -25,7 +26,7 @@ export function EmptyAnalytics({
       }
       action={{
         label: 'View Feed',
-        href: '/',
+        onClick: () => router.push('/'),
       }}
     />
   );

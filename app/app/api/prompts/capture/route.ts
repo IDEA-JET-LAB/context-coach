@@ -17,6 +17,12 @@ import { storePrompt, StorageError, FilteredError } from "@/lib/capture/store-pr
 import { withRetry, RetryError } from "@/lib/capture/retry";
 import { isTransientError, classifyError } from "@/lib/capture/errors";
 import { createScopedLogger } from "@/lib/utils/logger";
+import {
+  extractSessionIdFromMetadata,
+  findOrCreateSession,
+  linkPromptToSession,
+  buildSessionContextFromKeyResult,
+} from "@/lib/sessions";
 
 // Create a scoped logger for capture operations
 const logger = createScopedLogger("CAPTURE");
@@ -246,6 +252,43 @@ export async function POST(request: NextRequest) {
         attempts,
         durationMs: totalDurationMs,
       });
+
+      // Link prompt to session (non-blocking, failures don't affect prompt storage)
+      // Session detection failures should NOT block prompt storage
+      void (async () => {
+        try {
+          const sessionId = extractSessionIdFromMetadata(parsed.data.metadata);
+          if (sessionId) {
+            const sessionContext = buildSessionContextFromKeyResult(
+              { team_id: keyResult.team_id!, project_id: keyResult.project_id! },
+              parsed.data.user_id,
+              parsed.data.metadata
+            );
+
+            const { id: sessionDbId, isNew } = await findOrCreateSession(
+              sessionId,
+              sessionContext
+            );
+
+            const linked = await linkPromptToSession(result.id, sessionDbId);
+
+            if (linked) {
+              logger.log("Prompt linked to session", {
+                promptId: result.id,
+                sessionId,
+                sessionDbId,
+                isNewSession: isNew,
+              });
+            }
+          }
+        } catch (err) {
+          // Log but don't fail - session linking is non-critical
+          logger.warn("Session linking failed", {
+            promptId: result.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })();
 
       // Trigger analysis for prompts that need it (not commands)
       // This is async/non-blocking - we don't wait for analysis

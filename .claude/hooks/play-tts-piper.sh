@@ -43,6 +43,9 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
   export DYLD_LIBRARY_PATH="/opt/homebrew/lib:${DYLD_LIBRARY_PATH:-}"
 fi
 
+# Add common user bin directories to PATH for piper
+export PATH="$HOME/.local/bin:$HOME/Library/Python/3.9/bin:$PATH"
+
 TEXT="$1"
 VOICE_OVERRIDE="$2"  # Optional: voice model name
 

@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { usePersonalAnalytics, TimeRange } from '@/lib/hooks/use-personal-analytics';
 import { ScoreTrendChart } from './score-trend-chart';
 import { SummaryStats } from './summary-stats';
 import { DimensionBreakdown } from './dimension-breakdown';
 import { TimeRangeSelector } from './time-range-selector';
-import { AnalyticsEmptyState } from './analytics-empty-state';
+import { NoAnalyticsDataEmptyState } from '@/components/feedback';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const STORAGE_KEY = 'contextor-analytics-time-range';
@@ -59,9 +59,7 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
   // Show error toast notification
   useEffect(() => {
     if (error) {
-      toast.error('Failed to load analytics', {
-        description: 'Please try refreshing the page.',
-      });
+      showToast.error('Failed to load analytics', { description: 'Please try refreshing the page.' });
     }
   }, [error]);
 
@@ -82,7 +80,7 @@ export function AnalyticsDashboard({ userId }: AnalyticsDashboardProps) {
   }
 
   if (!data || data.totalPrompts === 0) {
-    return <AnalyticsEmptyState hasAnyData={false} />;
+    return <NoAnalyticsDataEmptyState />;
   }
 
   return (

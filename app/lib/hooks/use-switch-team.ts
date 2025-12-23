@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import { useRouter } from 'next/navigation';
 
 interface SwitchTeamInput {
@@ -46,7 +46,7 @@ export function useSwitchTeam() {
 
       if (error) {
         console.error('[useSwitchTeam] Error refreshing session:', error);
-        toast.error('Please refresh the page to complete team switch');
+        showToast.error('Please refresh the page to complete team switch');
         return;
       }
 
@@ -54,14 +54,14 @@ export function useSwitchTeam() {
       queryClient.clear();
 
       // Show success toast
-      toast.success(`Switched to ${data.team.name}`);
+      showToast.success(`Switched to ${data.team.name}`);
 
       // Navigate to team dashboard with fresh context
       router.push('/team');
       router.refresh();
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
     },
   });
 }

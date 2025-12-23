@@ -2,22 +2,14 @@
 
 import { useTeamAnalytics } from '@/lib/hooks/use-team-analytics';
 import { TeamDistributionChart } from './team-distribution-chart';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { MetricCard } from '@/components/analytics/metric-card';
+import { TrendIndicator } from '@/components/analytics/trend-indicator';
+import { NoAnalyticsDataEmptyState } from '@/components/feedback';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FileText, Target } from 'lucide-react';
 
 interface TeamSummaryProps {
   teamId: string;
-}
-
-function TrendIcon({ trend }: { trend: string }) {
-  switch (trend) {
-    case 'up':
-      return <TrendingUp className="h-5 w-5 text-teal-500" />;
-    case 'down':
-      return <TrendingDown className="h-5 w-5 text-red-400" />;
-    default:
-      return <Minus className="h-5 w-5 text-muted-foreground" />;
-  }
 }
 
 export function TeamSummary({ teamId }: TeamSummaryProps) {
@@ -49,14 +41,8 @@ export function TeamSummary({ teamId }: TeamSummaryProps) {
 
   if (!data || data.totalPrompts === 0) {
     return (
-      <div
-        className="rounded-lg border border-border bg-card p-8 text-center"
-        data-testid="team-summary-empty"
-      >
-        <p className="text-foreground text-lg mb-2">No team data yet</p>
-        <p className="text-muted-foreground">
-          Team statistics will appear as members start capturing prompts.
-        </p>
+      <div data-testid="team-summary-empty">
+        <NoAnalyticsDataEmptyState />
       </div>
     );
   }
@@ -65,25 +51,24 @@ export function TeamSummary({ teamId }: TeamSummaryProps) {
     <div className="space-y-6" data-testid="team-summary">
       {/* Aggregated Stats Only - No Individual Data */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-lg bg-card p-4 border border-border">
-          <p className="text-sm text-muted-foreground">Team Prompts</p>
-          <p className="text-2xl font-bold text-foreground" data-testid="team-total-prompts">
-            {data.totalPrompts}
-          </p>
+        <div data-testid="team-total-prompts">
+          <MetricCard
+            title="Team Prompts"
+            value={data.totalPrompts}
+            icon={FileText}
+          />
         </div>
-        <div className="rounded-lg bg-card p-4 border border-border">
-          <p className="text-sm text-muted-foreground">Team Average</p>
-          <p className="text-2xl font-bold text-primary" data-testid="team-average-score">
-            {data.teamAverage.toFixed(1)}
-          </p>
+        <div data-testid="team-average-score">
+          <MetricCard
+            title="Team Average"
+            value={`${data.teamAverage.toFixed(1)}/10`}
+            icon={Target}
+          />
         </div>
-        <div className="rounded-lg bg-card p-4 border border-border">
-          <p className="text-sm text-muted-foreground">Trend</p>
-          <div className="flex items-center gap-2 mt-1">
-            <TrendIcon trend={data.teamTrend} />
-            <span className="text-foreground capitalize" data-testid="team-trend">
-              {data.teamTrend}
-            </span>
+        <div className="rounded-lg border border-border bg-card p-4" data-testid="team-trend">
+          <p className="text-sm font-medium text-muted-foreground">Trend</p>
+          <div className="mt-2">
+            <TrendIndicator direction={data.teamTrend} size="lg" />
           </div>
         </div>
       </div>

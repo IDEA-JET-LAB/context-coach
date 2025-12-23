@@ -1,8 +1,9 @@
 'use client';
 
-import { ConfigVersionCard } from './config-version-card';
-import { EmptyState } from '@/components/ui/empty-state';
+import { useRouter } from 'next/navigation';
 import { Settings2 } from 'lucide-react';
+import { ConfigVersionCard } from './config-version-card';
+import { EmptyState } from '@/components/feedback';
 
 interface Config {
   id: string;
@@ -19,6 +20,8 @@ interface ConfigListProps {
 }
 
 export function ConfigList({ configs }: ConfigListProps) {
+  const router = useRouter();
+
   if (configs.length === 0) {
     return (
       <EmptyState
@@ -27,7 +30,7 @@ export function ConfigList({ configs }: ConfigListProps) {
         description="Create your first analysis configuration to start scoring prompts."
         action={{
           label: 'Create Configuration',
-          href: '/admin/config/new',
+          onClick: () => router.push('/admin/config/new'),
         }}
       />
     );

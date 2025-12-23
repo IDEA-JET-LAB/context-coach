@@ -10,6 +10,31 @@ Contextor is a prompt journaling system for AI-assisted development teams. It ca
 1. **Claude Code Hook** - Automatic capture via `UserPromptSubmit` hook (captures ALL prompts)
 2. **BMAD Native** - Agent-embedded capture that overwrites hook entries with richer metadata
 
+## Document Standards for All Agents
+
+### Table of Contents Requirement
+
+**All documents exceeding 200 lines MUST include a Table of Contents (TOC) with line number references.**
+
+Format:
+```markdown
+## Table of Contents
+
+- [Section Name](#section-name) (Line X)
+  - [Subsection Name](#subsection-name) (Line Y)
+```
+
+**Why:** Long documents become difficult to navigate. Line numbers allow agents and users to jump directly to relevant sections.
+
+**When to add TOC:**
+- When creating a new document that will exceed 200 lines
+- When editing an existing document and it now exceeds 200 lines without a TOC
+- Always include all heading levels (##, ###, ####)
+
+**Example:** See `_bmad-output/prd.md` for a comprehensive TOC implementation.
+
+---
+
 ## CRITICAL: API Endpoint Convention
 
 **This is a common source of bugs. All agents MUST understand this.**
@@ -621,3 +646,102 @@ Content-Security-Policy now configured in `next.config.ts` with appropriate dire
 ### GitHub Actions Security
 
 All actions pinned to commit SHAs to prevent supply-chain attacks.
+
+## Epic 13 Status: COMPLETED (December 2025)
+
+Account management features implemented and tested:
+- Account deletion with email confirmation and last-admin protection
+- Email change with password re-authentication
+- Password change with real-time strength indicator
+- OAuth-only user handling (Set Password flow)
+- 33 E2E tests passing
+
+Key files: `lib/api/account.ts`, `components/settings/danger-zone.tsx`, `components/settings/delete-account-modal.tsx`, `components/settings/email-change-form.tsx`, `components/settings/password-change-form.tsx`, `lib/validations/password.ts`
+
+## Epic 14 Status: COMPLETED (December 2025)
+
+In-app documentation system:
+- Docs section with sidebar navigation
+- 5 documentation pages: Getting Started, CLI Installation, Understanding Scores, Team Management, FAQ
+- Mobile responsive with collapsible sidebar
+- XSS-safe markdown rendering
+- Story 14-3 (Search) deferred as future enhancement
+
+Key files: `app/(dashboard)/docs/*`, `components/docs/docs-sidebar.tsx`, `lib/docs/config.ts`, `content/docs/*.md`
+
+## Epic 16 Status: COMPLETED (December 2025)
+
+Session management and analytics (249 tests):
+- Sessions database schema with full metadata
+- Session detection from prompt capture (idempotent)
+- Metadata extraction (cwd, git_branch, claude_code_version)
+- Session lifecycle management (start, end detection, timeout)
+- Conversation threading with parent-child relationships
+- Multi-terminal tracking with overlap detection
+- Duration analytics (daily/weekly/monthly summaries)
+- Efficiency metrics (prompts/hour, session density, peak hours)
+
+API Endpoints:
+- `GET /api/sessions` - List sessions with filters
+- `GET /api/sessions/[sessionId]/thread` - Threaded conversation
+- `GET /api/analytics/sessions/duration` - Duration stats
+
+Key files: `lib/sessions/*`, `app/api/sessions/*`, `app/api/analytics/sessions/*`
+
+Migrations: `20251223100000_create_sessions_table.sql`, `20251223110000_add_session_functions.sql`, `20251223120000_session_prompt_trigger.sql`, `20251223130000_session_duration_functions.sql`
+
+## Epic 15 Status: COMPLETED (December 2025)
+
+Transcript parsing for response capture (299 unit tests):
+- Transcript file discovery with path normalization
+- JSONL parser with streaming support
+- User message extraction
+- Assistant response extraction
+- Prompt-response pairing algorithm
+- Response storage schema with encryption
+- Tool execution capture
+
+Key files: `lib/transcript/*`, `supabase/migrations/20251223140000_add_response_storage.sql`, `supabase/migrations/20251223150000_add_tool_executions.sql`
+
+## Epic D Status: COMPLETED (December 2025)
+
+Design system and component library (6/8 stories complete):
+- D-1: Design system audit - semantic token mapping
+- D-2: UI refactoring - 240+ hardcoded colors replaced
+- D-3: Component library - 30+ Phase 2 components
+- D-4: VS Code extension design patterns
+- D-7: Admin config UI design
+- D-8: Apply component library to existing UI
+- D-5/D-6: Design-only stories (ready for future implementation)
+
+Key files: `app/(design)/design/*`, `components/analytics/*` (34 components), `tailwind.config.ts` (semantic tokens)
+
+## CRITICAL: Design System Mandate (Epic 17+)
+
+**All development from Epic 17 onwards MUST use the established design system exclusively.**
+
+### Rules
+
+1. **Use existing components** - Check `/design` route and `components/` directory before creating anything new
+2. **No hardcoded colors** - Use semantic tokens only (`bg-surface-primary`, `text-content-secondary`, etc.)
+3. **Composition over creation** - Extend existing components before requesting new ones
+
+### Required Reading
+
+Before implementing ANY UI for Epic 17+, developers MUST read:
+- `_bmad-output/DESIGN-SYSTEM-MANDATE.md` - Full component inventory and rules
+- `/design` route - Interactive component showcase
+- `tailwind.config.ts` - Semantic token definitions
+
+### Story Requirements
+
+All Epic 17+ stories MUST include a "Design System Requirements" section listing:
+- Specific components to use from the inventory
+- Confirmation that no new patterns are needed
+- Pre-implementation checklist for design system compliance
+
+### Enforcement
+
+- Stories without design system section will be rejected
+- Code with hardcoded colors will be rejected
+- New UI patterns require a separate Design Epic story with PO approval

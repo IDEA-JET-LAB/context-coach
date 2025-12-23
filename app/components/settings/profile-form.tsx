@@ -32,7 +32,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "sonner";
+import { showToast } from "@/components/feedback";
 import { Loader2, Upload, AlertCircle } from "lucide-react";
 
 interface ProfileFormProps {
@@ -120,7 +120,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       return;
     }
 
-    toast.success("Profile updated successfully");
+    showToast.success("Profile updated successfully");
     router.refresh();
   }
 

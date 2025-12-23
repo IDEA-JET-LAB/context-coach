@@ -181,7 +181,13 @@ export async function GET(request: NextRequest) {
     });
 
     if (!otpError) {
-      const redirectResponse = NextResponse.redirect(`${normalizedOrigin}${next}`);
+      // Handle email change confirmation - redirect to settings with success message
+      let redirectPath = next;
+      if (otpType === "email_change") {
+        redirectPath = "/settings?message=email-changed";
+      }
+
+      const redirectResponse = NextResponse.redirect(`${normalizedOrigin}${redirectPath}`);
       otpResponse.cookies.getAll().forEach((cookie) => {
         redirectResponse.cookies.set(cookie.name, cookie.value, {
           path: "/",

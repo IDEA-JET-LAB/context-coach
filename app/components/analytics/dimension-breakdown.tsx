@@ -1,6 +1,7 @@
 'use client';
 
 import { DimensionBar } from '@/components/prompt-detail/dimension-bar';
+import { DimensionRadar, type DimensionScore } from '@/components/analytics/dimension-radar';
 import type { DimensionAverage } from '@/lib/hooks/use-personal-analytics';
 import {
   DIMENSION_SUGGESTIONS,
@@ -36,8 +37,26 @@ export function DimensionBreakdown({ dimensions }: DimensionBreakdownProps) {
       DEFAULT_DIMENSION_SUGGESTION(dim.dimension ?? 'dimension'),
   }));
 
+  // Convert dimensions to radar chart format
+  const radarData: DimensionScore[] = dimensions.map((dim) => ({
+    dimension: dim.dimension ?? 'Unknown',
+    score: dim.avgScore ?? 0,
+  }));
+
   return (
     <div className="space-y-6" data-testid="dimension-breakdown">
+      {/* Dimension Radar Visualization */}
+      {dimensions.length >= 3 && (
+        <div data-testid="dimension-radar-section">
+          <h3 className="mb-3 font-medium text-foreground">Skill Profile</h3>
+          <DimensionRadar
+            data={radarData}
+            height={250}
+            showLegend={false}
+            userLabel="Your Scores"
+          />
+        </div>
+      )}
       {/* Focus Areas */}
       <div
         className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4"

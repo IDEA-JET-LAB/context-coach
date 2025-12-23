@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { showToast } from '@/components/feedback';
 import type { UpdateTeamInput } from '@/lib/validations/team';
 
 interface UpdateTeamParams extends UpdateTeamInput {
@@ -43,12 +43,12 @@ export function useUpdateTeam() {
       queryClient.invalidateQueries({ queryKey: ['team', teamId] });
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       queryClient.invalidateQueries({ queryKey: ['current-team'] });
-      toast.success('Team settings updated');
+      showToast.success('Team settings updated');
       // Refresh server components to update the page heading
       router.refresh();
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      showToast.error(error.message);
     },
   });
 }

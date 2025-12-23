@@ -6,20 +6,9 @@ import { Eye, Settings2, Copy, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { deleteConfig, duplicateConfig } from '@/lib/services/admin-config';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { showToast, ConfirmationModal } from '@/components/feedback';
 import { useState, useTransition } from 'react';
 
 interface ConfigVersionCardProps {
@@ -38,15 +27,16 @@ export function ConfigVersionCard({ config }: ConfigVersionCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDuplicate = () => {
     startTransition(async () => {
       const result = await duplicateConfig(config.id);
       if (result.success) {
-        toast.success('Config duplicated successfully');
+        showToast.success('Config duplicated successfully');
         router.push(`/admin/config/${result.data.id}`);
       } else {
-        toast.error(result.error.message);
+        showToast.error(result.error.message);
       }
     });
   };
@@ -57,10 +47,10 @@ export function ConfigVersionCard({ config }: ConfigVersionCardProps) {
     setIsDeleting(false);
 
     if (result.success) {
-      toast.success('Config deleted successfully');
+      showToast.success('Config deleted successfully');
       router.refresh();
     } else {
-      toast.error(result.error.message);
+      showToast.error(result.error.message);
     }
   };
 
@@ -140,32 +130,26 @@ export function ConfigVersionCard({ config }: ConfigVersionCardProps) {
                   {isPending ? 'Duplicating...' : 'Duplicate'}
                 </Button>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Configuration</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete &quot;{config.name}&quot;? This action
-                        cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        disabled={isDeleting}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {isDeleting ? 'Deleting...' : 'Delete'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+
+                <ConfirmationModal
+                  open={isDeleteDialogOpen}
+                  onOpenChange={setIsDeleteDialogOpen}
+                  title="Delete Configuration"
+                  description={`Are you sure you want to delete "${config.name}"? This action cannot be undone.`}
+                  variant="destructive"
+                  confirmLabel={isDeleting ? 'Deleting...' : 'Delete'}
+                  onConfirm={handleDelete}
+                  loading={isDeleting}
+                  icon={Trash2}
+                />
               </>
             )}
           </div>

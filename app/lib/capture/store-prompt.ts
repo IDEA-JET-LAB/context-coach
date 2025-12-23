@@ -13,6 +13,7 @@ import { calculateWordCount } from "./word-count";
 import { classifyPrompt, PromptType } from "./classify-prompt";
 import { createScopedLogger } from "@/lib/utils/logger";
 import { MAX_ANALYZED_TEXT_LENGTH } from "./constants";
+import { analyzeComplexity, classifyWorkStyle } from "@/lib/analysis";
 
 // Create a scoped logger for storage operations
 const logger = createScopedLogger("STORE");
@@ -155,6 +156,15 @@ export async function storePrompt(
   const charCount = input.text.length;
   const wordCount = calculateWordCount(textForCounts);
 
+  // Analyze complexity metrics
+  // Uses the full text for complexity analysis (not just promptPart)
+  // This runs in parallel with classification and is <2ms per prompt
+  const complexity = analyzeComplexity(input.text, charCount, wordCount);
+
+  // Classify work style category (Story 21-2)
+  // Uses the analyzed text for classification (promptPart for commands with prompts)
+  const workStyle = classifyWorkStyle(textForCounts);
+
   // Build insert data
   //
   // Note on text vs analyzed_text:
@@ -176,6 +186,17 @@ export async function storePrompt(
     metadata: input.metadata ?? null,
     prompt_type: classification.type,
     analysis_status: classification.analysisStatus,
+    // Complexity metrics (Story 21-4)
+    sentence_count: complexity.sentenceCount,
+    has_code: complexity.hasCode,
+    has_file_refs: complexity.hasFileRefs,
+    code_block_count: complexity.codeBlockCount,
+    file_ref_count: complexity.fileRefCount,
+    complexity_level: complexity.complexityLevel,
+    complexity_score: complexity.complexityScore,
+    // Work style classification (Story 21-2)
+    work_style_category: workStyle.category,
+    work_style_confidence: workStyle.confidence,
   };
 
   // For command_with_prompt, store the extracted text that will be analyzed

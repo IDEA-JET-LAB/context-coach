@@ -60,7 +60,7 @@ test.describe("Authentication Flows", () => {
       await page.getByLabel("Confirm Password").fill("short");
       await page.getByRole("button", { name: "Create account" }).click();
 
-      await expect(page.getByText("Password must be at least 8 characters")).toBeVisible();
+      await expect(page.getByText("Password must be at least 12 characters")).toBeVisible();
     });
 
     test("should successfully create account and redirect appropriately", async ({ page }) => {
@@ -231,7 +231,7 @@ test.describe("Authentication Flows", () => {
       await passwordInputs.last().fill("short");
       await page.getByRole("button", { name: "Update password" }).click();
 
-      await expect(page.getByText("Password must be at least 8 characters")).toBeVisible();
+      await expect(page.getByText("Password must be at least 12 characters")).toBeVisible();
     });
   });
 });
