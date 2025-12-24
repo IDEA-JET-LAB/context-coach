@@ -12,7 +12,7 @@
 
 import * as readline from 'readline';
 import * as fs from 'fs';
-import type { ParsedMessage, PromptResponsePair } from './types';
+import type { ParsedMessage, PromptResponsePair, ExtractedToolUse } from './types';
 
 /**
  * Extract text content from a user message.
@@ -97,6 +97,99 @@ export function extractTokens(msg: Record<string, unknown>): { input: number; ou
 }
 
 /**
+ * Summarize tool input for display.
+ * Truncates long inputs and extracts key information.
+ *
+ * @param toolName - Name of the tool
+ * @param input - The tool input object
+ * @returns A summarized string representation
+ */
+function summarizeToolInput(toolName: string, input: Record<string, unknown>): string {
+  const MAX_LENGTH = 200;
+
+  // Tool-specific summaries
+  switch (toolName) {
+    case 'Read':
+      return `Read: ${input.file_path || 'unknown file'}`;
+    case 'Write':
+      return `Write: ${input.file_path || 'unknown file'}`;
+    case 'Edit':
+      return `Edit: ${input.file_path || 'unknown file'}`;
+    case 'Bash':
+      const cmd = String(input.command || '').substring(0, 100);
+      return `Bash: ${cmd}${cmd.length >= 100 ? '...' : ''}`;
+    case 'Glob':
+      return `Glob: ${input.pattern || 'unknown pattern'}`;
+    case 'Grep':
+      return `Grep: ${input.pattern || 'unknown pattern'}`;
+    case 'Task':
+      return `Task: ${input.description || input.prompt?.toString().substring(0, 50) || 'subtask'}`;
+    case 'TodoWrite':
+      return 'TodoWrite: updating task list';
+    case 'WebFetch':
+      return `WebFetch: ${input.url || 'unknown url'}`;
+    case 'WebSearch':
+      return `WebSearch: ${input.query || 'unknown query'}`;
+    default: {
+      // Generic summary: stringify and truncate
+      try {
+        const str = JSON.stringify(input);
+        if (str.length <= MAX_LENGTH) return str;
+        return str.substring(0, MAX_LENGTH - 3) + '...';
+      } catch {
+        return `${toolName} invocation`;
+      }
+    }
+  }
+}
+
+/**
+ * Extract tool usage from an assistant message.
+ *
+ * Tool_use blocks are in the message.content array with:
+ * - type: 'tool_use'
+ * - id: tool_use ID (e.g., 'toolu_01ABC...')
+ * - name: tool name (e.g., 'Read', 'Edit', 'Bash')
+ * - input: tool input object
+ *
+ * @param msg - The parsed JSONL message object
+ * @returns Array of extracted tool uses, or undefined if none
+ */
+export function extractToolUsage(msg: Record<string, unknown>): ExtractedToolUse[] | undefined {
+  const message = msg.message as Record<string, unknown> | undefined;
+  if (!message) return undefined;
+
+  const content = message.content;
+  if (!Array.isArray(content)) return undefined;
+
+  const tools: ExtractedToolUse[] = [];
+
+  for (const block of content) {
+    if (
+      typeof block === 'object' &&
+      block !== null &&
+      (block as Record<string, unknown>).type === 'tool_use'
+    ) {
+      const toolBlock = block as Record<string, unknown>;
+      const toolId = toolBlock.id as string;
+      const toolName = toolBlock.name as string;
+      const input = toolBlock.input as Record<string, unknown> | undefined;
+
+      if (toolId && toolName) {
+        tools.push({
+          toolId,
+          toolName,
+          inputSummary: input ? summarizeToolInput(toolName, input) : toolName,
+          inputFull: input,
+        });
+      }
+    }
+  }
+
+  return tools.length > 0 ? tools : undefined;
+}
+
+/**
  * Parse a JSONL file using streaming.
  *
  * Reads the file line by line to avoid loading entire file into memory.
@@ -136,6 +229,7 @@ export async function parseJsonlFile(filePath: string): Promise<ParsedMessage[]>
             timestamp: msg.timestamp as string,
             model: message?.model as string | undefined,
             tokens: extractTokens(msg),
+            tools: extractToolUsage(msg),
           });
         }
         // Ignore other message types (system, tool_result, etc.)
@@ -197,6 +291,7 @@ export function pairMessages(messages: ParsedMessage[]): PromptResponsePair[] {
               timestamp: response.timestamp,
               model: response.model,
               tokens: response.tokens,
+              tools: response.tools,
             }
           : undefined,
       });

@@ -153,6 +153,20 @@ export const adminSingleRateLimit = redis
   : null;
 
 /**
+ * Recovery prompt generation rate limiter.
+ * Limit: 10 requests per minute per user.
+ * Identifier: user ID from authenticated session.
+ * Used to prevent abuse of AI-powered recovery prompt generation.
+ */
+export const recoveryRateLimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "1 m"),
+      prefix: "ratelimit:recovery",
+    })
+  : null;
+
+/**
  * Rate limit result type.
  */
 export interface RateLimitResult {

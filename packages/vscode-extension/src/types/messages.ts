@@ -83,7 +83,64 @@ export type ExtensionToWebviewMessage =
   // Coaching messages (Story 19-5)
   | { type: "coaching"; tips: CoachingTip[]; weakDimensions: WeakDimension[] }
   | { type: "coaching-loading"; isLoading: boolean }
-  | { type: "tip-dismissed"; tipId: string };
+  | { type: "tip-dismissed"; tipId: string }
+
+  // Session messages
+  | { type: "sessions"; sessions: SessionInfo[] }
+  | { type: "sessions-loading"; isLoading: boolean }
+  | { type: "session-recovered"; sessionId: string; success: boolean }
+  | { type: "session-dismissed"; sessionId: string }
+
+  // Import messages
+  | { type: "import-status"; status: ImportStatus }
+
+  // Last prompt messages
+  | { type: "last-prompt"; prompt: LastPromptData | null }
+  | { type: "last-prompt-loading"; isLoading: boolean };
+
+/**
+ * Session info for webview display
+ */
+export interface SessionInfo {
+  sessionId: string;
+  projectName: string;
+  lastActivity: string;
+  lastPrompt: string;
+  messageCount: number;
+  isInterrupted?: boolean;
+}
+
+/**
+ * Last prompt data for webview display
+ */
+export interface LastPromptData {
+  id: string;
+  text: string;
+  overall_score: number;
+  clarity_score: number;
+  context_score: number;
+  specificity_score: number;
+  actionability_score: number;
+  efficiency_score: number;
+  created_at: string;
+}
+
+/**
+ * Import status for webview display
+ */
+export interface ImportStatus {
+  state: "idle" | "scanning" | "importing" | "complete" | "error" | "cancelled";
+  totalSessions: number;
+  importedCount: number;
+  skippedCount: number;
+  errorMessage?: string;
+  /** Detailed status message for user feedback */
+  statusMessage?: string;
+  /** Current project being processed */
+  currentProject?: string;
+  /** Progress percentage (0-100) */
+  progress?: number;
+}
 
 /**
  * Messages sent from the webview to the extension
@@ -91,6 +148,10 @@ export type ExtensionToWebviewMessage =
 export type WebviewToExtensionMessage =
   // Initialization
   | { type: "ready" }
+
+  // Authentication
+  | { type: "login" }
+  | { type: "logout" }
 
   // Analytics actions
   | { type: "refresh" }
@@ -108,7 +169,19 @@ export type WebviewToExtensionMessage =
 
   // Coaching actions (Story 19-5)
   | { type: "refresh-coaching" }
-  | { type: "dismiss-tip"; tipId: string; reason?: "applied" | "not_relevant" | "already_know" };
+  | { type: "dismiss-tip"; tipId: string; reason?: "applied" | "not_relevant" | "already_know" }
+
+  // Session actions
+  | { type: "scan-sessions" }
+  | { type: "recover-session"; sessionId: string }
+  | { type: "dismiss-session"; sessionId: string }
+
+  // Import actions
+  | { type: "start-import" }
+  | { type: "cancel-import" }
+
+  // Last prompt actions
+  | { type: "fetch-last-prompt" };
 
 /**
  * Legacy AnalyticsData type for backward compatibility

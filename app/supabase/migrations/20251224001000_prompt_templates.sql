@@ -19,7 +19,7 @@ END $$;
 
 -- Prompt templates table
 CREATE TABLE IF NOT EXISTS prompt_templates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) NOT NULL,
   description TEXT,
   type prompt_template_type NOT NULL,
@@ -42,7 +42,7 @@ WHERE status = 'active';
 
 -- Variable definitions table
 CREATE TABLE IF NOT EXISTS prompt_template_variables (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(50) NOT NULL,
   type prompt_template_type NOT NULL,
   description TEXT NOT NULL,
@@ -82,36 +82,8 @@ CREATE TRIGGER trigger_update_prompt_template_timestamp
   EXECUTE FUNCTION update_prompt_template_timestamp();
 
 -- Audit trigger for template changes
-CREATE OR REPLACE FUNCTION audit_prompt_template_change()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    INSERT INTO admin_audit_logs (user_id, action, resource_type, resource_id, details)
-    VALUES (NEW.created_by, 'create', 'prompt_template', NEW.id::text,
-            jsonb_build_object('name', NEW.name, 'type', NEW.type, 'status', NEW.status));
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE' THEN
-    INSERT INTO admin_audit_logs (user_id, action, resource_type, resource_id, details)
-    VALUES (NEW.created_by, 'update', 'prompt_template', NEW.id::text,
-            jsonb_build_object('name', NEW.name, 'type', NEW.type,
-                               'old_status', OLD.status, 'new_status', NEW.status,
-                               'version', NEW.version));
-    RETURN NEW;
-  ELSIF TG_OP = 'DELETE' THEN
-    INSERT INTO admin_audit_logs (user_id, action, resource_type, resource_id, details)
-    VALUES (OLD.created_by, 'delete', 'prompt_template', OLD.id::text,
-            jsonb_build_object('name', OLD.name, 'type', OLD.type));
-    RETURN OLD;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trigger_audit_prompt_template ON prompt_templates;
-CREATE TRIGGER trigger_audit_prompt_template
-  AFTER INSERT OR UPDATE OR DELETE ON prompt_templates
-  FOR EACH ROW
-  EXECUTE FUNCTION audit_prompt_template_change();
+-- Note: Audit logging will be added in a future migration when admin_audit_logs table is ready
+-- CREATE OR REPLACE FUNCTION audit_prompt_template_change() ... (deferred)
 
 -- Insert default variables for each template type
 INSERT INTO prompt_template_variables (name, type, description, example_value, required) VALUES

@@ -1,6 +1,6 @@
 # Story 18.4: Recovery Notification UI
 
-Status: Ready
+Status: Done
 
 ## Story
 
@@ -491,17 +491,31 @@ button.secondary {
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created NotificationService with debounced toast notifications
+- Created DismissalService with 7-day expiration tracking
+- Created SessionWatcher with file system monitoring and debouncing
+- Created RecoveryPanelProvider with webview and VS Code themed styling
+- Added commands: showRecoveryPanel, dismissAllSessions, recoverSession
+- 70 unit tests (24 notification + 26 dismissal + 20 watcher)
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Initial implementation | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+- `packages/vscode-extension/src/services/notificationService.ts` (created)
+- `packages/vscode-extension/src/services/dismissalService.ts` (created)
+- `packages/vscode-extension/src/watchers/sessionWatcher.ts` (created)
+- `packages/vscode-extension/src/providers/recoveryPanelProvider.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/notificationService.test.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/dismissalService.test.ts` (created)
+- `packages/vscode-extension/src/watchers/__tests__/sessionWatcher.test.ts` (created)
+- `packages/vscode-extension/src/extension.ts` (modified)
+- `packages/vscode-extension/package.json` (modified)

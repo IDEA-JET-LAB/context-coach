@@ -1,6 +1,6 @@
 # Story 22.7: A/B Traffic Splitting
 
-Status: Ready
+Status: Completed
 
 ## Story
 
@@ -761,14 +761,26 @@ After completing this story, verify:
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+- Implemented deterministic hash-based user assignment (MD5)
+- Created traffic-split.tsx component for traffic configuration
+- Sticky assignments persist across sessions
+- Statistical distribution validation tests implemented
+- Paused experiment handling with existing assignment preservation
+- Experiment conflict detection and priority-based resolution
+- Admin debugging endpoint for assignment inspection
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Story completed with all ACs including conflict detection | Dev Agent |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+- `app/components/admin/traffic-split.tsx`
+- `app/lib/utils/experiment-hash.ts`
+- `app/lib/services/experiment-assignment.ts`
+- `app/lib/services/experiment-conflict-detector.ts`
+- `app/lib/types/experiments.ts`
+- `app/supabase/migrations/20251223005000_experiments.sql`

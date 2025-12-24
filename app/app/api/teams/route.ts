@@ -1,9 +1,30 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from 'next/server';
 import { createTeamSchema } from '@/lib/validations/team';
 import { ZodError } from 'zod';
 
-export async function POST(request: Request) {
+/**
+ * Verify VS Code access token and get user ID.
+ */
+async function verifyVSCodeToken(
+  accessToken: string,
+  adminClient: ReturnType<typeof createAdminClient>
+): Promise<string | null> {
+  const { data: tokenRecord, error } = await adminClient
+    .from('vscode_tokens')
+    .select('user_id, access_token_expires_at, revoked_at')
+    .eq('access_token', accessToken)
+    .single();
+
+  if (error || !tokenRecord) return null;
+  if (tokenRecord.revoked_at) return null;
+  if (new Date(tokenRecord.access_token_expires_at) < new Date()) return null;
+
+  return tokenRecord.user_id;
+}
+
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {
@@ -49,21 +70,37 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const adminClient = createAdminClient();
+    let userId: string | null = null;
 
-    if (!user) {
+    // Check for VS Code access token in Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const accessToken = authHeader.slice(7);
+      userId = await verifyVSCodeToken(accessToken, adminClient);
+    }
+
+    // If no VS Code token, try Supabase session auth
+    if (!userId) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
         { status: 401 }
       );
     }
 
-    const { data: teams, error } = await supabase
+    const { data: teams, error } = await adminClient
       .from('team_members')
       .select(
         `
@@ -71,7 +108,7 @@ export async function GET() {
         team:teams(id, name, description, created_at)
       `
       )
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (error) {
       return NextResponse.json(

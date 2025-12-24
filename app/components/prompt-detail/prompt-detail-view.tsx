@@ -3,13 +3,13 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowLeft, Calendar, Folder, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, Folder, FileText, Cpu, Wrench, Bot, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScoreBadge } from '@/components/feed/score-badge';
 import { CodeBlock } from '@/components/forms';
 import { DimensionRadar, type RadarDimensionScore } from '@/components/analytics';
 import { DimensionCard } from './dimension-card';
-import type { PromptWithFullAnalysis } from '@/lib/hooks/use-prompt';
+import type { PromptWithFullAnalysis, ToolExecution } from '@/lib/hooks/use-prompt';
 
 interface PromptDetailViewProps {
   prompt: PromptWithFullAnalysis;
@@ -124,6 +124,79 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
         <span className="sr-only" data-testid="prompt-full-text">{prompt.text}</span>
       </div>
 
+      {/* Response Section */}
+      {prompt.response && (
+        <div className="mb-8" data-testid="response-section">
+          <h2 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+            <Bot className="h-5 w-5 text-muted-foreground" />
+            AI Response
+          </h2>
+
+          {/* Response metadata */}
+          <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-muted-foreground">
+            {prompt.response.model && (
+              <div className="flex items-center gap-1.5" data-testid="response-model">
+                <Cpu className="h-4 w-4" />
+                <span>{prompt.response.model}</span>
+              </div>
+            )}
+
+            {(prompt.response.tokens_in !== undefined || prompt.response.tokens_out !== undefined) && (
+              <div className="flex items-center gap-1.5" data-testid="response-tokens">
+                <Coins className="h-4 w-4" />
+                <span>
+                  {prompt.response.tokens_in?.toLocaleString() ?? 0} in / {prompt.response.tokens_out?.toLocaleString() ?? 0} out tokens
+                </span>
+              </div>
+            )}
+
+            {prompt.response.tool_count > 0 && (
+              <div className="flex items-center gap-1.5" data-testid="response-tools-count">
+                <Wrench className="h-4 w-4" />
+                <span>{prompt.response.tool_count} tool{prompt.response.tool_count > 1 ? 's' : ''} used</span>
+              </div>
+            )}
+          </div>
+
+          {/* Response text */}
+          {prompt.response.response_text && (
+            <CodeBlock
+              code={prompt.response.response_text}
+              title="Response"
+              language="markdown"
+              copyable={true}
+              showLineNumbers={false}
+              maxHeight="400px"
+              className="mb-4"
+            />
+          )}
+
+          {/* Tool executions */}
+          {prompt.response.tool_executions && prompt.response.tool_executions.length > 0 && (
+            <div className="mt-4" data-testid="tool-executions">
+              <h3 className="text-md font-medium text-foreground mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-muted-foreground" />
+                Tool Executions ({prompt.response.tool_executions.length})
+              </h3>
+              <div className="space-y-2">
+                {prompt.response.tool_executions.map((tool, index) => (
+                  <ToolExecutionCard key={tool.id} tool={tool} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* No response message */}
+      {!prompt.response && (
+        <div className="mb-8 p-4 rounded-lg border border-border bg-surface-secondary" data-testid="no-response">
+          <p className="text-sm text-muted-foreground text-center">
+            No response data available for this prompt. Response may not have been captured during import.
+          </p>
+        </div>
+      )}
+
       {/* Dimension Radar Visualization */}
       {hasAnalysis && (
         <div className="mb-8" data-testid="dimension-radar-section">
@@ -188,6 +261,58 @@ export function PromptDetailView({ prompt }: PromptDetailViewProps) {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Card component for displaying a single tool execution
+ */
+function ToolExecutionCard({ tool, index }: { tool: ToolExecution; index: number }) {
+  // Get tool-specific color/style
+  const getToolColor = (toolName: string): string => {
+    switch (toolName) {
+      case 'Read':
+        return 'text-blue-600 bg-blue-50 dark:bg-blue-950/30';
+      case 'Write':
+        return 'text-green-600 bg-green-50 dark:bg-green-950/30';
+      case 'Edit':
+        return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30';
+      case 'Bash':
+        return 'text-purple-600 bg-purple-50 dark:bg-purple-950/30';
+      case 'Glob':
+      case 'Grep':
+        return 'text-orange-600 bg-orange-50 dark:bg-orange-950/30';
+      case 'Task':
+        return 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30';
+      default:
+        return 'text-gray-600 bg-gray-50 dark:bg-gray-950/30';
+    }
+  };
+
+  return (
+    <div
+      className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card"
+      data-testid={`tool-execution-${index}`}
+    >
+      <div className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+        {index + 1}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getToolColor(tool.tool_name)}`}>
+            {tool.tool_name}
+          </span>
+          {tool.success !== undefined && (
+            <span className={`text-xs ${tool.success ? 'text-green-600' : 'text-red-600'}`}>
+              {tool.success ? '✓ Success' : '✗ Failed'}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground break-words">
+          {tool.input_summary}
+        </p>
+      </div>
     </div>
   );
 }

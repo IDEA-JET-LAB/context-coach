@@ -162,25 +162,48 @@ export async function POST(request: NextRequest) {
       .update({ used_at: new Date().toISOString() })
       .eq("code", code);
 
-    // Get user profile
-    const { data: user, error: userError } = await adminClient
+    // Get user profile (try profiles table first, fall back to auth.users)
+    let userInfo: { id: string; email: string; name?: string; avatar_url?: string };
+
+    const { data: profile } = await adminClient
       .from("profiles")
       .select("id, email, full_name, avatar_url")
       .eq("id", authCode.user_id)
       .single();
 
-    if (userError || !user) {
-      console.error("[Auth] VS Code token: Failed to get user profile:", userError);
-      return NextResponse.json(
-        {
-          error: {
-            code: "USER_NOT_FOUND",
-            message: "User not found",
+    if (profile) {
+      userInfo = {
+        id: profile.id,
+        email: profile.email,
+        name: profile.full_name || undefined,
+        avatar_url: profile.avatar_url || undefined,
+      };
+    } else {
+      // Fall back to auth.users table
+      const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(authCode.user_id);
+
+      if (authUserError || !authUser?.user) {
+        console.error("[Auth] VS Code token: Failed to get user:", authUserError);
+        return NextResponse.json(
+          {
+            error: {
+              code: "USER_NOT_FOUND",
+              message: "User not found",
+            },
           },
-        },
-        { status: 400 }
-      );
+          { status: 400 }
+        );
+      }
+
+      userInfo = {
+        id: authUser.user.id,
+        email: authUser.user.email || "",
+        name: authUser.user.user_metadata?.full_name || authUser.user.user_metadata?.name,
+        avatar_url: authUser.user.user_metadata?.avatar_url,
+      };
     }
+
+    const user = userInfo;
 
     // Generate access and refresh tokens
     const accessToken = randomUUID();
@@ -222,8 +245,8 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        name: user.full_name || undefined,
-        avatar_url: user.avatar_url || undefined,
+        name: user.name,
+        avatar_url: user.avatar_url,
       },
     };
 

@@ -83,15 +83,23 @@ export async function exportRules(): Promise<ActionResult<ClassificationRulesExp
         color: c.color,
         sort_order: c.sort_order,
       })),
-      rules: rules.map((r) => ({
-        name: r.name,
-        category_name: (r.category as { name: string })?.name || 'unknown',
-        pattern: r.pattern,
-        pattern_flags: r.pattern_flags,
-        priority: r.priority,
-        description: r.description,
-        enabled: r.enabled,
-      })),
+      rules: rules.map((r) => {
+        // Handle both single object and array return types from Supabase
+        const category = r.category as { name: string } | { name: string }[] | null;
+        const categoryName = Array.isArray(category)
+          ? category[0]?.name
+          : category?.name;
+
+        return {
+          name: r.name,
+          category_name: categoryName || 'unknown',
+          pattern: r.pattern,
+          pattern_flags: r.pattern_flags,
+          priority: r.priority,
+          description: r.description,
+          enabled: r.enabled,
+        };
+      }),
     };
 
     console.log(`[ClassificationRulesIO] Exported ${rules.length} rules`);

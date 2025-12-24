@@ -150,6 +150,21 @@ export interface ImportResult {
 }
 
 /**
+ * Extracted tool usage from an assistant message.
+ * Story 17-3: Batch Import Processing
+ */
+export interface ExtractedToolUse {
+  /** Claude API tool_use ID (e.g., toolu_01ABC...) */
+  toolId: string;
+  /** Tool name (e.g., Read, Edit, Bash, Grep) */
+  toolName: string;
+  /** Summarized input for display */
+  inputSummary: string;
+  /** Full input object (optional, for storage) */
+  inputFull?: Record<string, unknown>;
+}
+
+/**
  * A parsed message from JSONL transcript.
  * Story 17-3: Batch Import Processing
  */
@@ -169,6 +184,8 @@ export interface ParsedMessage {
     input: number;
     output: number;
   };
+  /** Tool usage (for assistant messages) */
+  tools?: ExtractedToolUse[];
 }
 
 /**
@@ -200,6 +217,8 @@ export interface PromptResponsePair {
       input: number;
       output: number;
     };
+    /** Tools used in this response */
+    tools?: ExtractedToolUse[];
   };
 }
 
@@ -344,6 +363,8 @@ export interface BatchUploadResponse {
   imported: number;
   /** Number of prompts skipped (duplicates) */
   skipped: number;
+  /** Number of existing prompts that got responses added */
+  updated?: number;
   /** Error message if batch failed */
   error?: string;
 }

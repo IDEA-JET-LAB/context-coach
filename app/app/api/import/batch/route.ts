@@ -60,16 +60,17 @@ function validateBatchPayload(body: unknown): body is BatchUploadRequest {
 
 /**
  * Check which fingerprints already exist in the database.
+ * Returns a map of fingerprint -> prompt_id for existing prompts.
  */
-async function getExistingFingerprints(
+async function getExistingPromptsByFingerprint(
   fingerprints: string[],
   supabase: ReturnType<typeof createAdminClient>
-): Promise<Set<string>> {
-  if (fingerprints.length === 0) return new Set();
+): Promise<Map<string, string>> {
+  if (fingerprints.length === 0) return new Map();
 
   const { data, error } = await supabase
     .from('prompts')
-    .select('fingerprint')
+    .select('id, fingerprint')
     .in('fingerprint', fingerprints);
 
   if (error) {
@@ -77,7 +78,31 @@ async function getExistingFingerprints(
     throw new Error(`Database error: ${error.message}`);
   }
 
-  return new Set(data?.map((row) => row.fingerprint) ?? []);
+  const map = new Map<string, string>();
+  data?.forEach((row) => map.set(row.fingerprint, row.id));
+  return map;
+}
+
+/**
+ * Check which prompts already have responses.
+ */
+async function getPromptsWithResponses(
+  promptIds: string[],
+  supabase: ReturnType<typeof createAdminClient>
+): Promise<Set<string>> {
+  if (promptIds.length === 0) return new Set();
+
+  const { data, error } = await supabase
+    .from('prompt_responses')
+    .select('prompt_id')
+    .in('prompt_id', promptIds);
+
+  if (error) {
+    logger.error('Failed to check existing responses', error);
+    return new Set();
+  }
+
+  return new Set(data?.map((row) => row.prompt_id) ?? []);
 }
 
 /**
@@ -129,13 +154,52 @@ async function triggerAnalysis(promptIds: string[]): Promise<void> {
  * - skipped: Number of duplicates skipped
  * - error: Error message if failed
  */
+/**
+ * Verify VS Code access token and get user ID.
+ */
+async function verifyVSCodeToken(
+  accessToken: string,
+  adminClient: ReturnType<typeof createAdminClient>
+): Promise<string | null> {
+  const { data: tokenRecord, error } = await adminClient
+    .from('vscode_tokens')
+    .select('user_id, access_token_expires_at, revoked_at')
+    .eq('access_token', accessToken)
+    .single();
+
+  if (error || !tokenRecord) return null;
+  if (tokenRecord.revoked_at) return null;
+  if (new Date(tokenRecord.access_token_expires_at) < new Date()) return null;
+
+  return tokenRecord.user_id;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Verify user is authenticated
-    const userClient = await createClient();
-    const { data: { user } } = await userClient.auth.getUser();
+    const adminClient = createAdminClient();
+    let userId: string | null = null;
+    let userClient: Awaited<ReturnType<typeof createClient>> | null = null;
 
-    if (!user) {
+    // Check for VS Code access token in Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const accessToken = authHeader.slice(7);
+      userId = await verifyVSCodeToken(accessToken, adminClient);
+      if (userId) {
+        logger.log('VS Code token auth successful', { userId });
+      }
+    }
+
+    // If no VS Code token, try Supabase session auth
+    if (!userId) {
+      userClient = await createClient();
+      const { data: { user } } = await userClient.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json<BatchUploadResponse>(
         { success: false, imported: 0, skipped: 0, error: 'Unauthorized' },
         { status: 401 }
@@ -160,14 +224,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { pairs, importId, teamId, userId, projectPath } = body;
+    const { pairs, importId, teamId, projectPath } = body;
+    // Note: userId comes from auth check above, not from body
 
-    // Verify user has access to the team
-    const { data: membership } = await userClient
+    // Verify user has access to the team using admin client (works for both auth methods)
+    const { data: membership } = await adminClient
       .from('team_members')
       .select('team_id, role')
       .eq('team_id', teamId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single();
 
     if (!membership) {
@@ -178,7 +243,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the default project for the team
-    const { data: project } = await userClient
+    const { data: project } = await adminClient
       .from('projects')
       .select('id')
       .eq('team_id', teamId)
@@ -193,38 +258,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use admin client for insert operations
-    const adminClient = createAdminClient();
-
-    // Get existing fingerprints to skip duplicates
+    // Get existing prompts by fingerprint
     const fingerprints = pairs.map((p) => p.fingerprint);
-    const existingFingerprints = await getExistingFingerprints(fingerprints, adminClient);
+    const existingPrompts = await getExistingPromptsByFingerprint(fingerprints, adminClient);
 
-    // Filter out duplicates and garbage prompts
+    // Check which existing prompts already have responses
+    const existingPromptIds = Array.from(existingPrompts.values());
+    const promptsWithResponses = await getPromptsWithResponses(existingPromptIds, adminClient);
+
+    // Separate into new prompts and existing prompts that need responses
     const newPairs: PromptWithFingerprint[] = [];
+    const existingPairsNeedingResponses: { promptId: string; pair: PromptWithFingerprint }[] = [];
     let skippedCount = 0;
 
     for (const pair of pairs) {
-      if (existingFingerprints.has(pair.fingerprint)) {
-        skippedCount++;
-        continue;
-      }
-
       if (isGarbagePrompt(pair.prompt.text)) {
         skippedCount++;
         continue;
       }
 
-      newPairs.push(pair);
+      const existingPromptId = existingPrompts.get(pair.fingerprint);
+      if (existingPromptId) {
+        // Prompt exists - check if it needs a response
+        if (!promptsWithResponses.has(existingPromptId) && pair.response) {
+          existingPairsNeedingResponses.push({ promptId: existingPromptId, pair });
+        } else {
+          skippedCount++;
+        }
+      } else {
+        newPairs.push(pair);
+      }
     }
 
-    if (newPairs.length === 0) {
-      return NextResponse.json<BatchUploadResponse>({
-        success: true,
-        imported: 0,
-        skipped: skippedCount,
-      });
-    }
+    logger.log('Import batch analysis', {
+      total: pairs.length,
+      newPrompts: newPairs.length,
+      existingNeedingResponses: existingPairsNeedingResponses.length,
+      skipped: skippedCount,
+    });
 
     // Prepare prompts for insert
     const promptsToInsert = newPairs.map((pair) => {
@@ -268,31 +339,142 @@ export async function POST(request: NextRequest) {
     const importedCount = insertedPrompts?.length ?? 0;
 
     // Insert responses for prompts that have them
-    const responsesToInsert = newPairs
-      .map((pair, index) => {
-        if (!pair.response || !insertedPrompts?.[index]) return null;
-        return {
-          prompt_id: insertedPrompts[index].id,
-          // Note: We don't encrypt responses during import for performance
-          // Responses from historical import are stored as-is
-          tool_count: 0,
-          tools_used: [],
-          model: pair.response.model || 'unknown',
-          tokens_in: pair.response.tokens?.input || 0,
-          tokens_out: pair.response.tokens?.output || 0,
-          has_thinking: false,
-        };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+    // Uses insert_encrypted_response RPC to properly encrypt response text
+    let responsesInsertedCount = 0;
+    let toolExecutionsInsertedCount = 0;
 
-    if (responsesToInsert.length > 0) {
-      const { error: responseError } = await adminClient
-        .from('prompt_responses')
-        .insert(responsesToInsert);
+    for (let i = 0; i < newPairs.length; i++) {
+      const pair = newPairs[i];
+      const insertedPrompt = insertedPrompts?.[i];
 
-      if (responseError) {
-        logger.warn('Response insert failed (non-fatal)', { message: responseError.message });
-        // Continue - responses are non-critical
+      if (!pair?.response || !insertedPrompt) continue;
+
+      const tools = pair.response.tools || [];
+      const toolNames = tools.map(t => t.toolName);
+
+      try {
+        // Insert response with encrypted text and get response ID
+        const { data: responseId, error: rpcError } = await adminClient.rpc('insert_encrypted_response', {
+          p_prompt_id: insertedPrompt.id,
+          p_response_text: pair.response.text || null,
+          p_tool_count: tools.length,
+          p_tools_used: toolNames,
+          p_model: pair.response.model || 'unknown',
+          p_tokens_in: pair.response.tokens?.input || 0,
+          p_tokens_out: pair.response.tokens?.output || 0,
+          p_has_thinking: false,
+        });
+
+        if (rpcError) {
+          logger.warn('Response insert failed for prompt', {
+            promptId: insertedPrompt.id,
+            message: rpcError.message
+          });
+          continue;
+        }
+
+        responsesInsertedCount++;
+
+        // Insert tool executions if we have tools and got a response ID
+        if (tools.length > 0 && responseId) {
+          const toolExecutions = tools.map((tool, order) => ({
+            response_id: responseId,
+            tool_name: tool.toolName,
+            tool_id: tool.toolId,
+            input_summary: tool.inputSummary,
+            input_full: tool.inputFull || null,
+            output_summary: null, // We don't have results during import
+            result_matched: false,
+            success: null,
+            execution_order: order + 1,
+          }));
+
+          const { error: toolError } = await adminClient
+            .from('tool_executions')
+            .insert(toolExecutions);
+
+          if (toolError) {
+            logger.warn('Tool executions insert failed', {
+              responseId,
+              message: toolError.message
+            });
+          } else {
+            toolExecutionsInsertedCount += tools.length;
+          }
+        }
+      } catch (err) {
+        logger.warn('Response insert exception', {
+          promptId: insertedPrompt.id,
+          error: err instanceof Error ? err.message : String(err)
+        });
+      }
+    }
+
+    // Insert responses for EXISTING prompts that are missing them
+    let existingResponsesCount = 0;
+    let existingToolExecutionsCount = 0;
+
+    for (const { promptId, pair } of existingPairsNeedingResponses) {
+      if (!pair.response) continue;
+
+      const tools = pair.response.tools || [];
+      const toolNames = tools.map(t => t.toolName);
+
+      try {
+        const { data: responseId, error: rpcError } = await adminClient.rpc('insert_encrypted_response', {
+          p_prompt_id: promptId,
+          p_response_text: pair.response.text || null,
+          p_tool_count: tools.length,
+          p_tools_used: toolNames,
+          p_model: pair.response.model || 'unknown',
+          p_tokens_in: pair.response.tokens?.input || 0,
+          p_tokens_out: pair.response.tokens?.output || 0,
+          p_has_thinking: false,
+        });
+
+        if (rpcError) {
+          logger.warn('Response insert failed for existing prompt', {
+            promptId,
+            message: rpcError.message
+          });
+          continue;
+        }
+
+        existingResponsesCount++;
+
+        // Insert tool executions
+        if (tools.length > 0 && responseId) {
+          const toolExecutions = tools.map((tool, order) => ({
+            response_id: responseId,
+            tool_name: tool.toolName,
+            tool_id: tool.toolId,
+            input_summary: tool.inputSummary,
+            input_full: tool.inputFull || null,
+            output_summary: null,
+            result_matched: false,
+            success: null,
+            execution_order: order + 1,
+          }));
+
+          const { error: toolError } = await adminClient
+            .from('tool_executions')
+            .insert(toolExecutions);
+
+          if (toolError) {
+            logger.warn('Tool executions insert failed for existing prompt', {
+              promptId,
+              responseId,
+              message: toolError.message
+            });
+          } else {
+            existingToolExecutionsCount += tools.length;
+          }
+        }
+      } catch (err) {
+        logger.warn('Response insert exception for existing prompt', {
+          promptId,
+          error: err instanceof Error ? err.message : String(err)
+        });
       }
     }
 
@@ -310,7 +492,10 @@ export async function POST(request: NextRequest) {
       importId,
       imported: importedCount,
       skipped: skippedCount,
-      responsesInserted: responsesToInsert.length,
+      responsesInserted: responsesInsertedCount,
+      toolExecutionsInserted: toolExecutionsInsertedCount,
+      existingPromptsUpdated: existingResponsesCount,
+      existingToolExecutionsInserted: existingToolExecutionsCount,
       analysisQueued: promptsNeedingAnalysis.length,
     });
 
@@ -318,6 +503,7 @@ export async function POST(request: NextRequest) {
       success: true,
       imported: importedCount,
       skipped: skippedCount,
+      updated: existingResponsesCount, // Number of existing prompts that got responses added
     });
   } catch (error) {
     const err = error as Error;

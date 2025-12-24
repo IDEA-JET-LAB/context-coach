@@ -202,25 +202,27 @@ development_status:
   epic-12-retrospective: optional
 
   # =============================================================================
-  # Epic 13: Account Management (P2)
+  # Epic 13: Account Management (P2) ✅ COMPLETED
   # User self-service: delete account, change email, change password.
-  # Story files ready at: _bmad-output/stories/13-*.md
+  # Story files at: _bmad-output/stories/13-*.md
+  # Completed: 2025-12-23
   # =============================================================================
-  epic-13: backlog
-  13-1-account-deletion: ready-for-dev        # 3-4 hours - Delete account with confirmation
-  13-2-email-change: ready-for-dev            # 2-3 hours - Change email with verification
-  13-3-password-change-in-app: ready-for-dev  # 2-3 hours - In-app password change
+  epic-13: done
+  13-1-account-deletion: done        # Delete account with confirmation, last-admin protection
+  13-2-email-change: done            # Email change with password re-authentication
+  13-3-password-change-in-app: done  # In-app password change with strength indicator
   epic-13-retrospective: optional
 
   # =============================================================================
-  # Epic 14: Documentation Section (P2)
+  # Epic 14: Documentation Section (P2) ✅ COMPLETED
   # In-app documentation and help section for authenticated users.
-  # Story files ready at: _bmad-output/stories/14-*.md
+  # Story files at: _bmad-output/stories/14-*.md
+  # Completed: 2025-12-23
   # =============================================================================
-  epic-14: backlog
-  14-1-documentation-page-structure: ready-for-dev  # 4-6 hours - Docs layout & routing
-  14-2-core-documentation-content: ready-for-dev    # 3-4 hours - Write 5 doc sections
-  14-3-documentation-search: future                  # Low priority - implement when docs grow
+  epic-14: done
+  14-1-documentation-page-structure: done  # Docs layout & routing with sidebar
+  14-2-core-documentation-content: done    # 5 doc pages: Getting Started, CLI, Scores, Teams, FAQ
+  14-3-documentation-search: future        # Deferred - implement when docs grow
   epic-14-retrospective: optional
 
   # =============================================================================
@@ -242,32 +244,34 @@ development_status:
   epic-14.5-retrospective: optional
 
   # =============================================================================
-  # Epic 15: Response Capture & Context Extraction (P1)
+  # Epic 15: Response Capture & Context Extraction (P1) ✅ COMPLETED
   # Capture Claude's responses from JSONL transcripts for full conversation analysis.
   # Story files at: _bmad-output/stories/15-*.md
+  # Completed: 2025-12-23
   # =============================================================================
-  epic-15: backlog
-  15-1-transcript-file-discovery: ready-for-dev
-  15-2-jsonl-parser-implementation: ready-for-dev
-  15-3-user-message-extraction: ready-for-dev
-  15-4-assistant-response-extraction: ready-for-dev
-  15-5-prompt-response-pairing: ready-for-dev
-  15-6-response-storage-schema: ready-for-dev
-  15-7-tool-execution-capture: ready-for-dev
+  epic-15: done
+  15-1-transcript-file-discovery: done  # Transcript file discovery with path normalization
+  15-2-jsonl-parser-implementation: done  # JSONL parser with streaming support
+  15-3-user-message-extraction: done  # User message extraction from transcripts
+  15-4-assistant-response-extraction: done  # Assistant response extraction
+  15-5-prompt-response-pairing: done  # Prompt-response pairing algorithm
+  15-6-response-storage-schema: done  # Response storage schema with encryption
+  15-7-tool-execution-capture: done  # Tool execution capture, 299 unit tests
   epic-15-retrospective: optional
 
   # =============================================================================
-  # Epic 16: Session Management (P1)
+  # Epic 16: Session Management (P1) ✅ COMPLETED
   # Group prompts into sessions for conversation-level analytics.
   # Story files at: _bmad-output/stories/16-*.md
+  # Completed: 2025-12-23
   # =============================================================================
-  epic-16: backlog
-  16-1-sessions-database-schema: ready-for-dev
-  16-2-session-detection-logic: ready-for-dev
-  16-3-session-metadata-capture: ready-for-dev
-  16-4-conversation-threading: ready-for-dev
-  16-5-multi-terminal-awareness: ready-for-dev
-  16-6-session-duration-calculation: ready-for-dev
+  epic-16: done
+  16-1-sessions-database-schema: done  # Sessions schema with full metadata
+  16-2-session-detection-logic: done  # Session detection from prompt capture (idempotent)
+  16-3-session-metadata-capture: done  # cwd, git_branch, claude_code_version extraction
+  16-4-conversation-threading: done  # Parent-child relationships, thread view
+  16-5-multi-terminal-awareness: done  # Overlap detection, 249 tests
+  16-6-session-duration-calculation: done  # Duration analytics (daily/weekly/monthly)
   epic-16-retrospective: optional
 
   # =============================================================================
@@ -286,16 +290,17 @@ development_status:
   epic-17-retrospective: optional
 
   # =============================================================================
-  # Epic 18: Session Recovery (P2)
+  # Epic 18: Session Recovery (P2) ✅ COMPLETED
   # Detect interrupted sessions and help users resume their work.
   # Story files at: _bmad-output/stories/18-*.md
+  # Completed: 2025-12-24
   # =============================================================================
-  epic-18: backlog
-  18-1-interrupted-session-detection: ready-for-dev
-  18-2-session-state-snapshot: ready-for-dev
-  18-3-recovery-prompt-generator: ready-for-dev
-  18-4-recovery-notification-ui: ready-for-dev
-  18-5-one-click-resume: ready-for-dev
+  epic-18: done
+  18-1-interrupted-session-detection: done  # CrashDetector service with streaming JSONL parsing, 34 tests
+  18-2-session-state-snapshot: done         # SnapshotBuilder + SnapshotStore with 88 tests
+  18-3-recovery-prompt-generator: done      # AI-powered prompts with fallback, API endpoint, 58 tests
+  18-4-recovery-notification-ui: done       # Toast notifications, dismissal tracking, recovery panel, 70 tests
+  18-5-one-click-resume: done               # Clipboard copy, fallback modal, analytics, 100 tests
   epic-18-retrospective: optional
 
   # =============================================================================
@@ -349,35 +354,37 @@ development_status:
   epic-21-retrospective: optional
 
   # =============================================================================
-  # Epic 22: Analysis Configuration & A/B Testing (P3)
+  # Epic 22: Analysis Configuration & A/B Testing (P3) ✅ COMPLETED
   # Admin control over analysis prompts, scoring weights, experimentation.
   # Story files at: _bmad-output/stories/22-*.md
+  # Completed: 2025-12-24
   # =============================================================================
-  epic-22: in-progress
-  22-1-analysis-prompt-templates: in-progress
-  22-2-classification-rule-editor: in-progress
-  22-3-scoring-weight-configuration: in-progress
-  22-4-team-level-weight-overrides: ready-for-dev
-  22-5-configuration-version-control: ready-for-dev
-  22-6-ab-experiment-creation: in-progress
-  22-7-ab-traffic-splitting: ready-for-dev
-  22-8-statistical-significance-calculation: ready-for-dev
-  22-9-experiment-results-dashboard: ready-for-dev
-  22-10-configuration-audit-trail: in-progress
+  epic-22: done
+  22-1-analysis-prompt-templates: done      # Prompt template CRUD with variable syntax, preview, draft/publish workflow
+  22-2-classification-rule-editor: done     # Rule CRUD, ReDoS detection, regex tester, import/export, conflict detection
+  22-3-scoring-weight-configuration: done   # Weight sliders, auto-balance, reset to defaults, preview impact
+  22-4-team-level-weight-overrides: done    # Team weight customization with global change notification
+  22-5-configuration-version-control: done  # Draft/active/archived states, immutable snapshots, multi-entity versioning
+  22-6-ab-experiment-creation: done         # Experiment lifecycle, config comparison, traffic split config
+  22-7-ab-traffic-splitting: done           # Hash-based assignment, sticky variants, conflict detection
+  22-8-statistical-significance-calculation: done  # Welch's t-test, Cohen's d, confidence intervals, auto-promotion
+  22-9-experiment-results-dashboard: done   # Summary cards, distribution charts, trend charts, CSV export
+  22-10-configuration-audit-trail: done     # Partitioned audit log, JSON diff viewer, retention policy
   epic-22-retrospective: optional
 
   # =============================================================================
-  # Epic D: Phase 2 Design Foundation
+  # Epic D: Phase 2 Design Foundation ✅ COMPLETED
   # Design system audit, UI polish, and component library for Phase 2 features.
   # Story files at: _bmad-output/stories/D-*.md
+  # Completed: 2025-12-23
   # =============================================================================
-  epic-D: in-progress
+  epic-D: done
   D-1-design-system-audit: done            # Design system tokens and patterns
-  D-2-existing-ui-refactoring: done        # Hardcoded colors → semantic tokens
+  D-2-existing-ui-refactoring: done        # 240+ hardcoded colors → semantic tokens
   D-3-component-library-expansion: done    # 30+ components with /design showcase
-  D-4-vscode-extension-design: ready-for-dev
-  D-5-import-recovery-ui-design: ready-for-dev
-  D-6-advanced-analytics-design: ready-for-dev
-  D-7-admin-config-ui-design: ready-for-dev
-  D-8-apply-component-library: ready-for-dev  # Apply D-3 components to existing UI
+  D-4-vscode-extension-design: done        # VS Code extension design patterns
+  D-5-import-recovery-ui-design: design-only  # Design-only story (future implementation)
+  D-6-advanced-analytics-design: design-only  # Design-only story (future implementation)
+  D-7-admin-config-ui-design: done         # Admin config UI design
+  D-8-apply-component-library: done        # Applied component library to existing UI
   epic-D-retrospective: optional

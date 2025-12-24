@@ -60,7 +60,8 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Only set fingerprint if not already provided
   IF NEW.fingerprint IS NULL THEN
-    NEW.fingerprint := generate_prompt_fingerprint(NEW.user_id, NEW.created_at, NEW.text);
+    -- Cast user_id (UUID) to TEXT for the fingerprint function
+    NEW.fingerprint := generate_prompt_fingerprint(NEW.user_id::TEXT, NEW.created_at, NEW.text);
   END IF;
   RETURN NEW;
 END;
@@ -83,8 +84,9 @@ CREATE TRIGGER tr_prompts_set_fingerprint
 -- ============================================
 -- Generate fingerprints for all existing prompts that don't have one.
 -- This is safe to run multiple times (idempotent).
+-- Cast user_id (UUID) to TEXT for the fingerprint function.
 UPDATE prompts
-SET fingerprint = generate_prompt_fingerprint(user_id, created_at, text)
+SET fingerprint = generate_prompt_fingerprint(user_id::TEXT, created_at, text)
 WHERE fingerprint IS NULL;
 
 -- ============================================

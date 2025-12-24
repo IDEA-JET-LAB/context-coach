@@ -3235,7 +3235,7 @@ The following epics extend Contextor with advanced capabilities including respon
 
 ---
 
-## Epic 18: Session Recovery
+## Epic 18: Session Recovery ✅ COMPLETED (2025-12-24)
 
 **Goal:** Detect interrupted Claude Code sessions and help users resume their work.
 
@@ -3244,11 +3244,13 @@ The following epics extend Contextor with advanced capabilities including respon
 **FRs Covered:** Session continuity and recovery assistance
 
 **Stories:**
-- **18-1:** Interrupted Session Detection - Identify crashed/abandoned sessions
-- **18-2:** Session State Snapshot - Capture last known state
-- **18-3:** Recovery Prompt Generator - Create prompts to resume context
-- **18-4:** Recovery Notification UI - Alert users to recoverable sessions
-- **18-5:** One-Click Resume - Quick action to resume interrupted work
+- **18-1:** ✅ Interrupted Session Detection - CrashDetector service with streaming JSONL parsing, 34 tests
+- **18-2:** ✅ Session State Snapshot - SnapshotBuilder + SnapshotStore with 88 tests
+- **18-3:** ✅ Recovery Prompt Generator - AI-powered prompts with fallback, API endpoint, 58 tests
+- **18-4:** ✅ Recovery Notification UI - Toast notifications, dismissal tracking, recovery panel, 70 tests
+- **18-5:** ✅ One-Click Resume - Clipboard copy, fallback modal, analytics, 100 tests
+
+**Total: 350+ unit tests**
 
 ---
 
@@ -3369,12 +3371,12 @@ The following epics extend Contextor with advanced capabilities including respon
 - [ ] 17-5: Import Progress Tracking
 - [ ] 17-6: Import History & Rollback
 
-**Epic 18 (P2 - Recovery):**
-- [ ] 18-1: Interrupted Session Detection
-- [ ] 18-2: Session State Snapshot
-- [ ] 18-3: Recovery Prompt Generator
-- [ ] 18-4: Recovery Notification UI
-- [ ] 18-5: One-Click Resume
+**Epic 18 (P2 - Recovery):** ✅ COMPLETED
+- [x] 18-1: Interrupted Session Detection
+- [x] 18-2: Session State Snapshot
+- [x] 18-3: Recovery Prompt Generator
+- [x] 18-4: Recovery Notification UI
+- [x] 18-5: One-Click Resume
 
 **Epic 19 (P1 - VS Code Extension):**
 - [ ] 19-1: Extension Scaffold

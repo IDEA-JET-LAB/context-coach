@@ -28,6 +28,7 @@ interface MockWebviewView {
     cspSource: string;
   };
   onDidDispose: jest.Mock;
+  onDidChangeVisibility: jest.Mock;
   visible: boolean;
 }
 
@@ -46,6 +47,7 @@ const createMockWebviewView = (): MockWebviewView => {
       cspSource: "https://file+.vscode-resource.vscode-cdn.net",
     },
     onDidDispose: jest.fn((_handler: () => void) => ({ dispose: jest.fn() })),
+    onDidChangeVisibility: jest.fn((_handler: () => void) => ({ dispose: jest.fn() })),
     visible: true,
   };
 };

@@ -1,6 +1,6 @@
 # Story 18.3: Recovery Prompt Generator
 
-Status: Ready
+Status: Done
 
 ## Story
 
@@ -406,17 +406,30 @@ The API endpoint should implement rate limiting:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created API endpoint with OpenAI integration for AI-powered summaries
+- Implemented RecoveryPromptGenerator with AI and fallback modes
+- Implemented RecoveryPromptCache with MD5 hash-based invalidation
+- Added rate limiting (10 requests/minute per user)
+- Prompts kept under 500 characters with smart truncation
+- 58 unit tests (28 cache + 30 generator)
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Initial implementation | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+- `app/app/api/recovery/[sessionId]/route.ts` (created)
+- `packages/vscode-extension/src/types/recovery.ts` (created)
+- `packages/vscode-extension/src/services/recoveryPromptGenerator.ts` (created)
+- `packages/vscode-extension/src/services/recoveryPromptCache.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/recoveryPromptGenerator.test.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/recoveryPromptCache.test.ts` (created)
+- `app/lib/rate-limit/index.ts` (modified)
+- `packages/vscode-extension/src/types/index.ts` (modified)

@@ -80,15 +80,23 @@ async function loadRules(): Promise<CachedRule[]> {
     return cachedRules || [];
   }
 
-  cachedRules = rules.map((r) => ({
-    id: r.id,
-    name: r.name,
-    pattern: r.pattern,
-    flags: r.pattern_flags || 'i',
-    priority: r.priority,
-    category_id: r.category_id,
-    category_name: (r.category as { name: string })?.name || 'unknown',
-  }));
+  cachedRules = rules.map((r) => {
+    // Handle both single object and array return types from Supabase
+    const category = r.category as { name: string } | { name: string }[] | null;
+    const categoryName = Array.isArray(category)
+      ? category[0]?.name
+      : category?.name;
+
+    return {
+      id: r.id,
+      name: r.name,
+      pattern: r.pattern,
+      flags: r.pattern_flags || 'i',
+      priority: r.priority,
+      category_id: r.category_id,
+      category_name: categoryName || 'unknown',
+    };
+  });
   cacheTimestamp = now;
 
   console.log(`[ClassificationEngine] Loaded ${cachedRules.length} classification rules`);
@@ -160,16 +168,16 @@ export async function classifyPrompt(
   }
 
   // Primary is highest priority match (already sorted by priority)
-  const primary =
-    matches.length > 0
-      ? {
-          category: matches[0].category,
-          category_id: matches[0].category_id,
-          rule_id: matches[0].rule_id,
-          rule_name: matches[0].rule_name,
-          confidence: calculateConfidence(matches),
-        }
-      : null;
+  const firstMatch = matches[0];
+  const primary = firstMatch
+    ? {
+        category: firstMatch.category,
+        category_id: firstMatch.category_id,
+        rule_id: firstMatch.rule_id,
+        rule_name: firstMatch.rule_name,
+        confidence: calculateConfidence(matches),
+      }
+    : null;
 
   return { primary, all_matches: matches };
 }
@@ -331,9 +339,14 @@ export async function getRecentMatchesForRule(
  * Called by analytics pipeline.
  */
 export async function incrementMatchCount(ruleId: string): Promise<void> {
-  const supabase = createAdminClient();
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.rpc('increment_rule_match_count', { rule_id: ruleId });
 
-  await supabase.rpc('increment_rule_match_count', { rule_id: ruleId }).catch((error) => {
+    if (error) {
+      console.error(`[ClassificationEngine] Failed to increment match count for ${ruleId}:`, error);
+    }
+  } catch (error) {
     console.error(`[ClassificationEngine] Failed to increment match count for ${ruleId}:`, error);
-  });
+  }
 }

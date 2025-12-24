@@ -37,7 +37,7 @@ export interface ContextorSettings {
  * Default settings values
  */
 export const DEFAULT_SETTINGS: Readonly<ContextorSettings> = {
-  apiEndpoint: "https://contextor.co/api",
+  apiEndpoint: "http://127.0.0.1:3050/api",
   refreshInterval: 30,
   showNotifications: true,
   showStatusBarItem: true,

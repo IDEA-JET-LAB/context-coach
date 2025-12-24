@@ -1,6 +1,6 @@
 # Story 22.4: Team-Level Weight Overrides
 
-Status: Ready
+Status: Completed
 
 ## Story
 
@@ -573,14 +573,24 @@ After completing this story, verify:
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+- Implemented team weight overrides with admin component
+- Created team-overrides.tsx component for team-specific weight customization
+- Integrated with weight configuration system from Story 22-3
+- Added RLS policies for team admin access
+- Weight resolver service with caching implemented
+- Global change notification system in place
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Story completed with all ACs implemented | Dev Agent |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+- `app/components/admin/team-overrides.tsx`
+- `app/components/admin/weight-configuration.tsx`
+- `app/lib/services/weight-resolver.ts`
+- `app/lib/types/team-weights.ts`
+- `app/supabase/migrations/20251223003000_team_weight_overrides.sql`

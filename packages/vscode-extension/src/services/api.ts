@@ -49,7 +49,7 @@ export class ContextorAPI {
     const config = vscode.workspace.getConfiguration("contextor");
     this.apiEndpoint = config.get<string>(
       "apiEndpoint",
-      "https://contextor.co/api"
+      "http://127.0.0.1:3050/api"
     );
   }
 
@@ -60,26 +60,29 @@ export class ContextorAPI {
    */
   async getAnalytics(timeRange: TimeRange = '7d'): Promise<ApiResponse<AnalyticsData>> {
     try {
+      // Add cache-buster to ensure fresh data
+      const cacheBuster = Date.now();
       const response = await this.authenticatedFetch(
-        `/analytics/summary?range=${timeRange}`
+        `/analytics/summary?range=${timeRange}&_=${cacheBuster}`
       );
+      this.log(`Fetching analytics for range=${timeRange}`);
 
       if (!response.ok) {
         return this.handleErrorResponse(response);
       }
 
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
 
       // Transform API response to match our types
       const analytics: AnalyticsData = {
         summary: {
-          overallScore: data.overallScore ?? 0,
-          promptCount: data.promptCount ?? 0,
+          overallScore: (data.overallScore as number) ?? 0,
+          promptCount: (data.promptCount as number) ?? 0,
           timeRange: timeRange,
-          scoreChange: data.scoreChange,
-          countChange: data.countChange,
+          scoreChange: data.scoreChange as number | undefined,
+          countChange: data.countChange as number | undefined,
         },
-        dimensions: this.transformDimensions(data.dimensions),
+        dimensions: this.transformDimensions(data.dimensions as Record<string, { score: number; label: string }> | undefined),
         lastUpdated: new Date().toISOString(),
       };
 
@@ -104,10 +107,10 @@ export class ContextorAPI {
         return this.handleErrorResponse(response);
       }
 
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
 
       // Transform API response
-      const prompts: RecentPrompt[] = (data.prompts || []).map((p: Record<string, unknown>) => ({
+      const prompts: RecentPrompt[] = ((data.prompts as Array<Record<string, unknown>>) || []).map((p: Record<string, unknown>) => ({
         id: p.id as string,
         text: this.truncateText(p.text as string, 100),
         score: this.normalizeScore(p.overall_score as number),
@@ -137,21 +140,94 @@ export class ContextorAPI {
         return this.handleErrorResponse(response);
       }
 
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
 
       // Transform API response
       const detail: PromptDetail = {
-        id: data.id,
-        text: data.text,
-        score: this.normalizeScore(data.overall_score),
-        timestamp: data.created_at,
-        dimensions: this.flattenDimensions(data.dimension_scores),
-        suggestions: this.transformSuggestions(data.suggestions),
+        id: data.id as string,
+        text: data.text as string,
+        score: this.normalizeScore(data.overall_score as number),
+        timestamp: data.created_at as string,
+        dimensions: this.flattenDimensions(data.dimension_scores as Record<string, { score: number }>),
+        suggestions: this.transformSuggestions(data.suggestions as { byDimension?: Record<string, { type: string; message: string; example?: string }> } | undefined),
       };
 
       return { success: true, data: detail };
     } catch (error) {
       return this.handleError("getPromptDetail", error);
+    }
+  }
+
+/**
+   * Fetches the most recent prompt with its analysis.
+   * @returns Last prompt data or null if no prompts exist
+   */
+  async getLastPrompt(): Promise<ApiResponse<{
+    id: string;
+    text: string;
+    overall_score: number;
+    clarity_score: number;
+    context_score: number;
+    specificity_score: number;
+    actionability_score: number;
+    efficiency_score: number;
+    created_at: string;
+  } | null>> {
+    try {
+      // Fetch the most recent prompt with analysis
+      const response = await this.authenticatedFetch("/prompts/recent?limit=1");
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
+
+      const data = await response.json() as { prompts?: Array<Record<string, unknown>> };
+      const prompts = data.prompts || [];
+
+      if (prompts.length === 0) {
+        return { success: true, data: null };
+      }
+
+      const p = prompts[0];
+
+      // API already returns individual score fields (clarity_score, etc.)
+      // They are already in 0-100 scale from the API
+      const lastPrompt = {
+        id: p.id as string,
+        text: p.text as string,
+        overall_score: (p.overall_score as number) || 0,
+        clarity_score: (p.clarity_score as number) || 0,
+        context_score: (p.context_score as number) || 0,
+        specificity_score: (p.specificity_score as number) || 0,
+        actionability_score: (p.actionability_score as number) || 0,
+        efficiency_score: (p.efficiency_score as number) || 0,
+        created_at: p.created_at as string,
+      };
+
+      this.log(`Last prompt fetched: overall=${lastPrompt.overall_score}, clarity=${lastPrompt.clarity_score}`);
+
+      return { success: true, data: lastPrompt };
+    } catch (error) {
+      return this.handleError("getLastPrompt", error);
+    }
+  }
+
+  /**
+   * Fetches user's team memberships.
+   * @returns Array of teams the user belongs to
+   */
+  async getUserTeams(): Promise<ApiResponse<Array<{ id: string; name: string; role: string }>>> {
+    try {
+      const response = await this.authenticatedFetch("/teams");
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
+
+      const data = await response.json() as { teams?: Array<{ id: string; name: string; role: string }> };
+      return { success: true, data: data.teams || [] };
+    } catch (error) {
+      return this.handleError("getUserTeams", error);
     }
   }
 
@@ -305,7 +381,7 @@ export class ContextorAPI {
    */
   private async handleErrorResponse<T>(response: Response): Promise<ApiResponse<T>> {
     try {
-      const errorBody = await response.json();
+      const errorBody = await response.json() as Record<string, { code?: string; message?: string }>;
       return {
         success: false,
         error: {
@@ -389,7 +465,25 @@ export class ContextorAPI {
         return this.handleErrorResponse(response);
       }
 
-      const data = await response.json();
+      const data = await response.json() as {
+        tips?: Array<{
+          id?: string;
+          dimension?: string;
+          title?: string;
+          description?: string;
+          example?: { before?: string; after?: string };
+          priority?: string;
+          source?: string;
+          created_at?: string;
+        }>;
+        weakDimensions?: Array<{
+          dimension?: string;
+          score?: number;
+          label?: string;
+          threshold?: number;
+        }>;
+        lastUpdated?: string;
+      };
 
       // Transform API response to match our types
       const coaching: CoachingResponse = {

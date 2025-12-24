@@ -734,6 +734,19 @@ Transcript import experience for historical Claude Code prompts:
 
 Key files: `lib/import/*`, `components/import/*`, `app/api/import/*`, `app/(dashboard)/settings/import-history/*`
 
+## Epic 18 Status: COMPLETED (December 2025)
+
+Session recovery for interrupted Claude Code sessions (350+ unit tests):
+- 18-1: CrashDetector service - scans ~/.claude/projects for stale sessions, streaming JSONL parsing, 34 tests
+- 18-2: Session State Snapshot - SnapshotBuilder extracts files, tools, git context; SnapshotStore for persistence, 88 tests
+- 18-3: Recovery Prompt Generator - AI-powered summarization via OpenAI, local fallback template, caching, 58 tests
+- 18-4: Recovery Notification UI - Toast notifications, dismissal tracking, recovery panel webview, 70 tests
+- 18-5: One-Click Resume - Clipboard service, fallback modal, analytics tracking, 100 tests
+
+Key files: `packages/vscode-extension/src/services/crashDetector.ts`, `snapshotBuilder.ts`, `snapshotStore.ts`, `recoveryPromptGenerator.ts`, `notificationService.ts`, `dismissalService.ts`, `clipboardService.ts`, `recoveryState.ts`, `analyticsService.ts`
+
+API endpoint: `app/app/api/recovery/[sessionId]/route.ts`
+
 ## Epic 19 Status: COMPLETED (December 2025)
 
 VS Code extension bringing Contextor analytics to the IDE:
@@ -766,6 +779,24 @@ Advanced analytics with deep insights into developer-AI interactions:
 - 21-12: Team intelligence analytics with percentile ranks
 
 Key files: `lib/analytics/*`, `components/analytics/*`, `app/api/analytics/*`
+
+## Epic 22 Status: COMPLETED (December 2025)
+
+Configurable analysis engine with A/B testing for prompt scoring optimization:
+- 22-1: Analysis prompt templates with variable syntax and draft/publish workflow
+- 22-2: Classification rule editor with ReDoS detection, import/export, conflict detection
+- 22-3: Scoring weight configuration with auto-balance and preview impact
+- 22-4: Team-level weight overrides with global change notification
+- 22-5: Configuration version control (draft/active/archived states, multi-entity versioning)
+- 22-6: A/B experiment creation with lifecycle management
+- 22-7: A/B traffic splitting with hash-based assignment and conflict detection
+- 22-8: Statistical significance calculation (Welch's t-test, Cohen's d, auto-promotion)
+- 22-9: Experiment results dashboard with charts and CSV export
+- 22-10: Configuration audit trail with partitioned storage and JSON diff viewer
+
+Key files: `components/admin/*` (50+ components), `lib/services/*-activation.ts`, `lib/utils/statistics.ts`, `lib/types/experiments.ts`
+
+Migrations: `20251223002000_classification_rules.sql`, `20251223003000_team_weight_overrides.sql`, `20251223004000_config_versioning.sql`, `20251223005000_experiments.sql`, `20251223006000_config_audit_log.sql`
 
 ## CRITICAL: Design System Mandate (Epic 17+)
 

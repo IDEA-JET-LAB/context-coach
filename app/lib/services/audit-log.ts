@@ -93,10 +93,13 @@ export async function logConfigChange(input: CreateAuditLogInput): Promise<void>
  * Log a config change without awaiting - fire and forget pattern.
  * Use this when you don't want to delay the main operation.
  *
+ * Note: This function is async to satisfy Server Actions requirements,
+ * but it doesn't await the logging - it fires and forgets.
+ *
  * @param input - Audit log data
  */
-export function logConfigChangeAsync(input: CreateAuditLogInput): void {
-  // Fire and forget - don't await
+export async function logConfigChangeAsync(input: CreateAuditLogInput): Promise<void> {
+  // Fire and forget - don't await the actual logging
   logConfigChange(input).catch((err) => {
     console.error('[Audit] Async audit log failed:', err);
   });

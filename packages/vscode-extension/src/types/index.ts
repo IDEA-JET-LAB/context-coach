@@ -5,6 +5,15 @@
 // Re-export analytics types
 export * from './analytics';
 
+// Re-export interrupted session types (Story 18-1)
+export * from './interruptedSession';
+
+// Re-export session state types (Story 18-2)
+export * from './sessionState';
+
+// Re-export recovery types (Story 18-3)
+export * from './recovery';
+
 // Re-export coaching types (Story 19-5)
 // Note: PromptSuggestion is also exported from analytics, so we use CoachingPromptSuggestion here
 export {

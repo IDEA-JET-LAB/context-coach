@@ -183,6 +183,52 @@ export class AuthService {
   }
 
   /**
+   * Waits for SecretStorage to be ready.
+   * On VS Code reload, SecretStorage may take time to initialize.
+   * Returns true when ready, false if timeout reached.
+   */
+  async waitForReady(maxWaitMs: number = 3000): Promise<boolean> {
+    const startTime = Date.now();
+    const checkInterval = 100; // Check every 100ms
+
+    while (Date.now() - startTime < maxWaitMs) {
+      try {
+        // Try to read a known key - if we previously had a token, this should work
+        // If SecretStorage is not ready, this might return undefined even if token exists
+        const accessToken = await this.secrets.get(KEYS.ACCESS_TOKEN);
+
+        // If we get a token, SecretStorage is definitely ready
+        if (accessToken) {
+          this.log("SecretStorage ready (token found)");
+          return true;
+        }
+
+        // Try to read the expiry too - if both are undefined, either:
+        // 1. User is not logged in (legit)
+        // 2. SecretStorage isn't ready yet
+        const expiry = await this.secrets.get(KEYS.TOKEN_EXPIRY);
+        if (expiry) {
+          // We have expiry but no token - might be corrupted state
+          this.log("SecretStorage ready (expiry found, but no token)");
+          return true;
+        }
+
+        // Neither found - could be not logged in or not ready
+        // Wait a bit and check again
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      } catch (error) {
+        // SecretStorage threw an error - definitely not ready
+        this.log(`SecretStorage not ready: ${error instanceof Error ? error.message : String(error)}`);
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      }
+    }
+
+    // Timeout reached - SecretStorage should be ready by now
+    this.log("SecretStorage warmup timeout - assuming ready");
+    return true;
+  }
+
+  /**
    * Checks if the user is currently authenticated.
    * Returns true if we have a valid (or refreshable) token.
    */
@@ -248,16 +294,47 @@ export class AuthService {
 
   /**
    * Gets the current user profile, if authenticated.
+   * Will attempt to fetch from API if not cached locally.
    */
   async getUser(): Promise<UserProfile | undefined> {
+    // First try to get from cache
     const profileStr = await this.secrets.get(KEYS.USER_PROFILE);
-    if (!profileStr) {
+    if (profileStr) {
+      try {
+        return JSON.parse(profileStr) as UserProfile;
+      } catch {
+        // Invalid JSON, will try to fetch from API
+      }
+    }
+
+    // If not cached, try to fetch from API using access token
+    const accessToken = await this.getAccessToken();
+    if (!accessToken) {
       return undefined;
     }
 
     try {
-      return JSON.parse(profileStr) as UserProfile;
-    } catch {
+      this.log("User profile not cached, fetching from API");
+      const response = await fetch(`${this.apiEndpoint}/auth/vscode/me`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        this.log(`Failed to fetch user profile: ${response.status}`);
+        return undefined;
+      }
+
+      const user = (await response.json()) as UserProfile;
+
+      // Cache the profile
+      await this.secrets.store(KEYS.USER_PROFILE, JSON.stringify(user));
+      this.log(`Fetched and cached user profile: ${user.email}`);
+
+      return user;
+    } catch (error) {
+      this.logError("Failed to fetch user profile from API", error);
       return undefined;
     }
   }
@@ -333,10 +410,12 @@ export class AuthService {
 
   /**
    * Gets the VS Code callback URI for OAuth.
+   * Format: vscode://{publisher}.{extension-name}/callback
    */
   private getCallbackUri(): string {
     // Use the extension's URI handler
-    return `vscode://contextor.contextor-vscode/callback`;
+    // Publisher: ideajetlab, Name: contextor-vscode (from package.json)
+    return `vscode://ideajetlab.contextor-vscode/callback`;
   }
 
   /**

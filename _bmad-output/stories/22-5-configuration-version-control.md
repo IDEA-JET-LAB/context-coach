@@ -1,6 +1,6 @@
 # Story 22.5: Configuration Version Control
 
-Status: Ready
+Status: Completed
 
 ## Story
 
@@ -1208,14 +1208,27 @@ After completing this story, verify:
 ## Dev Agent Record
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
-*To be filled by dev agent after implementation*
+- Implemented configuration version control with draft/active/archived states
+- Created config-version-card.tsx for version display and management
+- Version history view with timeline visualization
+- Config comparison/diff viewer implemented
+- Immutable snapshots with RLS policies (no UPDATE allowed)
+- Multi-entity versioning extended to templates and rules
+- Coordinated activation via database RPC for atomicity
 
 ### Change Log
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Story completed with all ACs including multi-entity versioning | Dev Agent |
 
 ### File List
-*To be filled by dev agent - list all files created/modified*
+- `app/components/admin/config-version-card.tsx`
+- `app/components/admin/version-history.tsx`
+- `app/lib/services/config-snapshots.ts`
+- `app/lib/services/config-activation.ts`
+- `app/lib/services/config-set-snapshots.ts`
+- `app/lib/types/config-versioning.ts`
+- `app/supabase/migrations/20251223004000_config_versioning.sql`

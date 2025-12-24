@@ -295,7 +295,7 @@ export function CategoryManager({ categories, open, onClose }: CategoryManagerPr
         variant="warning"
         confirmLabel="Archive"
         onConfirm={handleArchive}
-        isLoading={isSubmitting}
+        loading={isSubmitting}
       />
     </>
   );

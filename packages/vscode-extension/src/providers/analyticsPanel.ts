@@ -17,9 +17,11 @@ import * as vscode from "vscode";
 import { AuthService } from "../services/auth";
 import { ContextorAPI } from "../services/api";
 import { SettingsService } from "../services/settings";
+import { ImportService, type ImportProgress, type DiscoveredProject } from "../services/importService";
+import { CrashDetector } from "../services/crashDetector";
+import { RealtimeService } from "../services/realtimeService";
 import {
   TimeRange,
-  SyncState,
   CachedAnalytics,
   AnalyticsData,
   RecentPrompt,
@@ -34,7 +36,6 @@ import {
   ExtensionToWebviewMessage,
   WebviewToExtensionMessage,
   AnalyticsPanelState,
-  LegacyAnalyticsData,
 } from "../types/messages";
 
 /**
@@ -84,6 +85,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   private _api?: ContextorAPI;
 
   /**
+   * Import service instance (initialized lazily).
+   */
+  private _importService?: ImportService;
+
+  /**
    * Current panel state.
    */
   private _state: AnalyticsPanelState = {
@@ -111,12 +117,66 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    */
   private globalState?: vscode.Memento;
 
+  /**
+   * Realtime service for instant updates (optional).
+   */
+  private readonly realtimeService?: RealtimeService;
+
+  /**
+   * Debounce timer for session change refreshes.
+   */
+  private sessionChangeDebounceTimer?: ReturnType<typeof setTimeout>;
+
+  /**
+   * Last time we refreshed the last prompt (to avoid too frequent refreshes).
+   */
+  private lastPromptRefreshTime = 0;
+
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly authService: AuthService,
-    private readonly outputChannel: vscode.OutputChannel
+    private readonly outputChannel: vscode.OutputChannel,
+    realtimeService?: RealtimeService
   ) {
     this.settingsService = SettingsService.getInstance();
+    this.realtimeService = realtimeService;
+
+    // Subscribe to realtime prompt updates (Supabase Realtime)
+    if (this.realtimeService) {
+      const realtimeDisposable = this.realtimeService.onNewPrompt((promptId) => {
+        this.log(`Realtime: New prompt detected: ${promptId}`);
+        // Refresh last prompt when a new one is analyzed
+        void this.handleFetchLastPrompt();
+      });
+      this._disposables.push(realtimeDisposable);
+    }
+  }
+
+  /**
+   * Called when a Claude Code session file changes.
+   * Triggers a debounced refresh of the last prompt.
+   */
+  public notifySessionChanged(): void {
+    // Debounce: wait 2 seconds after last change before refreshing
+    // This gives time for the prompt to be analyzed on the server
+    if (this.sessionChangeDebounceTimer) {
+      clearTimeout(this.sessionChangeDebounceTimer);
+    }
+
+    this.sessionChangeDebounceTimer = setTimeout(() => {
+      this.sessionChangeDebounceTimer = undefined;
+
+      // Only refresh if we haven't refreshed in the last 5 seconds
+      const now = Date.now();
+      if (now - this.lastPromptRefreshTime < 5000) {
+        this.log("Session change: skipping refresh (too soon)");
+        return;
+      }
+
+      this.log("Session change: triggering last prompt refresh");
+      this.lastPromptRefreshTime = now;
+      void this.handleFetchLastPrompt();
+    }, 2000);
   }
 
   /**
@@ -153,6 +213,33 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this._api = new ContextorAPI(this.authService, this.outputChannel);
     }
     return this._api;
+  }
+
+  /**
+   * Gets the ImportService, creating it if necessary.
+   */
+  private getImportService(): ImportService {
+    if (!this._importService) {
+      this._importService = new ImportService(this.authService);
+      this._importService.initialize(this.outputChannel);
+      // Set up progress callback with detailed status
+      this._importService.setProgressCallback((progress: ImportProgress) => {
+        this.postMessage({
+          type: "import-status",
+          status: {
+            state: progress.state,
+            totalSessions: progress.totalProjects,
+            importedCount: progress.importedCount,
+            skippedCount: progress.skippedCount,
+            errorMessage: progress.errorMessage,
+            statusMessage: progress.statusMessage,
+            currentProject: progress.currentProject,
+            progress: progress.progress,
+          },
+        } as ExtensionToWebviewMessage);
+      });
+    }
+    return this._importService;
   }
 
   /**
@@ -277,7 +364,21 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     switch (message.type) {
       case "ready":
         this.log("Webview ready");
-        await this.sendAuthState();
+        // Reset import state on init (fix stuck spinner after reload)
+        this.postMessage({
+          type: "import-status",
+          status: {
+            state: "idle",
+            totalSessions: 0,
+            importedCount: 0,
+            skippedCount: 0,
+          },
+        } as ExtensionToWebviewMessage);
+        // Wait for SecretStorage to be ready (fix 404 on reload)
+        this.log("Waiting for SecretStorage warmup...");
+        await this.authService.waitForReady(3000);
+        this.log("SecretStorage warmup complete, sending auth state");
+        await this.sendAuthStateWithRetry(3);
         await this.loadCachedData();
         // Load coaching data (Story 19-5)
         await this.loadCachedCoaching();
@@ -313,6 +414,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         this.log(`Webview error: ${message.error}`);
         break;
 
+      case "login":
+        this.log("Login requested from webview");
+        await vscode.commands.executeCommand("contextor.signIn");
+        break;
+
+      case "logout":
+        this.log("Logout requested from webview");
+        await vscode.commands.executeCommand("contextor.signOut");
+        break;
+
       // Coaching message handlers (Story 19-5)
       case "refresh-coaching":
         this.log("Coaching refresh requested");
@@ -323,6 +434,289 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         this.log(`Dismissing tip: ${message.tipId}`);
         await this.dismissTip(message.tipId, message.reason);
         break;
+
+      // Session message handlers
+      case "scan-sessions":
+        this.log("Session scan requested from webview");
+        await this.handleScanSessions();
+        break;
+
+      case "recover-session":
+        this.log(`Recover session requested: ${message.sessionId}`);
+        await this.handleRecoverSession(message.sessionId);
+        break;
+
+      case "dismiss-session":
+        this.log(`Dismiss session requested: ${message.sessionId}`);
+        await this.handleDismissSession(message.sessionId);
+        break;
+
+      // Import message handlers
+      case "start-import":
+        this.log("Import requested from webview");
+        await this.handleStartImport();
+        break;
+
+      case "cancel-import":
+        this.log("Import cancellation requested");
+        this.handleCancelImport();
+        break;
+
+      // Last prompt message handler
+      case "fetch-last-prompt":
+        this.log("Last prompt requested from webview");
+        await this.handleFetchLastPrompt();
+        break;
+    }
+  }
+
+  // ============================================
+  // Session Methods
+  // ============================================
+
+  /**
+   * Handles session scan request from webview.
+   */
+  private async handleScanSessions(): Promise<void> {
+    this.postMessage({ type: "sessions-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      // Use CrashDetector directly (not via command which shows QuickPick)
+      const crashDetector = CrashDetector.getInstance();
+      const result = await crashDetector.detectInterruptedSessions();
+
+      this.log(`Session scan complete: found ${result.interruptedSessions.length} sessions`);
+
+      // Map to webview session format
+      const sessions = result.interruptedSessions.map((session) => ({
+        sessionId: session.sessionId,
+        projectName: this.extractProjectName(session.sessionPath),
+        lastActivity: session.lastActivity.toISOString(),
+        lastPrompt: session.lastPrompt,
+        messageCount: session.messageCount,
+        isInterrupted: true,
+        cwd: session.cwd,
+        gitBranch: session.gitBranch,
+      }));
+
+      // Send sessions to webview
+      this.postMessage({ type: "sessions", sessions } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "sessions-loading", isLoading: false } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to scan sessions", error);
+      this.postMessage({ type: "sessions-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Extracts project name from session path.
+   */
+  private extractProjectName(sessionPath: string): string {
+    const parts = sessionPath.split("/");
+    const projectDir = parts[parts.length - 2];
+
+    if (projectDir && projectDir.startsWith("-")) {
+      // Convert normalized path back to readable name
+      const pathParts = projectDir.slice(1).split("-");
+      return pathParts[pathParts.length - 1] || projectDir;
+    }
+
+    return projectDir || "Unknown";
+  }
+
+  /**
+   * Handles session recovery request from webview.
+   */
+  private async handleRecoverSession(sessionId: string): Promise<void> {
+    try {
+      await vscode.commands.executeCommand("contextor.recoverSession", sessionId);
+      this.postMessage({
+        type: "session-recovered",
+        sessionId,
+        success: true,
+      } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError(`Failed to recover session ${sessionId}`, error);
+      this.postMessage({
+        type: "session-recovered",
+        sessionId,
+        success: false,
+      } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles session dismissal request from webview.
+   */
+  private async handleDismissSession(sessionId: string): Promise<void> {
+    try {
+      // The dismissal service is accessed via extension.ts
+      // For now, we can emit a command or directly handle it
+      this.postMessage({
+        type: "session-dismissed",
+        sessionId,
+      } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError(`Failed to dismiss session ${sessionId}`, error);
+    }
+  }
+
+  // ============================================
+  // Import Methods
+  // ============================================
+
+  /**
+   * Handles import start request from webview.
+   */
+  private async handleStartImport(): Promise<void> {
+    const importService = this.getImportService();
+
+    try {
+      // Step 1: Show scanning status
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "scanning",
+          totalSessions: 0,
+          importedCount: 0,
+          skippedCount: 0,
+        },
+      } as ExtensionToWebviewMessage);
+
+      // Step 2: Discover projects
+      this.log("Discovering Claude Code projects...");
+      const projects = await importService.discoverProjects();
+
+      if (projects.length === 0) {
+        vscode.window.showInformationMessage(
+          "Contextor: No Claude Code conversations found to import."
+        );
+        this.postMessage({
+          type: "import-status",
+          status: {
+            state: "complete",
+            totalSessions: 0,
+            importedCount: 0,
+            skippedCount: 0,
+          },
+        } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      // Step 3: Show what will be imported
+      this.log(`Found ${projects.length} projects with conversations`);
+      const totalPrompts = projects.reduce((sum, p) => sum + p.estimatedPrompts, 0);
+
+      // Update UI to show we found projects and are awaiting confirmation
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "idle",
+          totalSessions: projects.length,
+          importedCount: 0,
+          skippedCount: 0,
+        },
+      } as ExtensionToWebviewMessage);
+
+      const proceed = await vscode.window.showInformationMessage(
+        `Found ${projects.length} projects with ~${totalPrompts} prompts. This will upload your Claude Code prompts to Contextor for analysis.`,
+        { modal: true },
+        "Import Now",
+        "Cancel"
+      );
+
+      if (proceed !== "Import Now") {
+        this.log("Import cancelled by user");
+        this.postMessage({
+          type: "import-status",
+          status: {
+            state: "idle",
+            totalSessions: 0,
+            importedCount: 0,
+            skippedCount: 0,
+          },
+        } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      // Step 4: Start the import
+      this.log("Starting import...");
+      const result = await importService.startImport(projects);
+
+      // Step 5: Show completion message
+      if (result.state === "complete") {
+        vscode.window.showInformationMessage(
+          `Contextor: Import complete! ${result.importedCount} prompts imported, ${result.skippedCount} duplicates skipped.`
+        );
+      } else if (result.state === "cancelled") {
+        vscode.window.showInformationMessage("Contextor: Import cancelled.");
+      } else if (result.state === "error") {
+        vscode.window.showErrorMessage(
+          `Contextor: Import failed - ${result.errorMessage}`
+        );
+      }
+    } catch (error) {
+      this.logError("Failed to start import", error);
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "error",
+          totalSessions: 0,
+          importedCount: 0,
+          skippedCount: 0,
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+        },
+      } as ExtensionToWebviewMessage);
+      vscode.window.showErrorMessage(
+        `Contextor: Import failed - ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
+   * Handles import cancellation request from webview.
+   */
+  private handleCancelImport(): void {
+    if (this._importService) {
+      this._importService.cancel();
+      this.log("Import cancelled by user");
+    }
+  }
+
+  // ============================================
+  // Last Prompt Methods
+  // ============================================
+
+  /**
+   * Handles fetch last prompt request from webview.
+   */
+  private async handleFetchLastPrompt(): Promise<void> {
+    const isAuth = await this.authService.isAuthenticated();
+    if (!isAuth) {
+      this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    this.postMessage({ type: "last-prompt-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const api = this.getApi();
+      const result = await api.getLastPrompt();
+
+      if (!result.success || !result.data) {
+        this.log("No last prompt found or failed to fetch");
+        this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      this.log(`Last prompt fetched: ${result.data.id}`);
+      this.postMessage({ type: "last-prompt", prompt: result.data } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to fetch last prompt", error);
+      this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
     }
   }
 
@@ -355,6 +749,46 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * Sends auth state with retry logic (fix 404 on reload).
+   * Retries up to maxRetries times with exponential backoff.
+   * Key fix: Retry even when auth returns false, as SecretStorage might not be ready.
+   */
+  private async sendAuthStateWithRetry(maxRetries = 3): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.sendAuthState();
+
+        // If authenticated and we got analytics (or analytics loading), we're good
+        if (this._state.isAuthenticated) {
+          this.log(`Auth succeeded on attempt ${attempt}`);
+          return;
+        }
+
+        // Not authenticated - could be:
+        // 1. User is genuinely not logged in
+        // 2. SecretStorage wasn't ready yet (token exists but couldn't be read)
+        // On first attempts, assume it might be SecretStorage timing issue
+        if (attempt < maxRetries) {
+          this.log(`Auth attempt ${attempt}/${maxRetries}: not authenticated, retrying...`);
+          // Exponential backoff: 500ms, 1000ms, 2000ms
+          await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+        } else {
+          // Final attempt - user is genuinely not logged in
+          this.log(`Auth final attempt: user not authenticated`);
+          return;
+        }
+      } catch (error) {
+        this.log(`Auth attempt ${attempt}/${maxRetries} threw error, retrying...`);
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+        } else {
+          this.logError("All auth retry attempts failed", error);
+        }
+      }
+    }
+  }
+
+  /**
    * Refreshes analytics data from the API.
    * @param isInitialLoad - Whether this is the initial load (show loading skeleton)
    */
@@ -380,9 +814,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
     // Update loading state
     if (isInitialLoad && !this._state.analytics) {
+      this.log("Setting isLoading=true (initial load)");
       this.updateState({ isLoading: true, error: null });
       this.postMessage({ type: "loading", isLoading: true });
     } else {
+      this.log("Setting isRefreshing=true (manual refresh)");
       this.updateState({ isRefreshing: true, syncState: "syncing" });
       this.postMessage({ type: "refreshing", isRefreshing: true });
       this.postMessage({ type: "sync-state", state: "syncing" });
@@ -436,7 +872,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this.postMessage({ type: "loading", isLoading: false });
       this.postMessage({ type: "refreshing", isRefreshing: false });
 
-      this.log("Analytics refreshed successfully");
+      this.log(`Analytics refreshed: ${analyticsResult.data?.summary.promptCount} prompts, score ${analyticsResult.data?.summary.overallScore}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       this.logError("Failed to load analytics", error);
@@ -606,10 +1042,43 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="${styleUri}" rel="stylesheet">
   <title>Contextor Analytics</title>
+  <style>
+    body { background: var(--vscode-sideBar-background, #1e1e1e); color: var(--vscode-foreground, #ccc); padding: 16px; }
+    #debug { font-size: 11px; color: #888; margin-bottom: 12px; }
+  </style>
 </head>
 <body>
+  <div id="debug">Loading Contextor...</div>
   <div id="root"></div>
+  <script nonce="${nonce}">
+    document.getElementById('debug').textContent = 'Script started...';
+    window.onerror = function(msg, url, line, col, error) {
+      var fullMsg = 'Error: ' + msg;
+      if (error && error.stack) {
+        fullMsg += '\\n' + error.stack.substring(0, 500);
+      }
+      document.getElementById('debug').innerHTML = '<pre style="white-space:pre-wrap;font-size:10px;">' + fullMsg + '</pre>';
+      document.getElementById('debug').style.color = '#f44';
+      return true;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      document.getElementById('debug').innerHTML = '<pre style="white-space:pre-wrap;font-size:10px;">Promise rejected: ' + (e.reason ? e.reason.toString() : 'unknown') + '</pre>';
+      document.getElementById('debug').style.color = '#f44';
+    });
+  </script>
   <script nonce="${nonce}" src="${scriptUri}"></script>
+  <script nonce="${nonce}">
+    document.getElementById('debug').textContent = 'React script loaded...';
+    setTimeout(function() {
+      var root = document.getElementById('root');
+      if (!root || !root.innerHTML || root.innerHTML.trim() === '') {
+        document.getElementById('debug').textContent = 'React failed to mount! Root is empty.';
+        document.getElementById('debug').style.color = '#f44';
+      } else {
+        document.getElementById('debug').style.display = 'none';
+      }
+    }, 2000);
+  </script>
 </body>
 </html>`;
   }
@@ -779,40 +1248,6 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         weakDimensions: cached.data.weakDimensions,
       });
     }
-  }
-
-  /**
-   * Returns mock analytics data for development.
-   * Used when API is unavailable.
-   * @deprecated Use real API data instead.
-   */
-  private getMockAnalytics(): LegacyAnalyticsData {
-    return {
-      sessions: {
-        todayCount: 3,
-        todayPrompts: 25,
-        avgDuration: 45,
-        streak: 5,
-      },
-      efficiency: {
-        overallScore: 78,
-        promptsPerHour: 15,
-        avgPromptLength: 120,
-        contextUtilization: 65,
-      },
-      recentActivity: [
-        {
-          timestamp: new Date().toISOString(),
-          type: "prompt",
-          description: "Debugging authentication flow",
-        },
-        {
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          type: "session_start",
-          description: "Started new session",
-        },
-      ],
-    };
   }
 
   /**

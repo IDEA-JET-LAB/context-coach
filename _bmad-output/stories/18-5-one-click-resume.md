@@ -1,6 +1,6 @@
 # Story 18.5: One-Click Resume
 
-Status: Ready
+Status: Done
 
 ## Story
 
@@ -525,17 +525,34 @@ Success    Failure
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created ClipboardService with error handling and validation
+- Created RecoveryState service for tracking recovered sessions
+- Created AnalyticsService with privacy controls and event batching
+- Created recoverSession command with progress indicator
+- Created fallback webview modal for clipboard failures
+- Added analytics.enabled setting
+- 100 unit tests (26 clipboard + 31 recovery state + 24 analytics + 19 command)
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Initial implementation | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+- `packages/vscode-extension/src/services/clipboardService.ts` (created)
+- `packages/vscode-extension/src/services/recoveryState.ts` (created)
+- `packages/vscode-extension/src/services/analyticsService.ts` (created)
+- `packages/vscode-extension/src/commands/recoverSession.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/clipboardService.test.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/recoveryState.test.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/analyticsService.test.ts` (created)
+- `packages/vscode-extension/src/commands/__tests__/recoverSession.test.ts` (created)
+- `packages/vscode-extension/src/extension.ts` (modified)
+- `packages/vscode-extension/src/providers/recoveryPanelProvider.ts` (modified)
+- `packages/vscode-extension/package.json` (modified)

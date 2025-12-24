@@ -46,13 +46,21 @@ const ruleFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
   category_id: z.string().uuid('Please select a category'),
   pattern: z.string().min(1, 'Pattern is required'),
-  pattern_flags: z.string().max(10).default('i'),
-  priority: z.number().min(1).max(100).default(50),
+  pattern_flags: z.string().max(10),
+  priority: z.number().min(1).max(100),
   description: z.string().max(500).optional(),
-  enabled: z.boolean().default(true),
+  enabled: z.boolean(),
 });
 
-type RuleFormData = z.infer<typeof ruleFormSchema>;
+type RuleFormData = {
+  name: string;
+  category_id: string;
+  pattern: string;
+  pattern_flags: string;
+  priority: number;
+  description?: string;
+  enabled: boolean;
+};
 
 interface ClassificationRuleFormProps {
   categories: ClassificationCategory[];

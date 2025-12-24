@@ -2,7 +2,7 @@
   "name": "contextor-vscode",
   "displayName": "Contextor - Prompt Analytics",
   "description": "Track, analyze, and improve your AI prompting skills. Real-time analytics dashboard with 5-dimension scoring, personalized coaching tips, and team insights - all directly in VS Code.",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "ideajetlab",
   "license": "MIT",
   "repository": {
@@ -56,8 +56,7 @@
   "activationEvents": [
     "onStartupFinished",
     "onUri",
-    "onView:contextor.analyticsView",
-    "onView:contextor.sessionView"
+    "onView:contextor.analyticsView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -75,12 +74,7 @@
         {
           "type": "webview",
           "id": "contextor.analyticsView",
-          "name": "Analytics"
-        },
-        {
-          "id": "contextor.sessionView",
-          "name": "Sessions",
-          "when": "contextor.authenticated"
+          "name": "Contextor"
         }
       ]
     },
@@ -107,14 +101,48 @@
       {
         "command": "contextor.signOut",
         "title": "Contextor: Sign Out"
+      },
+      {
+        "command": "contextor.scanForInterruptedSessions",
+        "title": "Contextor: Scan for Interrupted Sessions"
+      },
+      {
+        "command": "contextor.clearSnapshots",
+        "title": "Contextor: Clear Stored Session Snapshots"
+      },
+      {
+        "command": "contextor.showRecoveryPanel",
+        "title": "Contextor: Show Recovery Panel"
+      },
+      {
+        "command": "contextor.dismissAllSessions",
+        "title": "Contextor: Dismiss All Interrupted Sessions"
+      },
+      {
+        "command": "contextor.recoverSession",
+        "title": "Contextor: Recover Session"
+      },
+      {
+        "command": "contextor.openWebApp",
+        "title": "Contextor: Open Web Dashboard",
+        "icon": "$(globe)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "contextor.openWebApp",
+          "when": "view == contextor.analyticsView",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Contextor",
       "properties": {
         "contextor.apiEndpoint": {
           "type": "string",
-          "default": "https://contextor.co/api",
+          "default": "http://127.0.0.1:3050/api",
           "description": "API endpoint URL for Contextor service. Change for self-hosted installations.",
           "format": "uri"
         },
@@ -139,6 +167,37 @@
           "type": "boolean",
           "default": true,
           "description": "Enable automatic refresh of analytics data."
+        },
+        "contextor.crashDetection.recentSessionsLimit": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum number of recent sessions to show in the Sessions tab."
+        },
+        "contextor.crashDetection.staleThreshold": {
+          "type": "number",
+          "default": 15,
+          "minimum": 5,
+          "maximum": 60,
+          "description": "Minimum age in minutes before a session is considered stale (not active). Sessions more recent than this are considered still active."
+        },
+        "contextor.crashDetection.maxAge": {
+          "type": "number",
+          "default": 1440,
+          "minimum": 60,
+          "maximum": 10080,
+          "description": "Maximum age in minutes to scan for interrupted sessions. Sessions older than this are ignored. Default: 1440 (24 hours). Maximum: 10080 (7 days)."
+        },
+        "contextor.crashDetection.autoScan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan for interrupted sessions when the extension starts."
+        },
+        "contextor.analytics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send anonymous usage analytics to help improve Contextor. Analytics include feature usage (e.g., session recovery counts) but never include prompt content or personal data."
         }
       }
     }
@@ -168,5 +227,8 @@
     "sharp": "^0.34.5",
     "ts-jest": "^29.1.1",
     "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.89.0"
   }
 }

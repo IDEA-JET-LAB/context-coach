@@ -1,6 +1,6 @@
 # Story 18.1: Interrupted Session Detection
 
-Status: Ready
+Status: Done
 
 ## Story
 
@@ -262,17 +262,29 @@ Add to VS Code extension settings:
 
 ### Agent Model Used
 
-<!-- To be filled by implementing agent -->
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
 
-*To be filled by dev agent after implementation*
+- Created CrashDetector service with singleton pattern
+- Implemented streaming JSONL parsing for memory efficiency
+- Added parallel file scanning with configurable concurrency limit
+- Early termination on proper end markers (summary, isConversationEnd)
+- Event emission when interrupted sessions are detected
+- Added VS Code configuration options (staleThreshold, maxAge, autoScan)
+- 34 unit tests covering all edge cases
 
 ### Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2025-12-24 | Initial implementation | Claude Opus 4.5 |
 
 ### File List
 
-*To be filled by dev agent - list all files created/modified*
+- `packages/vscode-extension/src/types/interruptedSession.ts` (created)
+- `packages/vscode-extension/src/services/crashDetector.ts` (created)
+- `packages/vscode-extension/src/services/__tests__/crashDetector.test.ts` (created)
+- `packages/vscode-extension/src/extension.ts` (modified)
+- `packages/vscode-extension/src/types/index.ts` (modified)
+- `packages/vscode-extension/package.json` (modified)

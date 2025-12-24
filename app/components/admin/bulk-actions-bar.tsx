@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmationModal } from '@/components/feedback';
-import { CheckCircle2, XCircle, FolderInput, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, FolderInput } from 'lucide-react';
 import type { ClassificationCategory } from '@/lib/types/classification-rules';
 
 interface BulkActionsBarProps {
@@ -75,7 +75,7 @@ export function BulkActionsBar({
   };
 
   const getConfirmationDetails = () => {
-    if (!confirmAction) return { title: '', description: '', variant: 'danger' as const };
+    if (!confirmAction) return { title: '', description: '', variant: 'warning' as const };
 
     switch (confirmAction.type) {
       case 'enable':
@@ -196,18 +196,9 @@ export function BulkActionsBar({
         title={confirmDetails.title}
         description={confirmDetails.description}
         variant={confirmDetails.variant}
-        confirmLabel={
-          isProcessing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            'Confirm'
-          )
-        }
+        confirmLabel="Confirm"
         onConfirm={handleConfirm}
-        isLoading={isProcessing}
+        loading={isProcessing}
       />
     </>
   );
