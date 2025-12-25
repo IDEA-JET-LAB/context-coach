@@ -108,6 +108,8 @@ type ExtensionMessage =
   | { type: "error"; message: string }
   | { type: "loading"; isLoading: boolean }
   | { type: "refreshing"; isRefreshing: boolean }
+  // Server status
+  | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number }
   // Session messages
   | { type: "sessions"; sessions: Session[] }
   | { type: "sessions-loading"; isLoading: boolean }
@@ -224,6 +226,9 @@ interface AppState {
   // Team stats
   teamStats: TeamStatsData | null;
   teamStatsLoading: boolean;
+  // Server status
+  isServerOnline: boolean;
+  retryCountdown: number;
 }
 
 const initialState: AppState = {
@@ -269,6 +274,9 @@ const initialState: AppState = {
   // Team stats
   teamStats: null,
   teamStatsLoading: false,
+  // Server status
+  isServerOnline: true,
+  retryCountdown: 0,
 };
 
 // ============================================
@@ -636,6 +644,15 @@ const App: React.FC = () => {
             teamStatsLoading: message.isLoading,
           }));
           break;
+
+        // Server status message
+        case "server-status":
+          setState((prev) => ({
+            ...prev,
+            isServerOnline: message.isServerOnline,
+            retryCountdown: message.retryCountdown ?? 0,
+          }));
+          break;
       }
     };
 
@@ -878,9 +895,37 @@ const App: React.FC = () => {
       <div className="welcome-container">
         <h2>Welcome to Contextor</h2>
         <p>Track and improve your AI prompting skills.</p>
-        <button className="sign-in-button" onClick={handleSignIn}>
+
+        {/* Server status warning */}
+        {!state.isServerOnline && (
+          <div className="server-warning">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <div className="server-warning-text">
+              <span className="server-warning-title">Server unavailable</span>
+              <span className="server-warning-detail">
+                Retrying in {state.retryCountdown}s...
+              </span>
+            </div>
+          </div>
+        )}
+
+        <button
+          className="sign-in-button"
+          onClick={handleSignIn}
+          disabled={!state.isServerOnline}
+        >
           Sign In
         </button>
+
+        {!state.isServerOnline && (
+          <p className="server-offline-hint">
+            The Contextor server is currently unavailable. Please try again later.
+          </p>
+        )}
       </div>
     );
   }

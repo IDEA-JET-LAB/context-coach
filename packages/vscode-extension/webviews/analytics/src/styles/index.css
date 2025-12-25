@@ -313,6 +313,53 @@ body {
   outline-offset: 2px;
 }
 
+.sign-in-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--ctx-foreground-muted);
+}
+
+/* Server Warning */
+.server-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--ctx-warning) 15%, transparent);
+  border: 1px solid var(--ctx-warning);
+  border-radius: 6px;
+  color: var(--ctx-warning);
+}
+
+.server-warning svg {
+  flex-shrink: 0;
+}
+
+.server-warning-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.server-warning-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.server-warning-detail {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.server-offline-hint {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--ctx-foreground-muted);
+  max-width: 200px;
+}
+
 /* ============================================
    Dashboard Layout
    ============================================ */

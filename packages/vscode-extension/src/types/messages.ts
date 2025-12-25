@@ -122,7 +122,10 @@ export type ExtensionToWebviewMessage =
 
   // Team stats messages
   | { type: "team-stats"; data: TeamStatsData }
-  | { type: "team-stats-loading"; isLoading: boolean };
+  | { type: "team-stats-loading"; isLoading: boolean }
+
+  // Server status messages
+  | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number };
 
 /**
  * Conversation summary for webview display (Phase 3)

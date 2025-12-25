@@ -169,6 +169,19 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    */
   private _isInitializing = true;
 
+  /**
+   * Server health check state.
+   */
+  private _isServerOnline = true;
+  private _healthCheckTimer?: ReturnType<typeof setInterval>;
+  private _retryCountdown = 0;
+  private _countdownTimer?: ReturnType<typeof setInterval>;
+
+  /**
+   * Health check interval in milliseconds (15 seconds).
+   */
+  private static readonly HEALTH_CHECK_INTERVAL = 15000;
+
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly authService: AuthService,
@@ -326,6 +339,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     // Handle view disposal
     const disposeDisposable = webviewView.onDidDispose(() => {
       this.stopAutoRefresh();
+      this.stopHealthCheck();
       this._disposables.forEach((d) => d.dispose());
       this._disposables = [];
       this._view = undefined;
@@ -394,6 +408,101 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       clearInterval(this.refreshTimer);
       this.refreshTimer = undefined;
     }
+  }
+
+  /**
+   * Checks if the Contextor server is reachable.
+   * Uses the health endpoint to verify server availability.
+   */
+  private async checkServerHealth(): Promise<boolean> {
+    try {
+      const apiEndpoint = this.settingsService.apiEndpoint;
+      const response = await fetch(`${apiEndpoint}/health`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        // Short timeout for health checks
+        signal: AbortSignal.timeout(5000),
+      });
+      return response.ok;
+    } catch (error) {
+      this.log(`Server health check failed: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  }
+
+  /**
+   * Starts the server health check timer.
+   * Checks every 15 seconds and notifies the webview of server status.
+   */
+  private startHealthCheck(): void {
+    // Stop existing timer if any
+    this.stopHealthCheck();
+
+    this.log("Starting server health check (every 15 seconds)");
+
+    // Do an immediate check
+    void this.performHealthCheck();
+
+    // Start countdown timer (updates every second)
+    this._retryCountdown = Math.floor(AnalyticsPanelProvider.HEALTH_CHECK_INTERVAL / 1000);
+    this._countdownTimer = setInterval(() => {
+      this._retryCountdown = Math.max(0, this._retryCountdown - 1);
+      if (!this._isServerOnline) {
+        this.postMessage({
+          type: "server-status",
+          isServerOnline: false,
+          retryCountdown: this._retryCountdown,
+        });
+      }
+    }, 1000);
+
+    // Start health check timer
+    this._healthCheckTimer = setInterval(() => {
+      this._retryCountdown = Math.floor(AnalyticsPanelProvider.HEALTH_CHECK_INTERVAL / 1000);
+      void this.performHealthCheck();
+    }, AnalyticsPanelProvider.HEALTH_CHECK_INTERVAL);
+  }
+
+  /**
+   * Performs a single health check and updates state.
+   */
+  private async performHealthCheck(): Promise<void> {
+    const isOnline = await this.checkServerHealth();
+    const wasOffline = !this._isServerOnline;
+    this._isServerOnline = isOnline;
+
+    // Notify webview of status
+    this.postMessage({
+      type: "server-status",
+      isServerOnline: isOnline,
+      retryCountdown: isOnline ? undefined : this._retryCountdown,
+    });
+
+    if (isOnline) {
+      this.log("Server is online");
+      if (wasOffline) {
+        this.log("Server came back online!");
+        // Optionally refresh auth state when server comes back
+        // The user can now try to sign in
+      }
+    } else {
+      this.log("Server is offline");
+    }
+  }
+
+  /**
+   * Stops the server health check timer.
+   */
+  private stopHealthCheck(): void {
+    if (this._healthCheckTimer) {
+      clearInterval(this._healthCheckTimer);
+      this._healthCheckTimer = undefined;
+    }
+    if (this._countdownTimer) {
+      clearInterval(this._countdownTimer);
+      this._countdownTimer = undefined;
+    }
+    this._retryCountdown = 0;
   }
 
   /**
@@ -1799,14 +1908,18 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this.postMessage({ type: "auth", authenticated: isAuth, user: user || undefined });
 
       if (isAuth) {
+        this.stopHealthCheck(); // Stop health check when authenticated
         this.setupAutoRefresh(); // Start auto-refresh now that we're authenticated
         await this.refreshAnalytics(true);
       } else {
         this.stopAutoRefresh();
+        this.startHealthCheck(); // Start health check when not authenticated
       }
     } catch (error) {
       this.logError("Failed to check auth state", error);
       this.postMessage({ type: "error", message: "Failed to check authentication" });
+      // Start health check on error too (might be server down)
+      this.startHealthCheck();
     }
   }
 
