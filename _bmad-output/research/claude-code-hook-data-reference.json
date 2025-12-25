@@ -1,0 +1,221 @@
+{
+  "_description": "All data available from Claude Code for prompt capture",
+  "_created": "2025-12-25",
+
+  "1_HOOK_INPUT": {
+    "_description": "JSON sent to UserPromptSubmit hook via stdin",
+    "session_id": "f19d6e8a-544f-49ae-bb36-ba498f777400",
+    "prompt": "The actual user prompt text goes here"
+  },
+
+  "2_ENVIRONMENT_VARIABLES": {
+    "_description": "Environment variables available to hooks",
+    "CLAUDE_PROJECT_DIR": "/Users/edgars/My-projects/2025-projects/DEV/context-coach",
+    "CLAUDE_SESSION_ID": "f19d6e8a-544f-49ae-bb36-ba498f777400",
+    "USER": "edgars",
+    "PWD": "/current/working/directory"
+  },
+
+  "3_TRANSCRIPT_USER_MESSAGE": {
+    "_description": "Full user message from ~/.claude/projects/{path}/{session}.jsonl",
+    "parentUuid": "previous-message-uuid",
+    "isSidechain": false,
+    "userType": "external",
+    "cwd": "/Users/edgars/My-projects/2025-projects/DEV/context-coach",
+    "sessionId": "017b1ce3-0634-4b6c-a8a3-c98f535d9094",
+    "version": "2.0.73",
+    "gitBranch": "main",
+    "slug": "inherited-seeking-thimble",
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": "The actual user prompt text"
+    },
+    "uuid": "20e17073-d208-40c8-bef0-de56a4ef4965",
+    "timestamp": "2025-12-20T14:09:23.071Z",
+    "thinkingMetadata": {
+      "level": "high",
+      "disabled": false,
+      "triggers": []
+    },
+    "todos": [],
+    "isMeta": false
+  },
+
+  "4_TRANSCRIPT_ASSISTANT_RESPONSE": {
+    "_description": "Full assistant response from transcript",
+    "parentUuid": "user-message-uuid",
+    "isSidechain": false,
+    "userType": "external",
+    "cwd": "/Users/edgars/My-projects/2025-projects/DEV/context-coach",
+    "sessionId": "017b1ce3-0634-4b6c-a8a3-c98f535d9094",
+    "version": "2.0.73",
+    "gitBranch": "main",
+    "slug": "inherited-seeking-thimble",
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01Q3kif1ot6o9AW7kiPVAjha",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "Internal reasoning (extended thinking)",
+          "signature": "encrypted-signature"
+        },
+        {
+          "type": "text",
+          "text": "Visible response to user"
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_01XTDphCe1dcLCDa9ZpJ1EjC",
+          "name": "Bash",
+          "input": {
+            "command": "ls -la",
+            "description": "List files"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 9364,
+        "cache_read_input_tokens": 39481,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 9364,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 357,
+        "service_tier": "standard"
+      }
+    },
+    "requestId": "req_011CWJ57x9Dhgk6cTe35iA2c",
+    "uuid": "83cd9fe6-f8ea-4c7b-86b7-c0a63f220e4b",
+    "timestamp": "2025-12-20T14:09:32.569Z"
+  },
+
+  "5_TRANSCRIPT_TOOL_RESULT": {
+    "_description": "Tool execution result from transcript",
+    "parentUuid": "assistant-message-uuid",
+    "isSidechain": false,
+    "userType": "external",
+    "cwd": "/Users/edgars/My-projects/2025-projects/DEV/context-coach",
+    "sessionId": "017b1ce3-0634-4b6c-a8a3-c98f535d9094",
+    "version": "2.0.73",
+    "gitBranch": "main",
+    "slug": "inherited-seeking-thimble",
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01XTDphCe1dcLCDa9ZpJ1EjC",
+          "type": "tool_result",
+          "content": "Command output here",
+          "is_error": false
+        }
+      ]
+    },
+    "uuid": "2c672f40-1a1f-4628-a86e-6fdb106c6d7d",
+    "timestamp": "2025-12-20T14:40:08.682Z",
+    "toolUseResult": {
+      "stdout": "Command output",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
+  },
+
+  "6_TRANSCRIPT_FILE_READ_RESULT": {
+    "_description": "File read result with full content",
+    "toolUseResult": {
+      "type": "text",
+      "file": {
+        "filePath": "/path/to/file.ts",
+        "content": "Full file content here...",
+        "numLines": 252,
+        "startLine": 1,
+        "totalLines": 252
+      }
+    }
+  },
+
+  "7_OTHER_TRANSCRIPT_TYPES": {
+    "file-history-snapshot": {
+      "_description": "File backup tracking",
+      "type": "file-history-snapshot",
+      "messageId": "uuid",
+      "snapshot": {
+        "messageId": "uuid",
+        "trackedFileBackups": {},
+        "timestamp": "2025-12-20T14:07:40.512Z"
+      },
+      "isSnapshotUpdate": false
+    },
+    "queue-operation": {
+      "_description": "Command queue events",
+      "type": "queue-operation",
+      "operation": "enqueue",
+      "timestamp": "2025-12-23T17:40:11.556Z",
+      "sessionId": "f19d6e8a-544f-49ae-bb36-ba498f777400",
+      "content": "/bmad:bmm:agents:pm"
+    }
+  },
+
+  "8_SYSTEM_GENERATED_MARKERS": {
+    "_description": "Flags to identify system-generated vs real user content",
+    "isMeta_true": "System-generated content (agent activation, skill expansion)",
+    "content_patterns": {
+      "<command-name>": "Slash command",
+      "<agent-activation>": "Agent activation prompt",
+      "<local-command-stdout>": "Local command output",
+      "Caveat: The messages below": "System caveat prefix"
+    },
+    "tool_result_in_content": "This is a tool result, not user input"
+  },
+
+  "9_FIELDS_WE_CAN_EXTRACT": {
+    "from_hook_input": {
+      "prompt": "User's actual prompt text",
+      "session_id": "Session identifier"
+    },
+    "from_transcript": {
+      "sessionId": "Session identifier",
+      "version": "Claude Code version (e.g., 2.0.76)",
+      "gitBranch": "Current git branch",
+      "cwd": "Working directory",
+      "slug": "Session slug (human-readable)",
+      "timestamp": "ISO timestamp",
+      "uuid": "Message UUID",
+      "parentUuid": "Parent message UUID (for threading)",
+      "model": "Model used (e.g., claude-opus-4-5-20251101)",
+      "usage": {
+        "input_tokens": "Tokens sent to model",
+        "output_tokens": "Tokens in response",
+        "cache_creation_input_tokens": "Cached tokens",
+        "cache_read_input_tokens": "Cache hits"
+      },
+      "tool_executions": "Array of tools used with inputs/outputs",
+      "thinking": "Extended thinking content (if enabled)",
+      "response_text": "Assistant's visible response"
+    }
+  },
+
+  "10_REAL_VS_SYSTEM_DETECTION": {
+    "_description": "How to identify real user prompts",
+    "is_real_user_prompt": {
+      "type": "user",
+      "isMeta": "false or absent",
+      "message.content": "string (not array with tool_result)",
+      "no_command_tags": "content doesn't start with <command-name>"
+    },
+    "is_system_generated": {
+      "isMeta": true,
+      "OR_content_starts_with": "<command-name>, <agent-activation>, Caveat:",
+      "OR_has_tool_result": "message.content[].type === 'tool_result'"
+    }
+  }
+}

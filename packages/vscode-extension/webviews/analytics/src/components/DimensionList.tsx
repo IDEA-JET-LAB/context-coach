@@ -56,7 +56,7 @@ export const DimensionList: React.FC<DimensionListProps> = ({ dimensions }) => {
         <div className="metric-row" key={key}>
           <span className="metric-label">{dimensionLabels[key] || key}</span>
           <span className="metric-value">
-            {dim.score}%
+            {(dim.score / 10).toFixed(1)}
             {dim.trend !== "stable" && (
               <span className={`score-trend ${dim.trend}`}>
                 <TrendIcon trend={dim.trend} />

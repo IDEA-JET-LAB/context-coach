@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * Query Parameters:
  * - limit: number (default: 5, max: 20)
+ * - project_id: string (optional) - Filter by project UUID
  */
 export async function GET(request: NextRequest) {
   // Get authorization header
@@ -50,9 +51,19 @@ export async function GET(request: NextRequest) {
     const userId = tokenData.user_id;
     const limitParam = request.nextUrl.searchParams.get("limit");
     const limit = Math.min(Math.max(parseInt(limitParam || "5", 10), 1), 20);
+    const projectId = request.nextUrl.searchParams.get("project_id");
 
-    // Fetch recent prompts with analyses
-    const { data: prompts, error: promptsError } = await adminClient
+    // Validate project_id is a valid UUID if provided
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (projectId && !uuidRegex.test(projectId)) {
+      return NextResponse.json(
+        { error: { code: "INVALID_PROJECT_ID", message: "Invalid project ID format" } },
+        { status: 400 }
+      );
+    }
+
+    // Build query - filter by user and optionally by project
+    let query = adminClient
       .from("prompts")
       .select(`
         id,
@@ -63,7 +74,15 @@ export async function GET(request: NextRequest) {
           dimension_scores
         )
       `)
-      .eq("user_id", userId)
+      .eq("user_id", userId);
+
+    // Add project filter if provided
+    if (projectId) {
+      query = query.eq("project_id", projectId);
+    }
+
+    // Fetch recent prompts with analyses
+    const { data: prompts, error: promptsError } = await query
       .order("created_at", { ascending: false })
       .limit(limit);
 

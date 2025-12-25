@@ -20,6 +20,7 @@ import { SettingsService } from "../services/settings";
 import { ImportService, type ImportProgress, type DiscoveredProject } from "../services/importService";
 import { CrashDetector } from "../services/crashDetector";
 import { RealtimeService } from "../services/realtimeService";
+import { WorkspaceConfigService } from "../services/workspaceConfig";
 import {
   TimeRange,
   CachedAnalytics,
@@ -36,6 +37,7 @@ import {
   ExtensionToWebviewMessage,
   WebviewToExtensionMessage,
   AnalyticsPanelState,
+  DocumentItem,
 } from "../types/messages";
 
 /**
@@ -45,7 +47,18 @@ const STORAGE_KEYS = {
   CACHED_ANALYTICS: "contextor.cachedAnalytics",
   TIME_RANGE: "contextor.timeRange",
   LAST_SYNC_TIME: "contextor.lastSyncTime",
+  IMPORT_HISTORY: "contextor.importHistory",
 } as const;
+
+/**
+ * Import history data
+ */
+interface ImportHistoryData {
+  timestamp: string;
+  importedCount: number;
+  skippedCount: number;
+  totalSessions: number;
+}
 
 /**
  * WebviewViewProvider for the Contextor Analytics panel.
@@ -90,6 +103,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   private _importService?: ImportService;
 
   /**
+   * Workspace config service for reading project ID.
+   */
+  private readonly workspaceConfigService: WorkspaceConfigService;
+
+  /**
    * Current panel state.
    */
   private _state: AnalyticsPanelState = {
@@ -132,6 +150,22 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    */
   private lastPromptRefreshTime = 0;
 
+  /**
+   * Last known prompt ID (to avoid sending duplicate updates).
+   */
+  private lastKnownPromptId?: string;
+
+  /**
+   * Last known prompt score (to detect when analysis completes).
+   */
+  private lastKnownPromptScore?: number;
+
+  /**
+   * Initialization flag - prevents premature API calls during startup.
+   * Set to true during initial setup, false after "ready" handler completes.
+   */
+  private _isInitializing = true;
+
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly authService: AuthService,
@@ -140,6 +174,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   ) {
     this.settingsService = SettingsService.getInstance();
     this.realtimeService = realtimeService;
+    this.workspaceConfigService = new WorkspaceConfigService(outputChannel);
 
     // Subscribe to realtime prompt updates (Supabase Realtime)
     if (this.realtimeService) {
@@ -175,7 +210,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
       this.log("Session change: triggering last prompt refresh");
       this.lastPromptRefreshTime = now;
-      void this.handleFetchLastPrompt();
+      void this.handleFetchLastPrompt(true); // Auto-refresh: skip if unchanged
     }, 2000);
   }
 
@@ -294,8 +329,12 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     });
     this._disposables.push(disposeDisposable);
 
-    // Listen for auth changes
+    // Listen for auth changes - but not during initialization to prevent race conditions
     const authDisposable = this.authService.onDidChangeAuth(() => {
+      if (this._isInitializing) {
+        this.log("Auth state changed during init - ignoring (will be handled by ready handler)");
+        return;
+      }
       this.log("Auth state changed, refreshing analytics");
       this.sendAuthState();
     });
@@ -310,13 +349,12 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     });
     this._disposables.push(settingsDisposable);
 
-    // Send initial auth state
-    this.sendAuthState();
+    // NOTE: Don't call sendAuthState() or setupAutoRefresh() here.
+    // Wait for webview "ready" message which properly waits for SecretStorage.
+    // The "ready" handler calls sendAuthStateWithRetry() after waitForReady().
+    // Auto-refresh is set up after successful auth in sendAuthState().
 
-    // Setup auto-refresh
-    this.setupAutoRefresh();
-
-    this.log("Analytics panel resolved");
+    this.log("Analytics panel resolved (v4 - deferred init until ready)");
   }
 
   /**
@@ -363,7 +401,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   ): Promise<void> {
     switch (message.type) {
       case "ready":
-        this.log("Webview ready");
+        this.log("Webview ready (v5 - with init flag and longer delays)");
         // Reset import state on init (fix stuck spinner after reload)
         this.postMessage({
           type: "import-status",
@@ -374,14 +412,37 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
             skippedCount: 0,
           },
         } as ExtensionToWebviewMessage);
+        // Send import history if available
+        this.sendImportHistory();
+
+        // Extra delay before any auth/API operations to let VS Code fully stabilize
+        this.log("Waiting 1 second for VS Code to stabilize...");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         // Wait for SecretStorage to be ready (fix 404 on reload)
+        // Increased timeout to 7 seconds for slower systems
         this.log("Waiting for SecretStorage warmup...");
-        await this.authService.waitForReady(3000);
-        this.log("SecretStorage warmup complete, sending auth state");
-        await this.sendAuthStateWithRetry(3);
+        await this.authService.waitForReady(7000);
+        this.log("SecretStorage warmup complete");
+
+        // Another small delay before making any API calls
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        this.log("Sending auth state...");
+        await this.sendAuthStateWithRetry(5);
+
+        // Load cached data first (fast, no API calls)
         await this.loadCachedData();
-        // Load coaching data (Story 19-5)
         await this.loadCachedCoaching();
+
+        // Mark initialization as complete BEFORE making optional API calls
+        this._isInitializing = false;
+        this.log("Initialization complete, auth change listener now active");
+
+        // Check and send workspace installation status
+        await this.sendWorkspaceStatus();
+
+        // Coaching refresh is optional and silent - won't break UI if it fails
         await this.refreshCoaching();
         break;
 
@@ -466,6 +527,84 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       case "fetch-last-prompt":
         this.log("Last prompt requested from webview");
         await this.handleFetchLastPrompt();
+        break;
+
+      // Terminal command handler
+      case "run-terminal-command":
+        this.log(`Terminal command requested: ${message.command}`);
+        this.handleRunTerminalCommand(message.command);
+        break;
+
+      // Start a new Claude Code conversation
+      case "start-conversation":
+        this.log("Start conversation requested");
+        this.handleStartConversation();
+        break;
+
+      // Conversation message handlers (Phase 3)
+      case "fetch-conversations":
+        this.log("Conversations requested from webview");
+        await this.handleFetchConversations();
+        break;
+
+      case "select-conversation":
+        this.log(`Conversation selected: ${message.sessionId}`);
+        await this.handleSelectConversation(message.sessionId);
+        break;
+
+      case "close-conversation":
+        this.log("Conversation closed");
+        // No-op on extension side, state handled in webview
+        break;
+
+      case "open-conversation-in-browser":
+        this.log(`Open conversation in browser: ${message.sessionId}`);
+        this.handleOpenConversationInBrowser(message.sessionId);
+        break;
+
+      // Project status handler (BMAD)
+      case "fetch-project-status":
+        this.log("Project status requested from webview");
+        await this.handleFetchProjectStatus();
+        break;
+
+      case "open-status-file":
+        this.log("Open status file requested");
+        await this.handleOpenStatusFile();
+        break;
+
+      case "install-bmad":
+        this.log("BMAD installation requested");
+        this.handleInstallBmad();
+        break;
+
+      case "refresh-workspace-status":
+        this.log("Workspace status refresh requested");
+        await this.sendWorkspaceStatus();
+        break;
+
+      case "register-project":
+        this.log("Project registration requested");
+        await this.handleRegisterProject();
+        break;
+
+      case "fetch-documents":
+        this.log("Fetch documents requested");
+        await this.handleFetchDocuments();
+        break;
+
+      case "open-document":
+        if ("path" in message) {
+          this.log(`Open document requested: ${message.path}`);
+          await this.handleOpenDocument(message.path);
+        }
+        break;
+
+      case "create-document":
+        if ("doc" in message) {
+          this.log(`Create document requested: ${message.doc.name}`);
+          await this.handleCreateDocument(message.doc);
+        }
         break;
     }
   }
@@ -643,8 +782,14 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this.log("Starting import...");
       const result = await importService.startImport(projects);
 
-      // Step 5: Show completion message
+      // Step 5: Show completion message and save history
       if (result.state === "complete") {
+        // Save import history for display in UI
+        await this.saveImportHistory(
+          result.importedCount,
+          result.skippedCount,
+          projects.length
+        );
         vscode.window.showInformationMessage(
           `Contextor: Import complete! ${result.importedCount} prompts imported, ${result.skippedCount} duplicates skipped.`
         );
@@ -683,40 +828,926 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /**
+   * Saves import history to persistent storage.
+   */
+  private async saveImportHistory(
+    importedCount: number,
+    skippedCount: number,
+    totalSessions: number
+  ): Promise<void> {
+    if (!this.globalState) return;
+
+    const history: ImportHistoryData = {
+      timestamp: new Date().toISOString(),
+      importedCount,
+      skippedCount,
+      totalSessions,
+    };
+
+    await this.globalState.update(STORAGE_KEYS.IMPORT_HISTORY, history);
+    this.log(`Import history saved: ${importedCount} imported, ${skippedCount} skipped`);
+
+    // Send to webview
+    this.sendImportHistory();
+  }
+
+  /**
+   * Sends import history to the webview.
+   */
+  private sendImportHistory(): void {
+    if (!this.globalState) return;
+
+    const history = this.globalState.get<ImportHistoryData>(STORAGE_KEYS.IMPORT_HISTORY);
+
+    this.postMessage({
+      type: "import-history",
+      history: history || null,
+    } as ExtensionToWebviewMessage);
+  }
+
+  // ============================================
+  // Terminal Command Methods
+  // ============================================
+
+  /**
+   * Sends a command to the active terminal.
+   * If no terminal is active, shows an error message.
+   */
+  private handleRunTerminalCommand(command: string): void {
+    const terminal = vscode.window.activeTerminal;
+
+    if (!terminal) {
+      this.log("No active terminal found");
+      vscode.window.showWarningMessage(
+        "Contextor: No active terminal. Please click on your Claude Code terminal first, then try again."
+      );
+      return;
+    }
+
+    this.log(`Sending command to terminal "${terminal.name}": ${command}`);
+    // Note: Claude Code uses raw terminal mode, so we can only paste the command.
+    // User must press Enter manually to execute.
+    terminal.sendText(command, false);
+    terminal.show(); // Ensure the terminal is visible
+  }
+
+  /**
+   * Start a new Claude Code conversation in a new terminal.
+   * Opens a terminal in the workspace folder and runs 'claude'.
+   */
+  private handleStartConversation(): void {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
+    if (!workspacePath) {
+      vscode.window.showWarningMessage(
+        "Contextor: Please open a workspace folder first."
+      );
+      return;
+    }
+
+    // Create a new terminal with Claude Code
+    const terminal = vscode.window.createTerminal({
+      name: "Claude Code",
+      cwd: workspacePath,
+    });
+
+    terminal.show();
+    terminal.sendText("claude");
+
+    vscode.window.showInformationMessage(
+      "Contextor: Starting new Claude Code conversation..."
+    );
+  }
+
+  // ============================================
+  // Project Status Methods (BMAD)
+  // ============================================
+
+  /**
+   * Handles fetch project status request from webview.
+   * Reads and parses sprint-status.yaml from the workspace.
+   */
+  private async handleFetchProjectStatus(): Promise<void> {
+    this.postMessage({ type: "project-status-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      // Find sprint-status.yaml in workspace
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        this.postMessage({ type: "project-status", status: null } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "project-status-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      // Search for sprint-status.yaml
+      const pattern = new vscode.RelativePattern(workspaceFolders[0], "**/sprint-status.yaml");
+      const files = await vscode.workspace.findFiles(pattern, "**/node_modules/**", 1);
+
+      if (files.length === 0) {
+        this.log("No sprint-status.yaml found in workspace");
+        this.postMessage({ type: "project-status", status: null } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "project-status-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      // Read and parse the YAML file
+      const fileUri = files[0];
+      const content = await vscode.workspace.fs.readFile(fileUri);
+      const text = new TextDecoder().decode(content);
+
+      // Parse YAML (simple parser for development_status format)
+      const status = this.parseSprintStatus(text);
+
+      this.log(`Project status loaded: ${status.epics.length} epics`);
+      this.postMessage({ type: "project-status", status } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "project-status-loading", isLoading: false } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to fetch project status", error);
+      this.postMessage({
+        type: "project-status-error",
+        error: error instanceof Error ? error.message : "Failed to load status",
+      } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "project-status-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Parses sprint-status.yaml content into structured data.
+   */
+  private parseSprintStatus(content: string): {
+    project: string;
+    generated: string;
+    epics: Array<{
+      id: string;
+      name: string;
+      status: string;
+      description?: string;
+      stories: Array<{ id: string; name: string; status: string }>;
+    }>;
+  } {
+    const lines = content.split("\n");
+    const epics: Array<{
+      id: string;
+      name: string;
+      status: string;
+      description?: string;
+      stories: Array<{ id: string; name: string; status: string }>;
+    }> = [];
+
+    let project = "Unknown";
+    let generated = new Date().toISOString().split("T")[0];
+    let currentEpic: {
+      id: string;
+      name: string;
+      status: string;
+      description?: string;
+      stories: Array<{ id: string; name: string; status: string }>;
+    } | null = null;
+
+    for (const line of lines) {
+      // Extract project name
+      if (line.startsWith("project:")) {
+        project = line.split(":")[1]?.trim() || project;
+        continue;
+      }
+
+      // Extract generated date
+      if (line.startsWith("generated:")) {
+        generated = line.split(":").slice(1).join(":").trim() || generated;
+        continue;
+      }
+
+      // Skip comments and empty lines
+      if (line.trim().startsWith("#") || !line.trim()) continue;
+
+      // Check for epic line (e.g., "epic-1: done")
+      const epicMatch = line.match(/^\s*(epic-\d+(?:\.\d+)?(?:-\w+)?)\s*:\s*(\w+)/);
+      if (epicMatch) {
+        const [, epicId, status] = epicMatch;
+
+        // Save previous epic if exists
+        if (currentEpic) {
+          epics.push(currentEpic);
+        }
+
+        // Find epic name from comments above (look back in lines)
+        const epicName = this.findEpicName(lines, lines.indexOf(line), epicId);
+
+        currentEpic = {
+          id: epicId,
+          name: epicName,
+          status: status,
+          stories: [],
+        };
+        continue;
+      }
+
+      // Check for retrospective line (e.g., "epic-1-retrospective: optional")
+      if (line.match(/epic-\d+(?:\.\d+)?-retrospective\s*:/)) {
+        continue; // Skip retrospective lines
+      }
+
+      // Check for story line (e.g., "1-1-project-initialization: done")
+      const storyMatch = line.match(/^\s*(\d+(?:\.\d+)?-\d+-[\w-]+)\s*:\s*(\S+)/);
+      if (storyMatch && currentEpic) {
+        const [, storyId, status] = storyMatch;
+        const storyName = this.formatStoryName(storyId);
+        currentEpic.stories.push({
+          id: storyId,
+          name: storyName,
+          status: status.replace(/#.*$/, "").trim(), // Remove trailing comments
+        });
+      }
+    }
+
+    // Don't forget to add the last epic
+    if (currentEpic) {
+      epics.push(currentEpic);
+    }
+
+    return { project, generated, epics };
+  }
+
+  /**
+   * Finds epic name from comments above the epic line.
+   */
+  private findEpicName(lines: string[], epicLineIndex: number, epicId: string): string {
+    // Look backwards for a comment containing the epic name
+    for (let i = epicLineIndex - 1; i >= 0 && i >= epicLineIndex - 5; i--) {
+      const line = lines[i].trim();
+      if (line.startsWith("#") && line.includes("Epic")) {
+        // Extract name after "Epic N:" or just the description
+        const match = line.match(/Epic\s+\d+(?:\.\d+)?[.:]\s*(.+)/);
+        if (match) {
+          return match[1].trim();
+        }
+      }
+    }
+
+    // Fallback: format the epic ID
+    return epicId.replace(/-/g, " ").replace(/epic /i, "Epic ");
+  }
+
+  /**
+   * Formats story ID into readable name.
+   */
+  private formatStoryName(storyId: string): string {
+    // Convert "1-1-project-initialization" to "Project Initialization"
+    const parts = storyId.split("-").slice(2); // Remove numeric prefix
+    return parts
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  /**
+   * Opens the sprint-status.yaml file in the editor.
+   */
+  private async handleOpenStatusFile(): Promise<void> {
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showWarningMessage("No workspace folder open");
+        return;
+      }
+
+      // Search for sprint-status.yaml
+      const pattern = new vscode.RelativePattern(workspaceFolders[0], "**/sprint-status.yaml");
+      const files = await vscode.workspace.findFiles(pattern, "**/node_modules/**", 1);
+
+      if (files.length === 0) {
+        vscode.window.showWarningMessage("No sprint-status.yaml found in workspace");
+        return;
+      }
+
+      // Open the file in the editor
+      const document = await vscode.workspace.openTextDocument(files[0]);
+      await vscode.window.showTextDocument(document, { preview: false });
+      this.log(`Opened status file: ${files[0].fsPath}`);
+    } catch (error) {
+      this.logError("Failed to open status file", error);
+      vscode.window.showErrorMessage("Failed to open sprint-status.yaml");
+    }
+  }
+
+  // ============================================
+  // Workspace Status Methods
+  // ============================================
+
+  /**
+   * Checks and sends workspace installation status to webview.
+   * Detects if Contextor and BMAD are installed in the current workspace.
+   */
+  private async sendWorkspaceStatus(): Promise<void> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      this.postMessage({
+        type: "workspace-status",
+        status: {
+          contextorInstalled: false,
+          bmadInstalled: false,
+          projectId: null,
+          projectName: null,
+        },
+      } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+
+    // Check Contextor installation
+    const contextorConfig = await this.workspaceConfigService.getWorkspaceConfig();
+    const contextorInstalled = contextorConfig !== null;
+
+    // Check BMAD installation (look for _bmad folder)
+    let bmadInstalled = false;
+    try {
+      const bmadPattern = new vscode.RelativePattern(workspaceFolders[0], "_bmad");
+      const bmadFolders = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(workspaceFolders[0], "_bmad/**/*"),
+        null,
+        1
+      );
+      bmadInstalled = bmadFolders.length > 0;
+    } catch {
+      bmadInstalled = false;
+    }
+
+    this.log(`Workspace status: Contextor=${contextorInstalled}, BMAD=${bmadInstalled}`);
+
+    this.postMessage({
+      type: "workspace-status",
+      status: {
+        contextorInstalled,
+        bmadInstalled,
+        projectId: contextorConfig?.project_id ?? null,
+        projectName: contextorConfig?.project_name ?? null,
+      },
+    } as ExtensionToWebviewMessage);
+  }
+
+  /**
+   * Handles BMAD installation request from webview.
+   * Opens a new terminal and runs the V6 alpha installation command.
+   */
+  private handleInstallBmad(): void {
+    const terminal = vscode.window.createTerminal({
+      name: "BMAD Installer",
+      cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+    });
+
+    // BMAD V6 Alpha installation command
+    const installCommand = 'npx --yes @anthropic/bmad-v6-alpha init';
+    terminal.sendText(installCommand);
+    terminal.show();
+
+    this.log(`BMAD installation started in terminal: ${installCommand}`);
+  }
+
+  /**
+   * Handles project registration request from webview.
+   * Calls the API to create a project and saves the config locally.
+   */
+  private async handleRegisterProject(): Promise<void> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      vscode.window.showErrorMessage("No workspace folder open. Please open a folder first.");
+      return;
+    }
+
+    const workspaceFolder = workspaceFolders[0];
+    const workspacePath = workspaceFolder.uri.fsPath;
+    const defaultProjectName = workspaceFolder.name;
+
+    // First, fetch user's teams
+    const api = this.getApi();
+    const teamsResult = await api.getMyTeams();
+
+    if (!teamsResult.success || !teamsResult.data) {
+      const errorMessage = teamsResult.error?.message || "Failed to fetch teams";
+      vscode.window.showErrorMessage(`Contextor: ${errorMessage}`);
+      return;
+    }
+
+    const teams = teamsResult.data;
+
+    if (teams.length === 0) {
+      // No teams - show message with link to web app
+      const action = await vscode.window.showWarningMessage(
+        "You don't have any teams yet. Create a team in the web app first.",
+        "Open Web App"
+      );
+      if (action === "Open Web App") {
+        const config = vscode.workspace.getConfiguration("contextor");
+        const apiEndpoint = config.get<string>("apiEndpoint", "http://127.0.0.1:3050/api");
+        const webUrl = apiEndpoint.replace("/api", "");
+        vscode.env.openExternal(vscode.Uri.parse(`${webUrl}/dashboard/settings/team`));
+      }
+      return;
+    }
+
+    // Ask user to select a team
+    interface TeamQuickPickItem extends vscode.QuickPickItem {
+      teamId: string;
+    }
+
+    const teamItems: TeamQuickPickItem[] = teams.map((team) => ({
+      label: team.name,
+      description: team.role === "admin" ? "Admin" : "Member",
+      teamId: team.id,
+    }));
+
+    // Add option to create new team
+    const createNewOption: TeamQuickPickItem = {
+      label: "$(add) Create New Team...",
+      description: "Open web app to create a new team",
+      teamId: "__create_new__",
+    };
+
+    const selectedTeam = await vscode.window.showQuickPick(
+      [...teamItems, createNewOption],
+      {
+        title: "Select Team",
+        placeHolder: "Choose a team for this project",
+      }
+    );
+
+    if (!selectedTeam) {
+      return; // User cancelled
+    }
+
+    if (selectedTeam.teamId === "__create_new__") {
+      const config = vscode.workspace.getConfiguration("contextor");
+      const apiEndpoint = config.get<string>("apiEndpoint", "http://127.0.0.1:3050/api");
+      const webUrl = apiEndpoint.replace("/api", "");
+      vscode.env.openExternal(vscode.Uri.parse(`${webUrl}/teams/new`));
+      return;
+    }
+
+    // Ask user for project name
+    const projectName = await vscode.window.showInputBox({
+      title: "Register Project",
+      prompt: "Enter a name for this project",
+      value: defaultProjectName,
+      validateInput: (value) => {
+        if (!value || value.trim().length === 0) {
+          return "Project name is required";
+        }
+        if (value.length > 100) {
+          return "Project name must be 100 characters or less";
+        }
+        return null;
+      },
+    });
+
+    if (!projectName) {
+      return; // User cancelled
+    }
+
+    // Show progress
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "Registering project...",
+        cancellable: false,
+      },
+      async () => {
+        try {
+          const result = await api.registerProject(projectName.trim(), workspacePath, selectedTeam.teamId);
+
+          if (!result.success || !result.data) {
+            const errorMessage = result.error?.message || "Failed to register project";
+            vscode.window.showErrorMessage(`Contextor: ${errorMessage}`);
+            return;
+          }
+
+          // Create .contextor directory
+          const contextorDir = vscode.Uri.joinPath(workspaceFolder.uri, ".contextor");
+          try {
+            await vscode.workspace.fs.createDirectory(contextorDir);
+          } catch {
+            // Directory may already exist
+          }
+
+          // Write config.json
+          const configPath = vscode.Uri.joinPath(contextorDir, "config.json");
+          const configContent = JSON.stringify(result.data.config, null, 2);
+          await vscode.workspace.fs.writeFile(configPath, Buffer.from(configContent, "utf-8"));
+
+          this.log(`Project registered: ${result.data.project.name} (${result.data.project.id})`);
+          this.log(`Config saved to: ${configPath.fsPath}`);
+
+          // Parse install token to get API key and user info
+          const tokenPayload = this.parseInstallToken(result.data.installToken);
+          if (tokenPayload) {
+            // Write .user file with API key
+            const userConfig = {
+              user_id: tokenPayload.user_id,
+              user_name: tokenPayload.user_name,
+              api_key: tokenPayload.api_key,
+              configured_at: new Date().toISOString(),
+            };
+            const userPath = vscode.Uri.joinPath(contextorDir, ".user");
+            await vscode.workspace.fs.writeFile(userPath, Buffer.from(JSON.stringify(userConfig, null, 2), "utf-8"));
+            this.log(`User config saved to: ${userPath.fsPath}`);
+
+            // Install capture hook
+            await this.installCaptureHook(workspacePath);
+            this.log("Capture hook installed");
+          } else {
+            this.log("Warning: Could not parse install token");
+          }
+
+          // Show success message
+          vscode.window.showInformationMessage(
+            `Project "${result.data.project.name}" registered successfully in team "${selectedTeam.label}"!`
+          );
+
+          // Refresh workspace status
+          await this.sendWorkspaceStatus();
+
+        } catch (error) {
+          this.logError("Failed to register project", error);
+          vscode.window.showErrorMessage(
+            `Contextor: Failed to register project - ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+        }
+      }
+    );
+  }
+
+  // ============================================
+  // Documents Methods
+  // ============================================
+
+  /**
+   * Handles fetch documents request from webview.
+   * Scans the workspace for BMAD documents and returns a file tree.
+   */
+  private async handleFetchDocuments(): Promise<void> {
+    this.postMessage({ type: "documents-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        this.postMessage({ type: "documents", documents: [] } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      const workspaceRoot = workspaceFolders[0].uri;
+      const documents: DocumentItem[] = [];
+
+      // Scan for key BMAD documents and folders
+      const bmadPatterns = [
+        "_bmad-output",      // BMAD output folder
+        "_bmad",             // BMAD config folder
+      ];
+
+      // Scan for key document files in root
+      const rootDocs = [
+        "prd.md",
+        "PRD.md",
+        "architecture.md",
+        "ARCHITECTURE.md",
+        "README.md",
+      ];
+
+      // Check for root documents
+      for (const docName of rootDocs) {
+        const docUri = vscode.Uri.joinPath(workspaceRoot, docName);
+        try {
+          await vscode.workspace.fs.stat(docUri);
+          documents.push({
+            id: docName,
+            name: docName,
+            path: docUri.fsPath,
+            type: "file",
+          });
+        } catch {
+          // File doesn't exist, skip
+        }
+      }
+
+      // Scan for BMAD folders
+      for (const pattern of bmadPatterns) {
+        const folderUri = vscode.Uri.joinPath(workspaceRoot, pattern);
+        try {
+          const stat = await vscode.workspace.fs.stat(folderUri);
+          if (stat.type === vscode.FileType.Directory) {
+            const folder = await this.scanFolder(folderUri, pattern);
+            if (folder) {
+              documents.push(folder);
+            }
+          }
+        } catch {
+          // Folder doesn't exist, skip
+        }
+      }
+
+      this.log(`Found ${documents.length} document items`);
+      this.postMessage({ type: "documents", documents } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to fetch documents", error);
+      this.postMessage({ type: "documents", documents: [] } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Recursively scans a folder and returns a DocumentItem tree.
+   */
+  private async scanFolder(folderUri: vscode.Uri, folderId: string): Promise<DocumentItem | null> {
+    try {
+      const entries = await vscode.workspace.fs.readDirectory(folderUri);
+      const children: DocumentItem[] = [];
+
+      // Sort entries: folders first, then files, alphabetically
+      entries.sort((a, b) => {
+        if (a[1] !== b[1]) {
+          return a[1] === vscode.FileType.Directory ? -1 : 1;
+        }
+        return a[0].localeCompare(b[0]);
+      });
+
+      for (const [name, type] of entries) {
+        // Skip hidden files and certain folders
+        if (name.startsWith(".") || name === "node_modules") {
+          continue;
+        }
+
+        const childUri = vscode.Uri.joinPath(folderUri, name);
+        const childId = `${folderId}/${name}`;
+
+        if (type === vscode.FileType.Directory) {
+          // Recursively scan subdirectories (limit depth)
+          const depth = folderId.split("/").length;
+          if (depth < 4) { // Max depth of 4 levels
+            const childFolder = await this.scanFolder(childUri, childId);
+            if (childFolder) {
+              children.push(childFolder);
+            }
+          }
+        } else if (type === vscode.FileType.File) {
+          // Only include relevant file types
+          const ext = name.split(".").pop()?.toLowerCase();
+          if (["md", "yaml", "yml", "json", "txt"].includes(ext || "")) {
+            children.push({
+              id: childId,
+              name,
+              path: childUri.fsPath,
+              type: "file",
+            });
+          }
+        }
+      }
+
+      return {
+        id: folderId,
+        name: folderUri.path.split("/").pop() || folderId,
+        path: folderUri.fsPath,
+        type: "folder",
+        children,
+      };
+    } catch (error) {
+      this.logError(`Failed to scan folder ${folderUri.fsPath}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Opens a document in VS Code editor.
+   */
+  private async handleOpenDocument(path: string): Promise<void> {
+    try {
+      const uri = vscode.Uri.file(path);
+      const doc = await vscode.workspace.openTextDocument(uri);
+      await vscode.window.showTextDocument(doc);
+      this.log(`Opened document: ${path}`);
+    } catch (error) {
+      this.logError(`Failed to open document: ${path}`, error);
+      vscode.window.showErrorMessage(`Failed to open document: ${path}`);
+    }
+  }
+
+  /**
+   * Handles create document request from webview.
+   * Opens a terminal with Claude and runs the appropriate BMAD workflow or agent.
+   */
+  private async handleCreateDocument(doc: {
+    id: string;
+    name: string;
+    filename: string;
+    workflow: string | null;
+    agent: string | null;
+  }): Promise<void> {
+    try {
+      const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!workspacePath) {
+        vscode.window.showErrorMessage("No workspace folder open");
+        return;
+      }
+
+      // Create terminal for Claude Code
+      const terminal = vscode.window.createTerminal({
+        name: `BMAD: ${doc.name}`,
+        cwd: workspacePath,
+      });
+      terminal.show();
+
+      // Build the command to run
+      let command: string;
+
+      if (doc.workflow) {
+        // Has a dedicated workflow - run it directly
+        command = `claude "${doc.workflow}"`;
+      } else if (doc.agent) {
+        // No workflow, but has an agent - start conversation with agent about the document
+        const agentSkill = `/bmad:bmm:agents:${doc.agent}`;
+        const prompt = `Please help me create the ${doc.name} document (${doc.filename}) for this project. Let's discuss what should be included.`;
+        command = `claude "${agentSkill}" --prompt "${prompt.replace(/"/g, '\\"')}"`;
+      } else {
+        // Fallback - just ask Claude about creating the document
+        const prompt = `Please help me create the ${doc.name} document (${doc.filename}) for this project following BMAD methodology.`;
+        command = `claude --prompt "${prompt.replace(/"/g, '\\"')}"`;
+      }
+
+      // Send the command to the terminal
+      terminal.sendText(command);
+
+      vscode.window.showInformationMessage(
+        `Starting ${doc.name} creation workflow. Follow the prompts in the terminal.`
+      );
+
+      this.log(`Started document creation: ${doc.name} with command: ${command}`);
+    } catch (error) {
+      this.logError(`Failed to create document: ${doc.name}`, error);
+      vscode.window.showErrorMessage(`Failed to start document creation: ${doc.name}`);
+    }
+  }
+
+  // ============================================
+  // Conversation Methods (Phase 3)
+  // ============================================
+
+  /**
+   * Handles fetch conversations request from webview.
+   * Fetches recent conversations (sessions) from the API.
+   */
+  private async handleFetchConversations(): Promise<void> {
+    const isAuth = await this.authService.isAuthenticated();
+    if (!isAuth) {
+      this.postMessage({ type: "conversations", conversations: [] } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    this.postMessage({ type: "conversations-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const api = this.getApi();
+      const result = await api.getConversations();
+
+      if (!result.success || !result.data) {
+        this.log("No conversations found or failed to fetch");
+        this.postMessage({ type: "conversations", conversations: [] } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "conversations-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      this.log(`Fetched ${result.data.length} conversations`);
+      this.postMessage({ type: "conversations", conversations: result.data } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "conversations-loading", isLoading: false } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to fetch conversations", error);
+      this.postMessage({ type: "conversations", conversations: [] } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "conversations-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles conversation selection request from webview.
+   * Fetches the messages for the selected conversation.
+   */
+  private async handleSelectConversation(sessionId: string): Promise<void> {
+    const isAuth = await this.authService.isAuthenticated();
+    if (!isAuth) {
+      this.postMessage({ type: "conversation-messages", messages: [] } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    this.postMessage({ type: "conversation-messages-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const api = this.getApi();
+      const result = await api.getConversationMessages(sessionId);
+
+      if (!result.success || !result.data) {
+        this.log(`No messages found for conversation ${sessionId}`);
+        this.postMessage({ type: "conversation-messages", messages: [] } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "conversation-messages-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      this.log(`Fetched ${result.data.length} messages for conversation ${sessionId}`);
+      this.postMessage({ type: "conversation-messages", messages: result.data } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "conversation-messages-loading", isLoading: false } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError(`Failed to fetch messages for conversation ${sessionId}`, error);
+      this.postMessage({ type: "conversation-messages", messages: [] } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "conversation-messages-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles open conversation in browser request.
+   * Opens the web app conversation thread view.
+   */
+  private handleOpenConversationInBrowser(sessionId: string): void {
+    const settings = this.settingsService;
+    const baseUrl = settings.apiEndpoint.replace("/api", "");
+    const url = `${baseUrl}/conversations/${sessionId}`;
+
+    vscode.env.openExternal(vscode.Uri.parse(url));
+    this.log(`Opened conversation in browser: ${url}`);
+  }
+
   // ============================================
   // Last Prompt Methods
   // ============================================
 
   /**
    * Handles fetch last prompt request from webview.
+   * @param isAutoRefresh - If true, skip update if prompt ID hasn't changed
    */
-  private async handleFetchLastPrompt(): Promise<void> {
+  private async handleFetchLastPrompt(isAutoRefresh = false): Promise<void> {
     const isAuth = await this.authService.isAuthenticated();
     if (!isAuth) {
       this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
       return;
     }
 
-    this.postMessage({ type: "last-prompt-loading", isLoading: true } as ExtensionToWebviewMessage);
+    // Only show loading indicator for manual refreshes
+    if (!isAutoRefresh) {
+      this.postMessage({ type: "last-prompt-loading", isLoading: true } as ExtensionToWebviewMessage);
+    }
 
     try {
+      // Get project ID from workspace config to filter prompts by current project
+      const projectId = await this.workspaceConfigService.getProjectId();
+      if (projectId) {
+        this.log(`Fetching last prompt for project: ${projectId}`);
+      } else {
+        this.log("No workspace config found, fetching all prompts");
+      }
+
       const api = this.getApi();
-      const result = await api.getLastPrompt();
+      const result = await api.getLastPrompt(projectId);
 
       if (!result.success || !result.data) {
         this.log("No last prompt found or failed to fetch");
-        this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
-        this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
+        if (!isAutoRefresh) {
+          this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
+          this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
+        }
         return;
       }
 
-      this.log(`Last prompt fetched: ${result.data.id}`);
+      // Debug logging
+      const currentScore = result.data.overall_score ?? 0;
+      this.log(`[DEBUG] API returned: id=${result.data.id}, score=${currentScore}`);
+      this.log(`[DEBUG] Cached: id=${this.lastKnownPromptId}, score=${this.lastKnownPromptScore}`);
+      this.log(`[DEBUG] isAutoRefresh=${isAutoRefresh}`);
+
+      // Skip update if prompt AND score haven't changed (for auto-refresh only)
+      // We check both ID and score because:
+      // 1. Same ID but score changed = analysis completed, must update UI
+      // 2. Different ID = new prompt, must update UI
+      const idSame = this.lastKnownPromptId === result.data.id;
+      const scoreSame = this.lastKnownPromptScore === currentScore;
+      this.log(`[DEBUG] idSame=${idSame}, scoreSame=${scoreSame}`);
+
+      if (isAutoRefresh && idSame && scoreSame) {
+        this.log(`Last prompt unchanged (${result.data.id}, score=${currentScore}), skipping update`);
+        return;
+      }
+
+      // Log what changed
+      if (idSame && !scoreSame) {
+        this.log(`Score updated for prompt ${result.data.id}: ${this.lastKnownPromptScore} -> ${currentScore}`);
+      } else if (!idSame) {
+        this.log(`New prompt detected: ${this.lastKnownPromptId} -> ${result.data.id}`);
+      }
+
+      this.lastKnownPromptId = result.data.id;
+      this.lastKnownPromptScore = currentScore;
+      this.log(`Sending prompt to UI: ${result.data.id}, score=${currentScore}`);
       this.postMessage({ type: "last-prompt", prompt: result.data } as ExtensionToWebviewMessage);
       this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
     } catch (error) {
       this.logError("Failed to fetch last prompt", error);
-      this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
-      this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
+      if (!isAutoRefresh) {
+        this.postMessage({ type: "last-prompt", prompt: null } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "last-prompt-loading", isLoading: false } as ExtensionToWebviewMessage);
+      }
     }
   }
 
@@ -738,6 +1769,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this.postMessage({ type: "auth", authenticated: isAuth, user: user || undefined });
 
       if (isAuth) {
+        this.setupAutoRefresh(); // Start auto-refresh now that we're authenticated
         await this.refreshAnalytics(true);
       } else {
         this.stopAutoRefresh();
@@ -1102,6 +2134,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
   /**
    * Refreshes coaching tips from the API.
+   * Note: Coaching failures are silent - they don't override the main UI.
    */
   private async refreshCoaching(): Promise<void> {
     if (!this._view) return;
@@ -1148,12 +2181,12 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
       this.log("Coaching tips refreshed successfully");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      this.logError("Failed to load coaching tips", error);
-
+      // IMPORTANT: Don't send global error for coaching failures.
+      // Coaching is optional - don't break the main UI if it fails.
+      this.logError("Failed to load coaching tips (silent failure)", error);
       this.updateState({ isCoachingLoading: false });
       this.postMessage({ type: "coaching-loading", isLoading: false });
-      this.postMessage({ type: "error", message: errorMessage });
+      // Just log it, don't send error to webview which would override the UI
     }
   }
 
@@ -1268,5 +2301,209 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     this.outputChannel.appendLine(
       `[${timestamp}] [AnalyticsPanel] ERROR: ${message}: ${errorMessage}`
     );
+  }
+
+  // ============================================
+  // Install Token & Hook Utilities
+  // ============================================
+
+  /**
+   * Parse an install token to extract the payload.
+   * Token format: ctx_<base64url encoded JSON>
+   */
+  private parseInstallToken(token: string): {
+    project_id: string;
+    project_name: string;
+    team_id: string;
+    team_name: string;
+    user_id: string;
+    user_name: string;
+    api_key: string;
+    api_endpoint: string;
+  } | null {
+    try {
+      if (!token.startsWith("ctx_")) {
+        return null;
+      }
+      const base64Payload = token.substring(4);
+      const jsonPayload = Buffer.from(base64Payload, "base64url").toString("utf-8");
+      const payload = JSON.parse(jsonPayload);
+
+      if (!payload.project_id || !payload.api_key || !payload.api_endpoint) {
+        return null;
+      }
+
+      return payload;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Install the Contextor capture hook in the workspace.
+   * Creates .claude/settings.json and .claude/hooks/contextor-capture.sh
+   */
+  private async installCaptureHook(workspacePath: string): Promise<void> {
+    const workspaceUri = vscode.Uri.file(workspacePath);
+
+    // Create .claude directory
+    const claudeDir = vscode.Uri.joinPath(workspaceUri, ".claude");
+    try {
+      await vscode.workspace.fs.createDirectory(claudeDir);
+    } catch {
+      // Directory may already exist
+    }
+
+    // Create hooks directory
+    const hooksDir = vscode.Uri.joinPath(claudeDir, "hooks");
+    try {
+      await vscode.workspace.fs.createDirectory(hooksDir);
+    } catch {
+      // Directory may already exist
+    }
+
+    // Read existing settings.json
+    const settingsPath = vscode.Uri.joinPath(claudeDir, "settings.json");
+    let settings: { hooks?: { UserPromptSubmit?: Array<{ matcher?: string; hooks: Array<{ type: string; command: string; timeout?: number }> }> }; [key: string]: unknown } = {};
+    try {
+      const content = await vscode.workspace.fs.readFile(settingsPath);
+      settings = JSON.parse(Buffer.from(content).toString("utf-8"));
+    } catch {
+      // File doesn't exist or is invalid
+    }
+
+    // Configure Contextor hook
+    const hookCommand = `bash "$CLAUDE_PROJECT_DIR"/.claude/hooks/contextor-capture.sh`;
+    const newHookEntry = {
+      matcher: ".*",
+      hooks: [{ type: "command", command: hookCommand, timeout: 5000 }],
+    };
+
+    settings.hooks ??= {};
+    const existing = settings.hooks.UserPromptSubmit ?? [];
+
+    // Check if Contextor hook already exists
+    const idx = existing.findIndex((entry) =>
+      entry.hooks?.some((h) => h.command.includes("contextor-capture"))
+    );
+
+    if (idx >= 0) {
+      existing[idx] = newHookEntry;
+    } else {
+      existing.push(newHookEntry);
+    }
+
+    settings.hooks.UserPromptSubmit = existing;
+
+    // Write settings.json
+    await vscode.workspace.fs.writeFile(
+      settingsPath,
+      Buffer.from(JSON.stringify(settings, null, 2) + "\n", "utf-8")
+    );
+
+    // Write capture script
+    const captureScript = this.getCaptureScriptContent();
+    const scriptPath = vscode.Uri.joinPath(hooksDir, "contextor-capture.sh");
+    await vscode.workspace.fs.writeFile(scriptPath, Buffer.from(captureScript, "utf-8"));
+
+    // Make script executable (Unix only)
+    try {
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      await execAsync(`chmod +x "${scriptPath.fsPath}"`);
+    } catch {
+      // Ignore chmod errors on Windows
+    }
+  }
+
+  /**
+   * Generate the capture script content.
+   */
+  private getCaptureScriptContent(): string {
+    return `#!/bin/bash
+# Contextor Capture - Silent background prompt capture
+# Errors are logged to debug file if DEBUG_CONTEXTOR=1
+
+SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "\${SCRIPT_DIR}/../.." && pwd)"
+
+USER_CONFIG="\${PROJECT_ROOT}/.contextor/.user"
+SHARED_CONFIG="\${PROJECT_ROOT}/.contextor/config.json"
+DEBUG_LOG="\${PROJECT_ROOT}/.contextor/.debug.log"
+
+# Debug logging function - only logs if DEBUG_CONTEXTOR=1
+debug_log() {
+  if [[ "\${DEBUG_CONTEXTOR}" == "1" ]]; then
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $1" >> "\${DEBUG_LOG}" 2>/dev/null
+  fi
+}
+
+# Exit silently if not configured or deps missing
+if ! command -v jq >/dev/null 2>&1; then
+  debug_log "ERROR: jq not found in PATH"
+  exit 0
+fi
+if ! command -v curl >/dev/null 2>&1; then
+  debug_log "ERROR: curl not found in PATH"
+  exit 0
+fi
+if [[ ! -f "\${USER_CONFIG}" ]]; then
+  debug_log "ERROR: User config not found at \${USER_CONFIG}"
+  exit 0
+fi
+if [[ ! -f "\${SHARED_CONFIG}" ]]; then
+  debug_log "ERROR: Shared config not found at \${SHARED_CONFIG}"
+  exit 0
+fi
+
+# Read config
+API_KEY=$(jq -r '.api_key // empty' "\${USER_CONFIG}" 2>/dev/null)
+API_ENDPOINT=$(jq -r '.api_endpoint // empty' "\${SHARED_CONFIG}" 2>/dev/null)
+PROJECT_ID=$(jq -r '.project_id // empty' "\${SHARED_CONFIG}" 2>/dev/null)
+USER_ID=$(jq -r '.user_id // empty' "\${USER_CONFIG}" 2>/dev/null)
+
+if [[ -z "\${API_KEY}" ]]; then
+  debug_log "ERROR: api_key is empty or missing from user config"
+  exit 0
+fi
+if [[ -z "\${API_ENDPOINT}" ]]; then
+  debug_log "ERROR: api_endpoint is empty or missing from shared config"
+  exit 0
+fi
+
+# Read prompt from stdin
+INPUT=$(cat)
+PROMPT=$(echo "\${INPUT}" | jq -r '.prompt // empty' 2>/dev/null)
+if [[ -z "\${PROMPT}" ]]; then
+  debug_log "ERROR: No prompt found in input JSON"
+  exit 0
+fi
+
+debug_log "INFO: Capturing prompt (\${#PROMPT} chars) to \${API_ENDPOINT}/prompts/capture"
+
+# Send to API in background (non-blocking, 10s timeout)
+{
+  RESPONSE=$(curl -s --max-time 10 -w "\\n%{http_code}" -X POST "\${API_ENDPOINT}/prompts/capture" \\
+    -H "Content-Type: application/json" \\
+    -H "Authorization: Bearer \${API_KEY}" \\
+    -d "$(jq -n \\
+      --arg user_id "\${USER_ID}" \\
+      --arg prompt "\${PROMPT}" \\
+      --arg project_id "\${PROJECT_ID}" \\
+      '{user_id:$user_id,prompt:$prompt,timestamp:(now|todate),metadata:{source:"claude-code-hook",project_id:$project_id}}')" 2>&1)
+
+  HTTP_CODE=$(echo "\${RESPONSE}" | tail -n1)
+  BODY=$(echo "\${RESPONSE}" | sed '\$d')
+
+  if [[ "\${HTTP_CODE}" -ge 200 && "\${HTTP_CODE}" -lt 300 ]]; then
+    debug_log "INFO: Capture successful (HTTP \${HTTP_CODE})"
+  else
+    debug_log "ERROR: Capture failed (HTTP \${HTTP_CODE}): \${BODY}"
+  fi
+} &
+
+exit 0
+`;
   }
 }

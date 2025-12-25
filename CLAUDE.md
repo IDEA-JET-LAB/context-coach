@@ -798,6 +798,22 @@ Key files: `components/admin/*` (50+ components), `lib/services/*-activation.ts`
 
 Migrations: `20251223002000_classification_rules.sql`, `20251223003000_team_weight_overrides.sql`, `20251223004000_config_versioning.sql`, `20251223005000_experiments.sql`, `20251223006000_config_audit_log.sql`
 
+## Epic 23 Status: COMPLETED (December 2025)
+
+VS Code extension improvements with better navigation, workspace detection, and BMAD integration:
+- 23-1: Two-level navigation with primary tabs (Contextor | BMAD) and secondary page tabs
+- 23-2: Tab memory per section - remembers last active tab when switching sections
+- 23-3: Collapsible status panel with expandable epic categories
+- 23-4: Workspace installation detection for Contextor and BMAD
+- 23-5: Register Project flow with team selection via QuickPick
+- 23-6: Install BMAD button with terminal automation
+- 23-7: BMAD Documents panel with recursive file tree viewer
+- 23-8: Smart Project Documents - Sub-tabs (All/Workflow/Project), missing doc detection, one-click creation via BMAD workflows
+
+Key files: `packages/vscode-extension/src/providers/analyticsPanel.ts`, `packages/vscode-extension/webviews/analytics/src/components/TabNavigation.tsx`, `DocumentsPanel.tsx`, `NotInstalledPanel.tsx`, `StatusPanel.tsx`
+
+API endpoint: `app/app/api/extension/register-project/route.ts`
+
 ## CRITICAL: Design System Mandate (Epic 17+)
 
 **All development from Epic 17 onwards MUST use the established design system exclusively.**

@@ -140,6 +140,67 @@ date: '2025-12-19'
 - [Phase 2 Non-Functional Requirements (Additions)](#phase-2-non-functional-requirements-additions) (Line 1905)
 - [Phase 2 Infrastructure Requirements](#phase-2-infrastructure-requirements) (Line 1935)
 - [Phase 2 Timeline Considerations](#phase-2-timeline-considerations) (Line 1955)
+- [Epic 21: Enhanced Analysis Framework](#epic-21-enhanced-analysis-framework) (Line 2050)
+- [Epic 22: Configurable Analysis Engine](#epic-22-configurable-analysis-engine) (Line 2593)
+- [Phase 2 Functional Requirements (Configuration Additions)](#functional-requirements-configuration-additions) (Line 3004)
+
+### Phase 3: Conversation Intelligence Platform
+
+- [Phase 3 Vision & Objectives](#phase-3-vision--objectives) (Line 3047)
+  - [The Paradigm Shift](#the-paradigm-shift) (Line 3049)
+  - [Phase 3 Vision](#phase-3-vision-1) (Line 3063)
+  - [Key Research Insights](#key-research-insights) (Line 3075)
+- [Phase 3 Success Criteria](#phase-3-success-criteria) (Line 3096)
+  - [User Success](#user-success-2) (Line 3098)
+  - [Technical Success](#technical-success-2) (Line 3112)
+- [Phase 3 Scope](#phase-3-scope) (Line 3125)
+  - [In Scope](#in-scope) (Line 3127)
+  - [Out of Scope (Future Features)](#out-of-scope-future-features) (Line 3163)
+- [Phase 3 Epic Overview](#phase-3-epic-overview) (Line 3177)
+  - [Dependency Graph](#dependency-graph-1) (Line 3201)
+- [Epic 23: Conversation Data Architecture](#epic-23-conversation-data-architecture) (Line 3235)
+  - [Story 23.1: Conversations Table & Schema](#story-231-conversations-table--schema) (Line 3250)
+  - [Story 23.2: Project Mapping Table](#story-232-project-mapping-table) (Line 3310)
+  - [Story 23.3: Conversation Aggregation Functions](#story-233-conversation-aggregation-functions) (Line 3345)
+  - [Story 23.4: Backfill Existing Prompts](#story-234-backfill-existing-prompts-to-conversations) (Line 3384)
+- [Epic 24: Enhanced Capture Pipeline](#epic-24-enhanced-capture-pipeline) (Line 3399)
+  - [Story 24.1: Response Completion Detection](#story-241-response-completion-detection) (Line 3414)
+  - [Story 24.2: Full Response Storage](#story-242-full-response-storage) (Line 3434)
+  - [Story 24.3: Thinking Summary Compression](#story-243-thinking-summary-compression) (Line 3449)
+  - [Story 24.4: Tool Execution Metadata](#story-244-tool-execution-metadata) (Line 3464)
+  - [Story 24.5: Enhanced VS Code Extension Capture](#story-245-enhanced-vs-code-extension-capture) (Line 3479)
+- [Epic 25: Conversations UI](#epic-25-conversations-ui) (Line 3494)
+  - [Story 25.1: Conversation List View](#story-251-conversation-list-view) (Line 3509)
+  - [Story 25.2: Conversation Thread View](#story-252-conversation-thread-view) (Line 3532)
+  - [Story 25.3: Message Detail Expansion](#story-253-message-detail-expansion) (Line 3554)
+  - [Story 25.4: Conversation Header & Metadata](#story-254-conversation-header--metadata) (Line 3576)
+  - [Story 25.5: Time & Effort Visualization](#story-255-time--effort-visualization) (Line 3591)
+  - [Story 25.6: Navigation Integration](#story-256-navigation-integration) (Line 3612)
+- [Epic 26: Context-Aware Analysis Engine](#epic-26-context-aware-analysis-engine) (Line 3627)
+  - [Story 26.1: Prompt Type Classification](#story-261-prompt-type-classification) (Line 3643)
+  - [Story 26.2: Conversation Context Retrieval](#story-262-conversation-context-retrieval) (Line 3669)
+  - [Story 26.3: Context-Aware Scoring](#story-263-context-aware-scoring) (Line 3684)
+  - [Story 26.4: Debugging Loop Detection](#story-264-debugging-loop-detection) (Line 3710)
+  - [Story 26.5: Project Stage Detection](#story-265-project-stage-detection) (Line 3730)
+  - [Story 26.6: Conversation-Level Scoring](#story-266-conversation-level-scoring) (Line 3755)
+  - [Story 26.7: Real-time VS Code Alerts](#story-267-real-time-vs-code-alerts) (Line 3770)
+  - [Story 26.8: Background Analysis Queue](#story-268-background-analysis-queue) (Line 3785)
+- [Epic 27: Project Mapping & Import Enhancement](#epic-27-project-mapping--import-enhancement) (Line 3800)
+  - [Story 27.1: Auto-Match Algorithm](#story-271-auto-match-algorithm) (Line 3815)
+  - [Story 27.2: Project Mapping UI](#story-272-project-mapping-ui) (Line 3838)
+  - [Story 27.3: Selective Import UI](#story-273-selective-import-ui) (Line 3861)
+  - [Story 27.4: Import as Onboarding Flow](#story-274-import-as-onboarding-flow) (Line 3877)
+  - [Story 27.5: Import Progress & History Enhancement](#story-275-import-progress--history-enhancement) (Line 3892)
+- [Epic 28: Team Analytics & Mentorship](#epic-28-team-analytics--mentorship) (Line 3907)
+  - [Story 28.1: Team Conversation Visibility](#story-281-team-conversation-visibility) (Line 3922)
+  - [Story 28.2: Team Aggregate Metrics Dashboard](#story-282-team-aggregate-metrics-dashboard) (Line 3936)
+  - [Story 28.3: Individual vs Team Comparison](#story-283-individual-vs-team-comparison) (Line 3951)
+  - [Story 28.4: Project Stage Analysis](#story-284-project-stage-analysis) (Line 3965)
+  - [Story 28.5: Mentorship Insights](#story-285-mentorship-insights) (Line 3979)
+- [Phase 3 Functional Requirements](#phase-3-functional-requirements) (Line 3993)
+- [Phase 3 Non-Functional Requirements](#phase-3-non-functional-requirements) (Line 4044)
+- [Phase 3 Risks & Mitigations](#phase-3-risks--mitigations) (Line 4068)
+- [Phase 3 Dependencies](#phase-3-dependencies) (Line 4080)
 
 ---
 
@@ -3012,3 +3073,1063 @@ CREATE TABLE ab_experiment_results (
 - **FR127:** Administrators can A/B test different configurations
 - **FR128:** System loads active configuration at runtime (no restart required)
 - **FR129:** Teams can customize analysis configuration within admin-set bounds
+
+---
+
+# Phase 3: Conversation Intelligence Platform
+
+**Status:** Planning
+**Date:** 2025-12-25
+**Reference:** Phase 3 requirements elicitation session with Product Owner
+
+---
+
+## Phase 3 Vision & Objectives
+
+### The Paradigm Shift
+
+Phase 2 transformed Contextor from a prompt logger into a conversation capture system. However, **analysis still happens prompt-by-prompt**. This creates fundamental limitations:
+
+| Phase 2 Limitation | User Impact |
+|--------------------|-------------|
+| Prompts analyzed in isolation | "Yes, proceed" scores poorly despite being appropriate |
+| No conversation threading | Can't see how dialogue flows |
+| No project stage detection | Can't track architectural vs debugging time |
+| No debugging loop detection | User stuck in cycles without awareness |
+| Prompt-centric UI | List of prompts, not conversations |
+
+**The Core Problem:** Without conversation context, we can't evaluate whether a prompt is good or bad. A one-word response is terrible as an opening prompt but perfect when selecting from options.
+
+### Phase 3 Vision
+
+Transform Contextor from **prompt analysis** to **context engineering coaching**:
+
+1. **Conversation-First Data Model** — Every prompt belongs to a conversation (session)
+2. **Context-Aware Analysis** — Evaluate prompts within their conversation context
+3. **Prompt Classification** — Categorize prompts (initiating, continuation, selection, correction)
+4. **Pattern Detection** — Identify debugging loops, project stages, effort distribution
+5. **Rich Capture** — Full LLM responses, thinking summaries, tool metadata
+6. **Chat-Like UI** — Navigate by conversation, not prompt list
+7. **Team Insights** — Seniors gain visibility into team patterns for mentorship
+
+### Key Research Insights
+
+Based on research from [Anthropic's Context Engineering Guide](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) and [Prompting Guide](https://www.promptingguide.ai/guides/context-engineering-guide):
+
+**The Four Pillars of Context Engineering:**
+
+| Pillar | Description | What We Can Detect |
+|--------|-------------|-------------------|
+| **Writing Context** | Capturing relevant information for later | Does user provide enough context upfront? |
+| **Selecting Context** | Just-in-time retrieval of what's needed | Does user overwhelm with irrelevant info? |
+| **Compressing Context** | Summarizing to preserve signal | Could user consolidate multiple prompts? |
+| **Isolating Context** | Compartmentalized workflows | Does user mix unrelated tasks? |
+
+**Context Rot Warning:** Studies show LLM performance degrades as token count increases. More words ≠ better prompt. Goal: *"Find the smallest set of high-signal tokens that maximize likelihood of desired outcome."*
+
+**Debugging Loop Pattern** (from [AI Doom Loops Research](https://natesnewsletter.substack.com/p/how-to-escape-ai-doom-loops-a-practical)):
+- Prompt → "Fixed!" → Still broken → Prompt again → Fixes new, resurrects old
+- Escape strategies: Switch modes, start fresh context, smaller prompts, provide architectural context
+
+---
+
+## Phase 3 Success Criteria
+
+### User Success
+
+**For Individual Developers:**
+- Navigate conversations chronologically, not prompt lists
+- See how their prompting evolved through a session
+- Identify when they got stuck in debugging loops
+- Understand time/effort distribution across project stages
+
+**For Team Leads & Seniors:**
+- View team members' conversation patterns
+- Identify who needs coaching on context engineering
+- See aggregate metrics across projects and stages
+- Provide targeted mentorship based on actual patterns
+
+### Technical Success
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Conversation grouping accuracy | 99%+ | sessionId matching |
+| Context-aware analysis improvement | +50% vs isolated | User satisfaction surveys |
+| Debugging loop detection precision | 80%+ | Manual review sample |
+| Project stage classification accuracy | 75%+ | User confirmation rate |
+| Conversation UI adoption | 70%+ | Users who switch from prompts list |
+| Import with project mapping | 90%+ | Successful project associations |
+
+---
+
+## Phase 3 Scope
+
+### In Scope
+
+1. **Conversation Data Architecture**
+   - `conversations` table linked to prompts
+   - parentUuid threading for message chains
+   - Project path → Contextor project mapping
+
+2. **Enhanced Capture Pipeline**
+   - Full LLM response storage
+   - Extended thinking summary (configurable length)
+   - Tool execution metadata
+   - Response completion detection
+
+3. **Conversations UI**
+   - Conversation list view (projects → conversations → messages)
+   - Chat-like message thread display
+   - Expandable metadata (git branch, tools, thinking)
+   - Time/effort visualization
+
+4. **Context-Aware Analysis Engine**
+   - Prompt classification (initiating, continuation, selection, etc.)
+   - Conversation-context scoring
+   - Debugging loop detection
+   - Project stage detection
+
+5. **Project Mapping & Import Enhancement**
+   - Auto-match confident mappings
+   - User-assisted mapping for ambiguous
+   - Create Contextor projects from import
+   - Selective project/conversation import
+
+6. **Team Analytics**
+   - Full prompt visibility within team
+   - Aggregate conversation metrics
+   - Stage-based effort analysis
+
+### Out of Scope (Future Features)
+
+**Deferred to Phase 4: Suggested Prompts**
+
+| Feature | Description | Rationale for Deferral |
+|---------|-------------|----------------------|
+| Proactive Next Prompt | Suggest next prompt based on conversation context | Requires stable conversation analysis first |
+| Retrospective Improvement | "A better prompt would be..." with explanation | Complex UX, depends on accurate classification |
+| VS Code Floating Widget | Real-time suggestions during typing | Performance concerns, user preference research needed |
+
+These features are documented in `_bmad-output/future-features/suggested-prompts.md`
+
+---
+
+## Phase 3 Epic Overview
+
+```
+PHASE 3: Conversation Intelligence Platform
+
+├── Epic 23: Conversation Data Architecture (P0)
+│   └── Database schema, threading, project mapping tables
+│
+├── Epic 24: Enhanced Capture Pipeline (P0)
+│   └── Full response capture, thinking summary, response detection
+│
+├── Epic 25: Conversations UI (P0)
+│   └── New navigation paradigm, chat view, metadata display
+│
+├── Epic 26: Context-Aware Analysis Engine (P1)
+│   └── Prompt classification, contextual scoring, loop detection
+│
+├── Epic 27: Project Mapping & Import Enhancement (P1)
+│   └── Auto-match, user-assisted, import as onboarding
+│
+└── Epic 28: Team Analytics & Mentorship (P2)
+    └── Team visibility, aggregate metrics, stage analysis
+```
+
+### Dependency Graph
+
+```
+                    ┌─────────────────┐
+                    │ Epic 23:        │
+                    │ Data            │
+                    │ Architecture    │
+                    └────────┬────────┘
+                             │
+    ┌────────────────────────┼────────────────────────┐
+    ▼                        ▼                        ▼
+┌─────────────┐      ┌─────────────┐          ┌─────────────┐
+│ Epic 24:    │      │ Epic 25:    │          │ Epic 27:    │
+│ Enhanced    │      │ Conversations│          │ Project     │
+│ Capture     │      │ UI          │          │ Mapping     │
+└──────┬──────┘      └──────┬──────┘          └──────┬──────┘
+       │                    │                        │
+       └────────────────────┼────────────────────────┘
+                            ▼
+                    ┌─────────────────┐
+                    │ Epic 26:        │
+                    │ Context-Aware   │
+                    │ Analysis Engine │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ Epic 28:        │
+                    │ Team Analytics  │
+                    └─────────────────┘
+```
+
+---
+
+## Epic 23: Conversation Data Architecture
+
+**Priority:** P0 (Foundation)
+**Rationale:** All Phase 3 features depend on conversation-centric data model
+
+### Objective
+
+Create database schema that:
+- Groups prompts into conversations via sessionId
+- Preserves message threading via parentUuid
+- Links Claude Code projects to Contextor projects
+- Stores full response data with configurable thinking compression
+
+### Stories
+
+#### Story 23.1: Conversations Table & Schema
+
+**As a** system architect
+**I want** a normalized conversation data model
+**So that** prompts are properly grouped and threaded
+
+**Acceptance Criteria:**
+- [ ] `conversations` table with sessionId as natural key
+- [ ] `prompts` table gains `conversation_id` foreign key
+- [ ] `prompts` table gains `parent_uuid` for threading
+- [ ] `prompt_responses` table gains `thinking_summary` column
+- [ ] Migration preserves existing prompt data
+- [ ] Indexes on sessionId, conversation_id, parent_uuid
+
+**Database Schema:**
+```sql
+CREATE TABLE conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id VARCHAR(100) NOT NULL UNIQUE,
+  project_id UUID REFERENCES projects(id),
+  team_id UUID REFERENCES teams(id) NOT NULL,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+
+  -- Metadata from Claude Code
+  claude_project_path TEXT,                    -- Original cwd
+  git_branch VARCHAR(255),
+  claude_code_version VARCHAR(20),
+  session_slug VARCHAR(100),                   -- Human-readable slug
+
+  -- Timestamps
+  started_at TIMESTAMPTZ NOT NULL,
+  ended_at TIMESTAMPTZ,
+
+  -- Aggregates (updated on prompt insert)
+  message_count INTEGER DEFAULT 0,
+  user_message_count INTEGER DEFAULT 0,
+
+  -- Classification (updated by analysis)
+  primary_stage VARCHAR(50),                   -- 'architecture', 'development', 'debugging', etc.
+  has_debugging_loop BOOLEAN DEFAULT FALSE,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add to prompts table
+ALTER TABLE prompts ADD COLUMN conversation_id UUID REFERENCES conversations(id);
+ALTER TABLE prompts ADD COLUMN parent_uuid VARCHAR(100);
+ALTER TABLE prompts ADD COLUMN message_uuid VARCHAR(100);
+ALTER TABLE prompts ADD COLUMN prompt_type VARCHAR(50);  -- 'initiating', 'continuation', 'selection', etc.
+
+-- Add to prompt_responses table
+ALTER TABLE prompt_responses ADD COLUMN thinking_summary TEXT;
+ALTER TABLE prompt_responses ADD COLUMN thinking_word_count INTEGER;
+ALTER TABLE prompt_responses ADD COLUMN model_name VARCHAR(100);
+ALTER TABLE prompt_responses ADD COLUMN tool_executions JSONB;
+```
+
+---
+
+#### Story 23.2: Project Mapping Table
+
+**As a** user importing historical data
+**I want** Claude Code project paths mapped to Contextor projects
+**So that** imported conversations belong to correct projects
+
+**Acceptance Criteria:**
+- [ ] `project_mappings` table links paths to projects
+- [ ] Support multiple paths per Contextor project
+- [ ] Confidence score for auto-matches
+- [ ] User confirmation status tracking
+
+**Database Schema:**
+```sql
+CREATE TABLE project_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id UUID REFERENCES teams(id) NOT NULL,
+  project_id UUID REFERENCES projects(id),    -- NULL if not yet mapped
+
+  claude_project_path TEXT NOT NULL,          -- e.g., "/Users/edgars/my-project"
+  normalized_path TEXT NOT NULL,              -- e.g., "-Users-edgars-my-project"
+
+  match_confidence DECIMAL(3,2),              -- 0.00-1.00
+  match_method VARCHAR(50),                   -- 'exact', 'suffix', 'user_selected'
+  user_confirmed BOOLEAN DEFAULT FALSE,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE(team_id, claude_project_path)
+);
+```
+
+---
+
+#### Story 23.3: Conversation Aggregation Functions
+
+**As a** developer querying conversations
+**I want** efficient aggregation queries
+**So that** conversation lists load quickly
+
+**Acceptance Criteria:**
+- [ ] Trigger updates message_count on prompt insert
+- [ ] Function to recalculate conversation aggregates
+- [ ] View for conversation list with computed fields
+- [ ] Performance: < 100ms for 1000 conversations
+
+**Database Functions:**
+```sql
+-- Trigger to update conversation aggregates
+CREATE OR REPLACE FUNCTION update_conversation_aggregates()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE conversations SET
+    message_count = message_count + 1,
+    user_message_count = CASE
+      WHEN NEW.prompt_type IS NOT NULL THEN user_message_count + 1
+      ELSE user_message_count
+    END,
+    ended_at = NEW.created_at,
+    updated_at = NOW()
+  WHERE id = NEW.conversation_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prompt_insert_trigger
+AFTER INSERT ON prompts
+FOR EACH ROW
+EXECUTE FUNCTION update_conversation_aggregates();
+```
+
+---
+
+#### Story 23.4: Backfill Existing Prompts to Conversations
+
+**As a** system administrator
+**I want** existing prompts migrated to conversation structure
+**So that** historical data works with new UI
+
+**Acceptance Criteria:**
+- [ ] Migration script groups prompts by session_id
+- [ ] Creates conversation records for existing sessions
+- [ ] Populates conversation_id on all prompts
+- [ ] Handles prompts without session_id (legacy)
+- [ ] Reversible migration
+
+---
+
+## Epic 24: Enhanced Capture Pipeline
+
+**Priority:** P0 (Foundation)
+**Rationale:** Rich data capture enables context-aware analysis
+
+### Objective
+
+Enhance the capture pipeline to:
+- Capture full LLM responses
+- Compress extended thinking to configurable summary
+- Detect response completion before analysis trigger
+- Store tool execution metadata
+
+### Stories
+
+#### Story 24.1: Response Completion Detection
+
+**As a** real-time capture system
+**I want** to detect when LLM finishes responding
+**So that** analysis can consider the full response
+
+**Acceptance Criteria:**
+- [ ] Hook monitors transcript file for response completion
+- [ ] Detection based on `stop_reason` field in assistant message
+- [ ] Timeout fallback (30 seconds no new content)
+- [ ] Event emitted when response complete
+- [ ] Works for streaming and non-streaming responses
+
+**Technical Notes:**
+- Use file watcher on session JSONL
+- Parse last assistant message for completion signals
+- Emit `response:complete` event to trigger analysis
+
+---
+
+#### Story 24.2: Full Response Storage
+
+**As a** conversation system
+**I want** complete LLM responses stored
+**So that** users can review full conversation context
+
+**Acceptance Criteria:**
+- [ ] Store full response text (visible content only, not thinking)
+- [ ] Store model name used for response
+- [ ] Store token usage (input, output, cache)
+- [ ] Link response to parent prompt via prompt_id
+- [ ] Handle multi-part responses (text + tool_use)
+
+---
+
+#### Story 24.3: Thinking Summary Compression
+
+**As a** storage-conscious system
+**I want** extended thinking compressed to summary
+**So that** we capture gist without excessive storage
+
+**Acceptance Criteria:**
+- [ ] Extract thinking content from assistant messages
+- [ ] Summarize to first N characters (configurable, default 500)
+- [ ] Store word count for full thinking
+- [ ] Admin-configurable summary length
+- [ ] Handle empty/missing thinking gracefully
+
+---
+
+#### Story 24.4: Tool Execution Metadata
+
+**As a** conversation analyst
+**I want** tool usage tracked per response
+**So that** we understand what actions LLM took
+
+**Acceptance Criteria:**
+- [ ] Extract tool_use blocks from responses
+- [ ] Store as JSONB: [{name, id, input_summary}]
+- [ ] Limit input_summary to 200 chars per tool
+- [ ] Track tool count per response
+- [ ] Support all Claude Code tools (Read, Write, Edit, Bash, etc.)
+
+---
+
+#### Story 24.5: Enhanced VS Code Extension Capture
+
+**As a** VS Code extension
+**I want** to capture full conversation context
+**So that** analytics reflect complete picture
+
+**Acceptance Criteria:**
+- [ ] Extension captures response after prompt
+- [ ] Waits for response completion (with timeout)
+- [ ] Sends prompt + response pair to backend
+- [ ] Handles interrupted sessions gracefully
+- [ ] Status indicator shows capture progress
+
+---
+
+## Epic 25: Conversations UI
+
+**Priority:** P0 (Core User Experience)
+**Rationale:** New navigation paradigm is central to Phase 3 value
+
+### Objective
+
+Create conversation-centric interface:
+- Project → Conversations → Messages hierarchy
+- Chat-like message thread display
+- Expandable metadata panels
+- Time/effort visualization
+
+### Stories
+
+#### Story 25.1: Conversation List View
+
+**As a** user
+**I want** to see all my conversations organized by project
+**So that** I can find and review past sessions
+
+**Acceptance Criteria:**
+- [ ] List conversations grouped by project
+- [ ] Show: session slug, date, message count, duration
+- [ ] Filter by project, date range, stage
+- [ ] Sort by date (default), duration, message count
+- [ ] Search by conversation content
+- [ ] Pagination for large lists
+
+**UI Elements:**
+- Project filter dropdown (includes "All Projects")
+- Date range picker
+- Stage filter (Architecture, Development, Debugging, etc.)
+- Conversation cards with summary info
+- "No conversations yet" empty state
+
+---
+
+#### Story 25.2: Conversation Thread View
+
+**As a** user
+**I want** to view a conversation as a chat thread
+**So that** I can see the dialogue flow
+
+**Acceptance Criteria:**
+- [ ] Messages displayed chronologically
+- [ ] User messages on right (or distinct styling)
+- [ ] Assistant responses on left
+- [ ] Timestamps on each message
+- [ ] Smooth scrolling through long conversations
+- [ ] Jump to top/bottom buttons
+
+**UI Elements:**
+- Message bubbles with role indicator
+- Timestamp display (relative or absolute)
+- Scroll position indicator for long threads
+- Thread header with conversation metadata
+
+---
+
+#### Story 25.3: Message Detail Expansion
+
+**As a** user
+**I want** to expand message details
+**So that** I can see metadata like tools used, git branch, etc.
+
+**Acceptance Criteria:**
+- [ ] Expandable section per message
+- [ ] Show: git branch, working directory, Claude version
+- [ ] Show: tool executions (name, summary)
+- [ ] Show: thinking summary (if available)
+- [ ] Show: token usage
+- [ ] Show: prompt score and dimensions (if analyzed)
+
+**UI Elements:**
+- Expand/collapse chevron
+- Metadata in organized sections
+- Tool execution list with icons
+- Score visualization (mini dimension chart)
+
+---
+
+#### Story 25.4: Conversation Header & Metadata
+
+**As a** user viewing a conversation
+**I want** summary information in the header
+**So that** I understand the session context at a glance
+
+**Acceptance Criteria:**
+- [ ] Header shows: project name, session date, duration
+- [ ] Header shows: message count, primary stage
+- [ ] Header shows: debugging loop indicator (if detected)
+- [ ] Link to project settings
+- [ ] Breadcrumb navigation (Projects > Project > Conversation)
+
+---
+
+#### Story 25.5: Time & Effort Visualization
+
+**As a** user
+**I want** to visualize my prompting activity
+**So that** I understand my work patterns
+
+**Acceptance Criteria:**
+- [ ] Calendar heatmap showing daily prompt activity
+- [ ] Stage breakdown pie/bar chart per project
+- [ ] Timeline view of conversations
+- [ ] Prompt frequency graph (prompts per hour)
+- [ ] Filter by date range
+
+**Visualization Types:**
+- Calendar heatmap (GitHub-style)
+- Stage distribution chart
+- Activity timeline
+- Prompt frequency over time
+
+---
+
+#### Story 25.6: Navigation Integration
+
+**As a** user
+**I want** conversations in the main navigation
+**So that** I can easily switch between views
+
+**Acceptance Criteria:**
+- [ ] "Conversations" link in sidebar/header
+- [ ] Conversations is prominent (not buried)
+- [ ] Quick switch between Conversations and Analytics
+- [ ] Deep linking to specific conversation
+- [ ] Back button works correctly
+
+---
+
+## Epic 26: Context-Aware Analysis Engine
+
+**Priority:** P1 (Core Value Proposition)
+**Rationale:** This is the "context engineering coaching" differentiator
+
+### Objective
+
+Transform analysis from prompt-level to conversation-level:
+- Classify prompt types
+- Evaluate prompts in conversation context
+- Detect debugging loops
+- Identify project stages
+- Generate conversation-level insights
+
+### Stories
+
+#### Story 26.1: Prompt Type Classification
+
+**As an** analysis engine
+**I want** to classify each prompt by type
+**So that** scoring is appropriate for the prompt's role
+
+**Acceptance Criteria:**
+- [ ] Classification categories defined
+- [ ] LLM-based classifier with fallback heuristics
+- [ ] Store classification on prompt record
+- [ ] Classification runs on prompt capture
+- [ ] Admin can add/modify categories
+
+**Prompt Types:**
+
+| Type | Description | Scoring Approach |
+|------|-------------|------------------|
+| `initiating` | Starts a new task/topic | Full scoring |
+| `continuation` | Provides requested information | Reduced weight on context |
+| `selection` | Chooses from presented options | Minimal scoring or skip |
+| `correction` | Redirects or corrects LLM | Score on clarity of correction |
+| `confirmation` | Approves to proceed | Skip scoring |
+| `clarification` | Asks LLM to explain | Score on question quality |
+
+---
+
+#### Story 26.2: Conversation Context Retrieval
+
+**As an** analysis engine
+**I want** to retrieve conversation context for analysis
+**So that** prompts are evaluated in context
+
+**Acceptance Criteria:**
+- [ ] Fetch last N messages before current prompt
+- [ ] Include response summaries in context
+- [ ] Configurable context depth (default: full conversation)
+- [ ] Token budget awareness (truncate if needed)
+- [ ] Cache conversation context for repeated analysis
+
+---
+
+#### Story 26.3: Context-Aware Scoring
+
+**As an** analysis engine
+**I want** to score prompts considering conversation context
+**So that** scores reflect true prompt quality
+
+**Acceptance Criteria:**
+- [ ] Analysis prompt includes conversation history
+- [ ] Scoring considers prompt type
+- [ ] "Yes, proceed" in selection context doesn't score low
+- [ ] First prompt in conversation scored as initiating
+- [ ] Recovery prompts scored for recovery quality
+
+**New Scoring Dimensions:**
+
+| Dimension | Description |
+|-----------|-------------|
+| Context Density | Signal-to-noise ratio |
+| Task Clarity | Single, unambiguous goal |
+| Constraint Specification | Boundaries defined |
+| Context Freshness | Not repeating known info |
+| Recovery Quality | New info when stuck |
+| Conversation Fit | Appropriate for context |
+
+---
+
+#### Story 26.4: Debugging Loop Detection
+
+**As a** user
+**I want** to know when I'm stuck in a debugging loop
+**So that** I can try a different approach
+
+**Acceptance Criteria:**
+- [ ] Detect 3+ semantically similar fix attempts
+- [ ] Detect error → "fixed" → same error pattern
+- [ ] Flag conversation as `has_debugging_loop`
+- [ ] Real-time VS Code notification when detected
+- [ ] Store loop instances for retrospective analysis
+
+**Detection Signals:**
+- Semantic similarity > 0.8 across 3+ prompts
+- Keywords: "still", "again", "same error", "not working"
+- Pattern: error message → fix attempt → similar error message
+
+---
+
+#### Story 26.5: Project Stage Detection
+
+**As a** user
+**I want** conversations classified by project stage
+**So that** I understand time distribution
+
+**Acceptance Criteria:**
+- [ ] Classification: Architecture, Specification, Development, Debugging, Enhancement
+- [ ] Classification based on conversation content
+- [ ] Store primary_stage on conversation
+- [ ] Auto-suggested, user can override
+- [ ] Aggregate stage time per project
+
+**Stage Indicators:**
+
+| Stage | Indicators |
+|-------|------------|
+| Architecture | "design", "structure", "pattern", "approach" |
+| Specification | "requirements", "should", "feature", "user story" |
+| Development | "implement", "create", "add", "build" |
+| Debugging | "error", "fix", "bug", "not working", "issue" |
+| Enhancement | "improve", "refactor", "optimize", "better" |
+
+---
+
+#### Story 26.6: Conversation-Level Scoring
+
+**As a** user
+**I want** overall conversation scores
+**So that** I understand session quality at a glance
+
+**Acceptance Criteria:**
+- [ ] Aggregate score = average of prompt scores
+- [ ] Exclude selection/confirmation prompts from average
+- [ ] Store aggregate on conversation record
+- [ ] Update on new prompt analysis
+- [ ] Show in conversation list and header
+
+---
+
+#### Story 26.7: Real-time VS Code Alerts
+
+**As a** VS Code user
+**I want** real-time alerts for detected issues
+**So that** I can adjust my approach during the session
+
+**Acceptance Criteria:**
+- [ ] Debugging loop detection triggers notification
+- [ ] Notification shows count and suggestion
+- [ ] Dismissible, with "don't show again" option
+- [ ] Configurable: enable/disable in extension settings
+- [ ] Badge on extension icon when issues detected
+
+---
+
+#### Story 26.8: Background Analysis Queue
+
+**As a** system
+**I want** historical imports analyzed in background
+**So that** import completes quickly with analysis following
+
+**Acceptance Criteria:**
+- [ ] Import stores prompts immediately
+- [ ] Analysis jobs queued for background processing
+- [ ] Priority: recent prompts first
+- [ ] Progress indicator in import history
+- [ ] Rate limiting to avoid API overload
+
+---
+
+## Epic 27: Project Mapping & Import Enhancement
+
+**Priority:** P1 (Onboarding Experience)
+**Rationale:** Import flow is primary onboarding path for many users
+
+### Objective
+
+Enhance import to:
+- Auto-match confident project mappings
+- User-assisted mapping for ambiguous cases
+- Create Contextor projects from import
+- Selective project/conversation import
+
+### Stories
+
+#### Story 27.1: Auto-Match Algorithm
+
+**As a** import system
+**I want** to auto-match Claude Code projects to Contextor projects
+**So that** confident matches require no user action
+
+**Acceptance Criteria:**
+- [ ] Exact path suffix match = 100% confidence
+- [ ] Project name similarity > 90% = 80% confidence
+- [ ] Auto-accept matches > 90% confidence
+- [ ] Flag matches 50-90% for user confirmation
+- [ ] Below 50% = no match, user must select
+
+**Match Logic:**
+```
+1. Exact path match → 100% confidence
+2. Path suffix match (last 2 folders) → 90% confidence
+3. Project name fuzzy match → 70-90% confidence
+4. No match → 0% confidence, suggest "Create New"
+```
+
+---
+
+#### Story 27.2: Project Mapping UI
+
+**As a** user importing data
+**I want** to map unmatched projects to Contextor projects
+**So that** all imported data has a home
+
+**Acceptance Criteria:**
+- [ ] List of unmatched Claude Code projects
+- [ ] Dropdown to select existing Contextor project
+- [ ] "Create New Project" option in dropdown
+- [ ] Inline project creation form
+- [ ] Bulk actions (map multiple at once)
+- [ ] Skip option (don't import this project)
+
+**UI Flow:**
+1. Import discovers 5 projects
+2. 3 auto-matched with high confidence
+3. 2 shown in mapping UI
+4. User selects existing or creates new
+5. Confirm to proceed with import
+
+---
+
+#### Story 27.3: Selective Import UI
+
+**As a** user
+**I want** to choose which projects and conversations to import
+**So that** I don't import irrelevant data
+
+**Acceptance Criteria:**
+- [ ] Project list with checkboxes
+- [ ] Expand project to see conversations
+- [ ] Conversation checkboxes
+- [ ] Select all / deselect all
+- [ ] Show estimated import size/time
+- [ ] Date range filter option
+
+---
+
+#### Story 27.4: Import as Onboarding Flow
+
+**As a** new user
+**I want** import to create projects and provide immediate value
+**So that** my first experience shows Contextor's value
+
+**Acceptance Criteria:**
+- [ ] New user prompt: "Import your Claude Code history?"
+- [ ] Discovery shows projects with conversation counts
+- [ ] Projects created during import get analyzed
+- [ ] After import, user lands on populated conversations view
+- [ ] "First insights" summary after import completes
+
+---
+
+#### Story 27.5: Import Progress & History Enhancement
+
+**As a** user
+**I want** detailed import progress and history
+**So that** I know what was imported and can manage it
+
+**Acceptance Criteria:**
+- [ ] Real-time progress: projects → conversations → prompts
+- [ ] Per-project status in progress view
+- [ ] Import history shows project breakdown
+- [ ] Rollback available per project (not just entire import)
+- [ ] Re-import option for failed projects
+
+---
+
+## Epic 28: Team Analytics & Mentorship
+
+**Priority:** P2 (Team Value)
+**Rationale:** Team visibility enables mentorship use case
+
+### Objective
+
+Provide team-level insights:
+- Aggregate metrics across team
+- Stage-based effort analysis
+- Pattern comparison (individual vs team average)
+- Debugging loop frequency tracking
+
+### Stories
+
+#### Story 28.1: Team Conversation Visibility
+
+**As a** team member
+**I want** to view teammates' conversations
+**So that** I can learn from their approaches
+
+**Acceptance Criteria:**
+- [ ] Team members can view each other's conversations
+- [ ] Filter by team member
+- [ ] Respect any future privacy settings
+- [ ] Activity feed of recent team conversations
+
+---
+
+#### Story 28.2: Team Aggregate Metrics Dashboard
+
+**As a** team lead
+**I want** aggregate metrics for my team
+**So that** I understand team prompting patterns
+
+**Acceptance Criteria:**
+- [ ] Total prompts, conversations, projects
+- [ ] Average scores by dimension
+- [ ] Stage distribution across team
+- [ ] Debugging loop frequency by member
+- [ ] Trend over time (week/month)
+
+---
+
+#### Story 28.3: Individual vs Team Comparison
+
+**As a** team member
+**I want** to compare my metrics to team average
+**So that** I know where I can improve
+
+**Acceptance Criteria:**
+- [ ] Dimension scores: individual vs team average
+- [ ] Stage distribution: individual vs team
+- [ ] Debugging loop rate: individual vs team
+- [ ] Visualization: radar chart or bar comparison
+
+---
+
+#### Story 28.4: Project Stage Analysis
+
+**As a** team lead
+**I want** to see time/effort by project stage
+**So that** I understand where the team spends time
+
+**Acceptance Criteria:**
+- [ ] Per-project stage breakdown
+- [ ] Compare stages across projects
+- [ ] Identify debugging-heavy projects
+- [ ] Historical trend of stage distribution
+
+---
+
+#### Story 28.5: Mentorship Insights
+
+**As a** senior developer
+**I want** to identify team members who need coaching
+**So that** I can provide targeted help
+
+**Acceptance Criteria:**
+- [ ] Low-scoring members highlighted
+- [ ] High debugging loop frequency flagged
+- [ ] Improvement trend tracking
+- [ ] Exportable report for 1:1 discussions
+
+---
+
+## Phase 3 Functional Requirements
+
+### Conversation Management
+
+- **FR201:** System groups prompts into conversations by sessionId
+- **FR202:** System maintains message threading via parentUuid
+- **FR203:** Users can navigate from project → conversation → messages
+- **FR204:** Users can view conversations in chat-like interface
+- **FR205:** Users can expand message details (tools, thinking, scores)
+
+### Enhanced Capture
+
+- **FR206:** System captures full LLM response text
+- **FR207:** System summarizes extended thinking to configurable length
+- **FR208:** System captures tool execution metadata as JSONB
+- **FR209:** System detects response completion before triggering analysis
+- **FR210:** VS Code extension captures prompt + response pairs
+
+### Context-Aware Analysis
+
+- **FR211:** System classifies prompts by type (initiating, continuation, selection, etc.)
+- **FR212:** Analysis considers conversation context, not just isolated prompt
+- **FR213:** System detects debugging loops (3+ similar fix attempts)
+- **FR214:** System classifies conversations by project stage
+- **FR215:** Conversation-level aggregate scores calculated
+
+### Project Mapping
+
+- **FR216:** System auto-matches Claude Code paths to Contextor projects
+- **FR217:** Users can manually map unmatched projects
+- **FR218:** Users can create Contextor projects during import
+- **FR219:** Users can selectively import projects/conversations
+- **FR220:** Project mappings persist server-side, shared across devices
+
+### Team Analytics
+
+- **FR221:** Team members can view each other's conversations
+- **FR222:** Team leads see aggregate metrics dashboard
+- **FR223:** Individual vs team comparison available
+- **FR224:** Stage-based effort analysis per project
+- **FR225:** Debugging loop frequency tracked per member
+
+### Real-time Features
+
+- **FR226:** VS Code alerts on debugging loop detection
+- **FR227:** Alerts are dismissible with "don't show again" option
+- **FR228:** Historical analysis runs in background queue (recent first)
+- **FR229:** Import progress shows real-time status
+
+---
+
+## Phase 3 Non-Functional Requirements
+
+### Performance
+
+- **NFR201:** Conversation list loads in < 500ms for 1000 conversations
+- **NFR202:** Conversation thread loads in < 300ms for 500 messages
+- **NFR203:** Context-aware analysis completes in < 5 seconds
+- **NFR204:** Background analysis processes 100 prompts/minute
+- **NFR205:** Import discovery completes in < 10 seconds for 30 days of history
+
+### Scalability
+
+- **NFR206:** Support 100,000 conversations per team
+- **NFR207:** Support 10,000 messages per conversation
+- **NFR208:** Analysis queue handles 10,000 pending jobs
+
+### Data
+
+- **NFR209:** Full conversation data exportable as JSON
+- **NFR210:** Thinking summary length configurable (100-2000 chars)
+- **NFR211:** Response storage uses appropriate compression
+
+---
+
+## Phase 3 Risks & Mitigations
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Context-aware analysis is expensive | High cost per analysis | Medium | Start with full context, measure, optimize |
+| Prompt classification accuracy | Poor UX if misclassified | Medium | Allow user override, iterate on classifier |
+| Debugging loop false positives | Annoying alerts | Medium | Conservative threshold, easy dismissal |
+| Large conversation storage | Database growth | Low | Thinking summarization, retention policies |
+| Import overwhelms system | API overload | Medium | Rate limiting, background queue |
+
+---
+
+## Phase 3 Dependencies
+
+### On Phase 2
+
+- Epic 15 (Response Context Capture) — extended for full storage
+- Epic 16 (Session Tracking) — foundation for conversations
+- Epic 17 (Historical Import) — extended for project mapping
+- Epic 19 (VS Code Extension) — extended for alerts and capture
+- Epic 21 (Enhanced Analysis) — extended for context-awareness
+- Epic 22 (Configurable Analysis) — used for prompt classification config
+
+### External
+
+- Claude API — for context-aware analysis
+- Supabase — database schema extensions
+- VS Code Marketplace — extension updates

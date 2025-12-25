@@ -4,9 +4,9 @@ import { CreateFirstTeam } from '@/components/onboarding/create-first-team';
 import { OnboardingChecklistWrapper } from '@/components/onboarding/onboarding-checklist-wrapper';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MetricCard } from '@/components/analytics/metric-card';
+import { DashboardMetrics } from './DashboardMetrics';
 import Link from 'next/link';
-import { Plus, Users, FolderKanban, MessageSquare } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface TeamMembership {
   role: string;
@@ -91,28 +91,12 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <MetricCard
-          title="Team Members"
-          value={memberCount ?? 0}
-          subtitle={isAdmin ? 'You are an admin' : 'You are a member'}
-          icon={Users}
-        />
-
-        <MetricCard
-          title="Projects"
-          value={projectCount ?? 0}
-          subtitle="Active projects"
-          icon={FolderKanban}
-        />
-
-        <MetricCard
-          title="Prompts Captured"
-          value={0}
-          subtitle="This month"
-          icon={MessageSquare}
-        />
-      </div>
+      <DashboardMetrics
+        memberCount={memberCount ?? 0}
+        projectCount={projectCount ?? 0}
+        promptCount={0}
+        isAdmin={isAdmin}
+      />
 
       {isAdmin && (
         <Card>

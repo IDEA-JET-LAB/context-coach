@@ -42,12 +42,32 @@ export interface ImportProgress {
 }
 
 /**
+ * Tool execution from assistant response
+ */
+interface ExtractedToolUse {
+  toolId: string;
+  toolName: string;
+  inputSummary: string;
+  inputFull?: Record<string, unknown>;
+}
+
+/**
  * Prompt-response pair with fingerprint
  */
 interface PromptWithFingerprint {
   prompt: {
     text: string;
     timestamp: string;
+  };
+  response?: {
+    text: string;
+    timestamp: string;
+    model?: string;
+    tokens?: {
+      input: number;
+      output: number;
+    };
+    tools?: ExtractedToolUse[];
   };
   fingerprint: string;
 }
@@ -439,43 +459,202 @@ export class ImportService {
   }
 
   /**
-   * Extract prompts from a JSONL file.
+   * Extract prompts with responses from a JSONL file.
    */
   private async extractPromptsFromFile(
     filePath: string,
     userId: string
   ): Promise<PromptWithFingerprint[]> {
-    const prompts: PromptWithFingerprint[] = [];
+    const pairs: PromptWithFingerprint[] = [];
 
     try {
       const content = fs.readFileSync(filePath, "utf-8");
       const lines = content.split("\n").filter((line) => line.trim());
 
+      // Parse all messages first
+      interface ParsedMessage {
+        type: string;
+        content: string;
+        timestamp: string;
+        model?: string;
+        tokens?: { input: number; output: number };
+        tools?: ExtractedToolUse[];
+      }
+      const messages: ParsedMessage[] = [];
+
       for (const line of lines) {
         try {
           const message = JSON.parse(line);
 
-          // Look for user messages
           if (message.type === "user" && message.message?.content) {
             const text = this.extractTextContent(message.message.content);
             if (text && text.length > 0) {
-              const timestamp =
-                message.timestamp || new Date().toISOString();
-              prompts.push({
-                prompt: { text, timestamp },
-                fingerprint: this.generateFingerprint(userId, timestamp, text),
+              messages.push({
+                type: "user",
+                content: text,
+                timestamp: message.timestamp || new Date().toISOString(),
               });
             }
+          } else if (message.type === "assistant" && message.message) {
+            const text = this.extractAssistantContent(message.message.content);
+            const usage = message.message.usage;
+            messages.push({
+              type: "assistant",
+              content: text,
+              timestamp: message.timestamp || new Date().toISOString(),
+              model: message.message.model,
+              tokens: usage
+                ? {
+                    input: usage.input_tokens || 0,
+                    output: usage.output_tokens || 0,
+                  }
+                : undefined,
+              tools: this.extractToolUsage(message.message.content),
+            });
           }
         } catch {
           // Skip malformed lines
+        }
+      }
+
+      // Pair user messages with subsequent assistant responses
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        if (msg.type === "user") {
+          const nextMsg = messages[i + 1];
+          const response =
+            nextMsg?.type === "assistant" ? nextMsg : undefined;
+
+          pairs.push({
+            prompt: {
+              text: msg.content,
+              timestamp: msg.timestamp,
+            },
+            response: response
+              ? {
+                  text: response.content,
+                  timestamp: response.timestamp,
+                  model: response.model,
+                  tokens: response.tokens,
+                  tools: response.tools,
+                }
+              : undefined,
+            fingerprint: this.generateFingerprint(
+              userId,
+              msg.timestamp,
+              msg.content
+            ),
+          });
         }
       }
     } catch (error) {
       this.logError(`Failed to read file: ${filePath}`, error);
     }
 
-    return prompts;
+    return pairs;
+  }
+
+  /**
+   * Extract text content from assistant message (filters out tool_use blocks).
+   */
+  private extractAssistantContent(content: unknown): string {
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      return content
+        .filter(
+          (block): block is { type: string; text: string } =>
+            typeof block === "object" &&
+            block !== null &&
+            block.type === "text" &&
+            typeof block.text === "string"
+        )
+        .map((block) => block.text)
+        .join("\n");
+    }
+
+    return "";
+  }
+
+  /**
+   * Extract tool usage from assistant message content.
+   */
+  private extractToolUsage(content: unknown): ExtractedToolUse[] | undefined {
+    if (!Array.isArray(content)) return undefined;
+
+    const tools: ExtractedToolUse[] = [];
+
+    for (const block of content) {
+      if (
+        typeof block === "object" &&
+        block !== null &&
+        (block as Record<string, unknown>).type === "tool_use"
+      ) {
+        const toolBlock = block as Record<string, unknown>;
+        const toolId = toolBlock.id as string;
+        const toolName = toolBlock.name as string;
+        const input = toolBlock.input as Record<string, unknown> | undefined;
+
+        if (toolId && toolName) {
+          tools.push({
+            toolId,
+            toolName,
+            inputSummary: input
+              ? this.summarizeToolInput(toolName, input)
+              : toolName,
+            inputFull: input,
+          });
+        }
+      }
+    }
+
+    return tools.length > 0 ? tools : undefined;
+  }
+
+  /**
+   * Summarize tool input for display.
+   */
+  private summarizeToolInput(
+    toolName: string,
+    input: Record<string, unknown>
+  ): string {
+    const MAX_LENGTH = 200;
+
+    switch (toolName) {
+      case "Read":
+        return `Read: ${input.file_path || "unknown file"}`;
+      case "Write":
+        return `Write: ${input.file_path || "unknown file"}`;
+      case "Edit":
+        return `Edit: ${input.file_path || "unknown file"}`;
+      case "Bash": {
+        const cmd = String(input.command || "").substring(0, 100);
+        return `Bash: ${cmd}${cmd.length >= 100 ? "..." : ""}`;
+      }
+      case "Glob":
+        return `Glob: ${input.pattern || "unknown pattern"}`;
+      case "Grep":
+        return `Grep: ${input.pattern || "unknown pattern"}`;
+      case "Task":
+        return `Task: ${input.description || String(input.prompt || "").substring(0, 50) || "subtask"}`;
+      case "TodoWrite":
+        return "TodoWrite: updating task list";
+      case "WebFetch":
+        return `WebFetch: ${input.url || "unknown url"}`;
+      case "WebSearch":
+        return `WebSearch: ${input.query || "unknown query"}`;
+      default: {
+        try {
+          const str = JSON.stringify(input);
+          if (str.length <= MAX_LENGTH) return str;
+          return str.substring(0, MAX_LENGTH - 3) + "...";
+        } catch {
+          return `${toolName} invocation`;
+        }
+      }
+    }
   }
 
   /**

@@ -16,6 +16,7 @@ interface LastPromptPanelProps {
   prompt: LastPromptData | null;
   isLoading: boolean;
   onRefresh: () => void;
+  onStartConversation?: () => void;
 }
 
 // Format score from 0-100 scale to 1.0-10.0 display
@@ -85,6 +86,7 @@ export const LastPromptPanel: React.FC<LastPromptPanelProps> = ({
   prompt,
   isLoading,
   onRefresh,
+  onStartConversation,
 }) => {
   if (isLoading) {
     return (
@@ -110,9 +112,22 @@ export const LastPromptPanel: React.FC<LastPromptPanelProps> = ({
           <p className="empty-description">
             Your most recent prompt analysis will appear here.
           </p>
-          <button className="retry-button" onClick={onRefresh}>
-            Refresh
-          </button>
+          <div className="empty-actions">
+            {onStartConversation && (
+              <button className="start-conversation-button" onClick={onStartConversation}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Start Conversation
+              </button>
+            )}
+            <button className="retry-button secondary" onClick={onRefresh}>
+              Refresh
+            </button>
+          </div>
+          <p className="empty-hint">
+            Opens a new Claude Code terminal where you can start prompting the AI agent.
+          </p>
         </div>
       </div>
     );

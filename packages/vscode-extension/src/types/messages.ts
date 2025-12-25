@@ -93,10 +93,58 @@ export type ExtensionToWebviewMessage =
 
   // Import messages
   | { type: "import-status"; status: ImportStatus }
+  | { type: "import-history"; history: ImportHistoryData | null }
 
   // Last prompt messages
   | { type: "last-prompt"; prompt: LastPromptData | null }
-  | { type: "last-prompt-loading"; isLoading: boolean };
+  | { type: "last-prompt-loading"; isLoading: boolean }
+  // Conversation messages (Phase 3)
+  | { type: "conversations"; conversations: ConversationSummary[] }
+  | { type: "conversations-loading"; isLoading: boolean }
+  | { type: "conversation-messages"; messages: ConversationMessage[] }
+  | { type: "conversation-messages-loading"; isLoading: boolean }
+
+  // Project status messages (BMAD)
+  | { type: "project-status"; status: ProjectStatusData | null }
+  | { type: "project-status-loading"; isLoading: boolean }
+  | { type: "project-status-error"; error: string }
+
+  // Workspace installation status
+  | { type: "workspace-status"; status: WorkspaceStatus }
+
+  // Documents messages
+  | { type: "documents"; documents: DocumentItem[] }
+  | { type: "documents-loading"; isLoading: boolean };
+
+/**
+ * Conversation summary for webview display (Phase 3)
+ */
+export interface ConversationSummary {
+  id: string;
+  sessionId: string;
+  slug: string;
+  projectName: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  messageCount: number;
+  primaryStage: string | null;
+  hasDebuggingLoop: boolean;
+  conversationScore: number | null;
+  gitBranch: string | null;
+}
+
+/**
+ * Conversation message for webview display (Phase 3)
+ */
+export interface ConversationMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  promptType?: string;
+  score?: number;
+  toolsUsed?: string[];
+}
 
 /**
  * Session info for webview display
@@ -143,6 +191,56 @@ export interface ImportStatus {
 }
 
 /**
+ * Import history data for webview display
+ */
+export interface ImportHistoryData {
+  timestamp: string;
+  importedCount: number;
+  skippedCount: number;
+  totalSessions: number;
+}
+
+/**
+ * Workspace installation status
+ */
+export interface WorkspaceStatus {
+  contextorInstalled: boolean;
+  bmadInstalled: boolean;
+  projectId: string | null;
+  projectName: string | null;
+}
+
+/**
+ * Project status data for BMAD sprint tracking
+ */
+export interface ProjectStatusData {
+  project: string;
+  generated: string;
+  epics: Array<{
+    id: string;
+    name: string;
+    status: string;
+    description?: string;
+    stories: Array<{
+      id: string;
+      name: string;
+      status: string;
+    }>;
+  }>;
+}
+
+/**
+ * Document tree item for BMAD documents panel
+ */
+export interface DocumentItem {
+  id: string;
+  name: string;
+  path: string;
+  type: "file" | "folder";
+  children?: DocumentItem[];
+}
+
+/**
  * Messages sent from the webview to the extension
  */
 export type WebviewToExtensionMessage =
@@ -181,7 +279,44 @@ export type WebviewToExtensionMessage =
   | { type: "cancel-import" }
 
   // Last prompt actions
-  | { type: "fetch-last-prompt" };
+  | { type: "fetch-last-prompt" }
+
+  // Terminal command actions
+  | { type: "run-terminal-command"; command: string }
+
+  // Start new Claude Code conversation
+  | { type: "start-conversation" }
+
+  // Conversation actions (Phase 3)
+  | { type: "fetch-conversations" }
+  | { type: "select-conversation"; sessionId: string }
+  | { type: "close-conversation" }
+  | { type: "open-conversation-in-browser"; sessionId: string }
+
+  // Project status actions (BMAD)
+  | { type: "fetch-project-status" }
+  | { type: "open-status-file" }
+
+  // Workspace installation actions
+  | { type: "install-bmad" }
+  | { type: "refresh-workspace-status" }
+  | { type: "register-project" }
+
+  // Documents actions
+  | { type: "fetch-documents" }
+  | { type: "open-document"; path: string }
+  | { type: "create-document"; doc: ProjectDocumentInfo };
+
+/**
+ * Project document info for creation workflow
+ */
+export interface ProjectDocumentInfo {
+  id: string;
+  name: string;
+  filename: string;
+  workflow: string | null;
+  agent: string | null;
+}
 
 /**
  * Legacy AnalyticsData type for backward compatibility

@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 
+export interface ImportHistory {
+  timestamp: string;
+  importedCount: number;
+  skippedCount: number;
+  totalSessions: number;
+}
+
 interface ImportPanelProps {
   isLoading: boolean;
   importStatus: ImportStatus | null;
+  lastImport?: ImportHistory | null;
   onStartImport: () => void;
   onCancelImport: () => void;
 }
@@ -21,9 +29,27 @@ export interface ImportStatus {
   progress?: number;
 }
 
+// Helper to format relative time
+const formatRelativeTime = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
+
 export const ImportPanel: React.FC<ImportPanelProps> = ({
   isLoading,
   importStatus,
+  lastImport,
   onStartImport,
   onCancelImport,
 }) => {
@@ -182,6 +208,18 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
             Claude responses are not imported or stored.
           </p>
         </div>
+
+        {lastImport && (
+          <div className="last-import-info">
+            <h4>Last Import</h4>
+            <div className="last-import-details">
+              <span className="last-import-time">{formatRelativeTime(lastImport.timestamp)}</span>
+              <span className="last-import-stats">
+                {lastImport.importedCount} imported, {lastImport.skippedCount} skipped
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="confirm-checkbox">
           <label>

@@ -100,7 +100,8 @@
       },
       {
         "command": "contextor.signOut",
-        "title": "Contextor: Sign Out"
+        "title": "Contextor: Sign Out",
+        "icon": "$(sign-out)"
       },
       {
         "command": "contextor.scanForInterruptedSessions",
@@ -133,7 +134,12 @@
         {
           "command": "contextor.openWebApp",
           "when": "view == contextor.analyticsView",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "contextor.signOut",
+          "when": "view == contextor.analyticsView",
+          "group": "navigation@2"
         }
       ]
     },

@@ -41,7 +41,6 @@ interface DashboardProps {
   user: UserProfile | null;
   isRefreshing?: boolean;
   onRefresh?: () => void;
-  onSignOut?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -49,7 +48,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   user,
   isRefreshing = false,
   onRefresh,
-  onSignOut,
 }) => {
   if (!analytics) {
     return (
@@ -117,28 +115,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </svg>
             </button>
           )}
-          {onSignOut && (
-            <button
-              className="sign-out-button"
-              onClick={onSignOut}
-              aria-label="Sign out"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
-          )}
         </div>
       </div>
 
@@ -156,11 +132,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <h3 className="section-title">Summary</h3>
         <div className="stats-grid">
           <div className="stat-card">
-            <span className="stat-value">{summary.promptCount}</span>
-            <span className="stat-label">Prompts</span>
+            <span className="stat-value">{summary.promptCount.toLocaleString()}</span>
+            <span className="stat-label">Total Prompts</span>
           </div>
           <div className="stat-card">
-            <span className="stat-value">{summary.timeRange}</span>
+            <span className="stat-value">All time</span>
             <span className="stat-label">Time Range</span>
           </div>
         </div>

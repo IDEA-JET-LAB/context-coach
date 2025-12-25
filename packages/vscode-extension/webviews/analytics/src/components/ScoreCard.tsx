@@ -49,7 +49,7 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
           />
         </svg>
         <div className="score-value" style={{ color: getScoreColor(score) }}>
-          {score}
+          {(score / 10).toFixed(1)}
         </div>
       </div>
       <div className="score-info">

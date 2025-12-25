@@ -160,9 +160,10 @@ export class ContextorAPI {
 
 /**
    * Fetches the most recent prompt with its analysis.
+   * @param projectId - Optional project UUID to filter prompts by current workspace
    * @returns Last prompt data or null if no prompts exist
    */
-  async getLastPrompt(): Promise<ApiResponse<{
+  async getLastPrompt(projectId?: string | null): Promise<ApiResponse<{
     id: string;
     text: string;
     overall_score: number;
@@ -174,8 +175,14 @@ export class ContextorAPI {
     created_at: string;
   } | null>> {
     try {
+      // Build query with optional project filter
+      let url = "/prompts/recent?limit=1";
+      if (projectId) {
+        url += `&project_id=${encodeURIComponent(projectId)}`;
+      }
+
       // Fetch the most recent prompt with analysis
-      const response = await this.authenticatedFetch("/prompts/recent?limit=1");
+      const response = await this.authenticatedFetch(url);
 
       if (!response.ok) {
         return this.handleErrorResponse(response);
@@ -578,4 +585,201 @@ export class ContextorAPI {
       strategies: dim.strategies || [],
     }));
   }
+
+  // ============================================
+  // Conversation API Methods (Phase 3)
+  // ============================================
+
+  /**
+   * Fetches recent conversations (sessions) for the user.
+   * @param limit - Maximum number of conversations to fetch (default: 20)
+   * @returns Array of conversation summaries
+   */
+  async getConversations(limit: number = 20): Promise<ApiResponse<ConversationSummary[]>> {
+    try {
+      const response = await this.authenticatedFetch(`/sessions?limit=${limit}`);
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
+
+      const data = await response.json() as { sessions?: Array<Record<string, unknown>> };
+
+      // Transform API response to conversation summaries
+      const conversations: ConversationSummary[] = (data.sessions || []).map((s: Record<string, unknown>) => ({
+        id: s.id as string,
+        sessionId: s.id as string,
+        slug: (s.slug as string) || (s.first_prompt_text as string)?.slice(0, 50) || "Unnamed Session",
+        projectName: (s.project_name as string) || (s.cwd as string)?.split("/").pop() || null,
+        startedAt: s.started_at as string,
+        endedAt: (s.ended_at as string) || null,
+        messageCount: (s.prompt_count as number) || 0,
+        primaryStage: (s.primary_stage as string) || null,
+        hasDebuggingLoop: (s.has_debugging_loop as boolean) || false,
+        conversationScore: (s.average_score as number) || null,
+        gitBranch: (s.git_branch as string) || null,
+      }));
+
+      return { success: true, data: conversations };
+    } catch (error) {
+      return this.handleError("getConversations", error);
+    }
+  }
+
+  /**
+   * Fetches messages for a specific conversation (session).
+   * @param sessionId - The session ID to fetch messages for
+   * @returns Array of conversation messages
+   */
+  async getConversationMessages(sessionId: string): Promise<ApiResponse<ConversationMessage[]>> {
+    try {
+      const response = await this.authenticatedFetch(`/sessions/${sessionId}/thread`);
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
+
+      const data = await response.json() as { messages?: Array<Record<string, unknown>> };
+
+      // Transform API response to conversation messages
+      const messages: ConversationMessage[] = (data.messages || []).map((m: Record<string, unknown>) => ({
+        id: m.id as string,
+        role: (m.role as "user" | "assistant") || "user",
+        content: m.content as string,
+        timestamp: m.timestamp as string,
+        promptType: (m.prompt_type as string) || undefined,
+        score: (m.score as number) || undefined,
+        toolsUsed: (m.tools_used as string[]) || undefined,
+      }));
+
+      return { success: true, data: messages };
+    } catch (error) {
+      return this.handleError("getConversationMessages", error);
+    }
+  }
+
+  /**
+   * Fetches the list of teams the current user belongs to.
+   * @returns Array of teams or error
+   */
+  async getMyTeams(): Promise<ApiResponse<TeamInfo[]>> {
+    try {
+      this.log("Fetching user's teams");
+
+      const response = await this.authenticatedFetch("/teams");
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
+
+      const result = await response.json() as { data: { teams: TeamInfo[] } };
+      this.log(`Found ${result.data.teams.length} teams`);
+
+      return { success: true, data: result.data.teams };
+    } catch (error) {
+      return this.handleError("getMyTeams", error);
+    }
+  }
+
+  /**
+   * Registers a project from the VS Code extension.
+   * Creates a new project in the backend and returns config for local storage.
+   * @param projectName - Name of the project (usually workspace folder name)
+   * @param workspacePath - Path to the workspace (for reference)
+   * @param teamId - Optional team ID (uses current team if not specified)
+   * @returns Project config to save locally or error
+   */
+  async registerProject(
+    projectName: string,
+    workspacePath?: string,
+    teamId?: string
+  ): Promise<ApiResponse<RegisterProjectResponse>> {
+    try {
+      this.log(`Registering project: ${projectName}`);
+
+      const response = await this.authenticatedFetch("/extension/register-project", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: projectName,
+          workspacePath,
+          teamId,
+        }),
+      });
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
+
+      const result = await response.json() as { data: RegisterProjectResponse };
+      this.log(`Project registered successfully: ${result.data.project.id}`);
+
+      return { success: true, data: result.data };
+    } catch (error) {
+      return this.handleError("registerProject", error);
+    }
+  }
+}
+
+/**
+ * Response from project registration API
+ */
+interface RegisterProjectResponse {
+  project: {
+    id: string;
+    name: string;
+    team_id: string;
+    team_name: string;
+  };
+  installToken: string;
+  config: {
+    project_id: string;
+    project_name: string;
+    team_id: string;
+    team_name: string;
+    api_endpoint: string;
+    created_at: string;
+    created_by: string;
+  };
+}
+
+/**
+ * Team info from API
+ */
+interface TeamInfo {
+  id: string;
+  name: string;
+  role: string;
+}
+
+/**
+ * Conversation summary for API response (Phase 3)
+ */
+interface ConversationSummary {
+  id: string;
+  sessionId: string;
+  slug: string;
+  projectName: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  messageCount: number;
+  primaryStage: string | null;
+  hasDebuggingLoop: boolean;
+  conversationScore: number | null;
+  gitBranch: string | null;
+}
+
+/**
+ * Conversation message for API response (Phase 3)
+ */
+interface ConversationMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  promptType?: string;
+  score?: number;
+  toolsUsed?: string[];
 }

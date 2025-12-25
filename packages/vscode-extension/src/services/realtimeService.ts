@@ -63,6 +63,7 @@ export class RealtimeService {
     // Get Supabase config from settings
     const settings = SettingsService.getInstance();
     const apiEndpoint = settings.apiEndpoint;
+    this.log(`API endpoint: ${apiEndpoint}`);
 
     // Extract Supabase URL from API endpoint
     // API endpoint: https://contextor.co/api or http://127.0.0.1:3050/api
@@ -70,11 +71,15 @@ export class RealtimeService {
     const supabaseUrl = this.getSupabaseUrl();
     const supabaseAnonKey = this.getSupabaseAnonKey();
 
+    this.log(`Supabase URL: ${supabaseUrl}`);
+    this.log(`Supabase anon key: ${supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'NOT SET'}`);
+
     if (!supabaseUrl || !supabaseAnonKey) {
       this.log("Supabase URL or anon key not configured, realtime disabled");
       return;
     }
 
+    this.log("Creating Supabase client for Realtime...");
     this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
       realtime: {
         params: {
@@ -82,6 +87,7 @@ export class RealtimeService {
         },
       },
     });
+    this.log("Supabase client created successfully");
 
     // Try to connect if already authenticated
     await this.handleAuthChange();
@@ -91,27 +97,46 @@ export class RealtimeService {
    * Handle authentication state changes.
    */
   private async handleAuthChange(): Promise<void> {
+    this.log("handleAuthChange called");
     const isAuth = await this.authService.isAuthenticated();
+    this.log(`isAuthenticated: ${isAuth}`);
 
     if (isAuth) {
       const user = await this.authService.getUser();
       const accessToken = await this.authService.getAccessToken();
+      this.log(`User: ${user?.id || 'null'}, email: ${user?.email || 'null'}`);
+      this.log(`Access token: ${accessToken ? accessToken.substring(0, 20) + '...' : 'NOT SET'}`);
 
       if (user?.id && user.id !== this.userId) {
         this.userId = user.id;
+        this.log(`User ID changed, setting up Realtime for: ${user.id}`);
 
         // Set the user's access token on the Supabase client for RLS
         if (this.supabase && accessToken) {
-          await this.supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: '', // We manage refresh separately
-          });
-          this.log(`Set Supabase session for user: ${user.id}`);
+          this.log("Setting Supabase auth session...");
+          try {
+            const { data, error } = await this.supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: '', // We manage refresh separately
+            });
+            if (error) {
+              this.logError("Failed to set Supabase session", error);
+            } else {
+              this.log(`Supabase session set successfully. User: ${data?.user?.id || 'null'}`);
+            }
+          } catch (err) {
+            this.logError("Exception setting Supabase session", err);
+          }
+        } else {
+          this.log(`Cannot set session: supabase=${!!this.supabase}, accessToken=${!!accessToken}`);
         }
 
         await this.connect();
+      } else {
+        this.log(`User ID unchanged or null: ${user?.id}, current: ${this.userId}`);
       }
     } else {
+      this.log("Not authenticated, disconnecting Realtime");
       this.disconnect();
       this.userId = null;
     }
@@ -121,8 +146,10 @@ export class RealtimeService {
    * Connect to Supabase Realtime and subscribe to prompt changes.
    */
   private async connect(): Promise<void> {
+    this.log("connect() called");
+
     if (!this.supabase || !this.userId) {
-      this.log("Cannot connect: missing supabase client or user ID");
+      this.log(`Cannot connect: supabase=${!!this.supabase}, userId=${this.userId}`);
       return;
     }
 
@@ -131,48 +158,67 @@ export class RealtimeService {
       return;
     }
 
-    this.log(`Connecting to realtime for user: ${this.userId}`);
+    const channelName = `prompts:user:${this.userId}`;
+    this.log(`Connecting to realtime channel: ${channelName}`);
 
     try {
-      // Subscribe to INSERT events on the prompts table for this user
+      // Subscribe to UPDATE events on prompts table to catch analysis completion
+      // When analysis_status changes from 'pending' to 'complete', we notify
+      // Note: We don't filter by user_id because:
+      // 1. prompts.user_id is a TEXT field from CLI (e.g., "Edgars")
+      // 2. auth.uid() is a UUID that doesn't match
+      // 3. RLS policy already ensures we only see prompts from our teams
+      this.log("Creating channel subscription...");
       this.channel = this.supabase
-        .channel(`prompts:user:${this.userId}`)
+        .channel(channelName)
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event: "UPDATE",
             schema: "public",
             table: "prompts",
-            filter: `user_id=eq.${this.userId}`,
+            // No filter - RLS handles access control via team_members table
           },
           (payload) => {
-            this.log(`New prompt received: ${payload.new.id}`);
-            this.notifyNewPrompt(payload.new.id as string);
+            this.log(`Received postgres_changes event!`);
+            this.log(`Payload: ${JSON.stringify(payload, null, 2).substring(0, 500)}`);
+
+            const newRecord = payload.new as Record<string, unknown>;
+            const oldRecord = payload.old as Record<string, unknown>;
+
+            this.log(`Old status: ${oldRecord.analysis_status}, New status: ${newRecord.analysis_status}`);
+
+            // Only notify if analysis just completed
+            if (
+              newRecord.analysis_status === "complete" &&
+              oldRecord.analysis_status !== "complete"
+            ) {
+              this.log(`Analysis completed for prompt: ${newRecord.id}`);
+              this.notifyNewPrompt(newRecord.id as string);
+            } else {
+              this.log(`Ignoring update: status change was ${oldRecord.analysis_status} -> ${newRecord.analysis_status}`);
+            }
           }
         )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "prompt_analyses",
-            // Note: prompt_analyses has prompt_id, not user_id
-            // We'll filter in the callback
-          },
-          (payload) => {
-            this.log(`New analysis received for prompt: ${payload.new.prompt_id}`);
-            this.notifyNewPrompt(payload.new.prompt_id as string);
-          }
-        )
-        .subscribe((status) => {
+        .subscribe((status, err) => {
           this.log(`Realtime subscription status: ${status}`);
+          if (err) {
+            this.logError(`Subscription error`, err);
+          }
           if (status === "SUBSCRIBED") {
             this.isConnected = true;
+            this.log("Successfully subscribed to prompt analysis updates");
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            this.log(`Subscription failed with status: ${status}`);
             this.isConnected = false;
             this.scheduleReconnect();
+          } else if (status === "CLOSED") {
+            this.log("Channel closed");
+            this.isConnected = false;
           }
         });
+
+      this.log("Channel subscription created, waiting for status...");
     } catch (error) {
       this.logError("Failed to connect to realtime", error);
       this.scheduleReconnect();

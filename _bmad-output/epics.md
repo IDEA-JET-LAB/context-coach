@@ -3336,6 +3336,26 @@ The following epics extend Contextor with advanced capabilities including respon
 
 ---
 
+## Epic 23: VS Code Extension Improvements ✅ COMPLETED (2025-12-25)
+
+**Goal:** Enhance the VS Code extension with better navigation, workspace detection, and BMAD integration.
+
+**Business Value:** Improved developer experience within the IDE, reducing context switches to web dashboard. Better onboarding flow for new projects and seamless BMAD document access.
+
+**FRs Covered:** FR55-FR65 (CLI/Installation), IDE integration
+
+**Stories:**
+- **23-1:** Two-Level Navigation - Primary tabs (Contextor | BMAD) with secondary tab pages
+- **23-2:** Tab Memory Per Section - Remember last active tab within each primary section
+- **23-3:** Collapsible Status Panel - Expandable categories for epic/story grouping
+- **23-4:** Workspace Installation Detection - Check for Contextor and BMAD installation state
+- **23-5:** Register Project Flow - Register project with team selection via QuickPick
+- **23-6:** Install BMAD Button - Terminal automation for BMAD installation
+- **23-7:** BMAD Documents Panel - File tree viewer for project documentation
+- **23-8:** Smart Project Documents - Sub-tabs (All/Workflow/Project) with missing doc detection and one-click creation
+
+---
+
 ### Phase 2 Implementation Checklist
 
 **Epic 14.5 (P1 - Security First):**
