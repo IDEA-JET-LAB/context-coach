@@ -23,6 +23,7 @@ import {
   type SyncState,
   type PromptSuggestion,
 } from '../components';
+import type { DimensionScore, PromptDimensions } from '../shared/types';
 
 // ============================================
 // Types
@@ -35,20 +36,6 @@ export interface Prompt {
   timestamp: Date | string;
   dimensions?: Record<string, number>;
   isNew?: boolean;
-}
-
-export interface DimensionScore {
-  score: number;
-  trend: 'up' | 'down' | 'stable';
-  change?: number;
-}
-
-export interface PromptDimensions {
-  clarity: DimensionScore;
-  context: DimensionScore;
-  specificity: DimensionScore;
-  actionability: DimensionScore;
-  efficiency: DimensionScore;
 }
 
 export interface AnalyticsData {
@@ -97,56 +84,43 @@ export interface AnalyticsPanelProps {
 // ============================================
 
 const LoadingSkeleton: React.FC = () => {
-  const skeletonStyle: React.CSSProperties = {
-    background: 'linear-gradient(90deg, var(--ctx-surface) 0%, var(--ctx-surface-hover) 50%, var(--ctx-surface) 100%)',
-    backgroundSize: '200% 100%',
-    animation: 'shimmer 1.5s ease-in-out infinite',
-    borderRadius: '4px',
-  };
-
   return (
-    <>
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-      <div style={{ padding: '0' }}>
-        {/* Header Skeleton */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ ...skeletonStyle, width: '100px', height: '10px' }} />
-          <div style={{ ...skeletonStyle, width: '120px', height: '24px' }} />
-        </div>
+    <div className="sidebar-analytics__skeleton">
+      {/* Header Skeleton */}
+      <div className="sidebar-analytics__skeleton-header">
+        <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-header-left" />
+        <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-header-right" />
+      </div>
 
-        {/* Session Health Skeleton */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-            <div style={{ ...skeletonStyle, width: '80px', height: '50px', borderRadius: '40px 40px 0 0' }} />
-          </div>
-        </div>
-
-        {/* Stats Row Skeleton */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-          <div style={{ ...skeletonStyle, flex: 1, height: '48px' }} />
-          <div style={{ ...skeletonStyle, flex: 1, height: '48px' }} />
-        </div>
-
-        {/* Dimensions Skeleton */}
-        <div style={{ ...skeletonStyle, width: '100px', height: '10px', marginBottom: '12px' }} />
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} style={{ ...skeletonStyle, height: '36px', marginBottom: '8px' }} />
-        ))}
-
-        {/* Recent Prompts Skeleton */}
-        <div style={{ marginTop: '20px' }}>
-          <div style={{ ...skeletonStyle, width: '100px', height: '10px', marginBottom: '12px' }} />
-          {[1, 2, 3].map((i) => (
-            <div key={i} style={{ ...skeletonStyle, height: '64px', marginBottom: '8px' }} />
-          ))}
+      {/* Session Health Skeleton */}
+      <div className="sidebar-analytics__skeleton-section">
+        <div className="sidebar-analytics__skeleton-gauge">
+          <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-gauge-shape" />
         </div>
       </div>
-    </>
+
+      {/* Stats Row Skeleton */}
+      <div className="sidebar-analytics__skeleton-stats">
+        <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-stat" />
+        <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-stat" />
+      </div>
+
+      {/* Dimensions Skeleton */}
+      <div className="sidebar-analytics__skeleton-section">
+        <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-title" />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-dimension" />
+        ))}
+      </div>
+
+      {/* Recent Prompts Skeleton */}
+      <div className="sidebar-analytics__skeleton-section">
+        <div className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-title" />
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="sidebar-analytics__skeleton-item sidebar-analytics__skeleton-prompt" />
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -155,53 +129,16 @@ const LoadingSkeleton: React.FC = () => {
 // ============================================
 
 const EmptyState: React.FC = () => {
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    padding: '32px 16px',
-    color: 'var(--ctx-foreground-muted)',
-  };
-
-  const iconStyle: React.CSSProperties = {
-    marginBottom: '16px',
-    opacity: 0.5,
-    animation: 'float 3s ease-in-out infinite',
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '13px',
-    fontWeight: 500,
-    color: 'var(--ctx-foreground)',
-    marginBottom: '8px',
-  };
-
-  const descStyle: React.CSSProperties = {
-    fontSize: '11px',
-    lineHeight: '1.5',
-    maxWidth: '180px',
-  };
-
   return (
-    <>
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-      `}</style>
-      <div style={containerStyle}>
-        <div style={iconStyle}>
-          <CodeIcon size={48} color="var(--ctx-foreground-muted)" />
-        </div>
-        <h3 style={titleStyle}>Start coding to see analytics</h3>
-        <p style={descStyle}>
-          Your prompt analytics will appear here once you begin using Claude Code.
-        </p>
+    <div className="sidebar-analytics__empty">
+      <div className="sidebar-analytics__empty-icon">
+        <CodeIcon size={48} color="var(--ctx-foreground-muted)" />
       </div>
-    </>
+      <h3 className="sidebar-analytics__empty-title">Start coding to see analytics</h3>
+      <p className="sidebar-analytics__empty-desc">
+        Your prompt analytics will appear here once you begin using Claude Code.
+      </p>
+    </div>
   );
 };
 
@@ -297,121 +234,6 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
     return <EmptyState />;
   }
 
-  // ============================================
-  // Styles
-  // ============================================
-
-  const sectionStyle: React.CSSProperties = {
-    marginBottom: '20px',
-  };
-
-  const sectionHeaderStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '12px',
-  };
-
-  const sectionTitleStyle: React.CSSProperties = {
-    fontSize: '10px',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: 'var(--ctx-foreground-muted)',
-  };
-
-  const headerRowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '16px',
-  };
-
-  const gaugeContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '8px 0',
-    position: 'relative',
-  };
-
-  const refreshIndicatorStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '4px',
-    right: '4px',
-    animation: 'spin 1s linear infinite',
-    color: 'var(--ctx-foreground-muted)',
-  };
-
-  const statsRowStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px',
-  };
-
-  const statCardStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '10px 12px',
-    backgroundColor: 'var(--ctx-surface)',
-    border: '1px solid var(--ctx-border-subtle)',
-    borderRadius: '4px',
-  };
-
-  const statLabelStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: 'var(--ctx-foreground-muted)',
-    marginBottom: '4px',
-  };
-
-  const statValueStyle: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: 600,
-    fontFamily: 'var(--ctx-font-mono)',
-    color: 'var(--ctx-foreground)',
-  };
-
-  const trendContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '10px 12px',
-    backgroundColor: 'var(--ctx-surface)',
-    border: '1px solid var(--ctx-border-subtle)',
-    borderRadius: '4px',
-    marginBottom: '20px',
-  };
-
-  const trendLabelStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-  };
-
-  const activityStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: 'var(--ctx-foreground-muted)',
-    marginTop: '8px',
-    textAlign: 'center',
-  };
-
-  const dimensionsContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  };
-
-  const refreshButtonStyle: React.CSSProperties = {
-    padding: '4px',
-    background: 'transparent',
-    border: 'none',
-    borderRadius: '3px',
-    cursor: 'pointer',
-    color: 'var(--ctx-foreground-muted)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 100ms ease',
-  };
-
   // Default dimensions if not provided
   const dimensions = data.dimensions || {
     clarity: { score: 0, trend: 'stable' as const },
@@ -423,20 +245,9 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
 
   return (
     <div>
-      <style>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-
       {/* Header with Time Range Selector */}
-      <div style={headerRowStyle}>
-        <span style={sectionTitleStyle}>Analytics</span>
+      <div className="sidebar-analytics__header-row">
+        <span className="sidebar-analytics__header-title">Analytics</span>
         {onTimeRangeChange && (
           <TimeRangeSelector
             value={selectedTimeRange}
@@ -448,7 +259,7 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
 
       {/* Sync Status */}
       {(syncState !== 'idle' || lastSyncTime || isOffline) && (
-        <div style={{ marginBottom: '16px' }}>
+        <div className="sidebar-analytics__sync-status">
           <SyncStatus
             state={isOffline ? 'offline' : syncState}
             lastSyncTime={lastSyncTime}
@@ -459,58 +270,50 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
       )}
 
       {/* Session Health Score */}
-      <div style={sectionStyle}>
-        <div style={sectionHeaderStyle}>
-          <span style={sectionTitleStyle}>Overall Score</span>
+      <div className="sidebar-analytics__section">
+        <div className="sidebar-analytics__section-header">
+          <span className="sidebar-analytics__section-title">Overall Score</span>
           {onRefresh && !isRefreshing && (
             <button
-              style={refreshButtonStyle}
+              className="sidebar-analytics__refresh-button"
               onClick={onRefresh}
               aria-label="Refresh analytics"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--ctx-foreground)';
-                e.currentTarget.style.backgroundColor = 'var(--ctx-surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--ctx-foreground-muted)';
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
             >
               <RefreshIcon size={14} />
             </button>
           )}
         </div>
-        <div style={gaugeContainerStyle}>
+        <div className="sidebar-analytics__gauge-container">
           {isRefreshing && (
-            <div style={refreshIndicatorStyle}>
+            <div className="sidebar-analytics__refresh-indicator">
               <RefreshIcon size={12} />
             </div>
           )}
           <Gauge value={data.sessionScore} size="md" label="Session Score" />
-          <p style={activityStyle}>{formatTimeSince(data.lastPromptTime)}</p>
+          <p className="sidebar-analytics__activity">{formatTimeSince(data.lastPromptTime)}</p>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div style={{ ...sectionStyle, ...statsRowStyle }}>
-        <div style={statCardStyle}>
-          <div style={statLabelStyle}>Prompts</div>
-          <div style={statValueStyle}>{data.promptCount}</div>
+      <div className="sidebar-analytics__section sidebar-analytics__stats-row">
+        <div className="sidebar-analytics__stat-card">
+          <div className="sidebar-analytics__stat-label">Prompts</div>
+          <div className="sidebar-analytics__stat-value">{data.promptCount}</div>
         </div>
-        <div style={statCardStyle}>
-          <div style={statLabelStyle}>Avg Score</div>
-          <div style={statValueStyle}>
+        <div className="sidebar-analytics__stat-card">
+          <div className="sidebar-analytics__stat-label">Avg Score</div>
+          <div className="sidebar-analytics__stat-value">
             <ScoreBadge score={data.averageScore} size="sm" />
           </div>
         </div>
       </div>
 
       {/* Dimension Scores */}
-      <div style={sectionStyle}>
-        <div style={sectionHeaderStyle}>
-          <span style={sectionTitleStyle}>Dimension Breakdown</span>
+      <div className="sidebar-analytics__section">
+        <div className="sidebar-analytics__section-header">
+          <span className="sidebar-analytics__section-title">Dimension Breakdown</span>
         </div>
-        <div style={dimensionsContainerStyle} role="list" aria-label="Dimension scores">
+        <div className="sidebar-analytics__dimensions" role="list" aria-label="Dimension scores">
           {Object.entries(dimensions).map(([name, dimData]) => (
             <DimensionScoreCard
               key={name}
@@ -526,10 +329,10 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
 
       {/* Trend Chart */}
       {data.trendData.length > 1 && (
-        <div style={trendContainerStyle}>
-          <div style={trendLabelStyle}>
-            <span style={statLabelStyle}>Score Trend</span>
-            <span style={{ fontSize: '11px', color: 'var(--ctx-foreground)' }}>
+        <div className="sidebar-analytics__trend-container">
+          <div className="sidebar-analytics__trend-label">
+            <span className="sidebar-analytics__stat-label">Score Trend</span>
+            <span className="sidebar-analytics__trend-text">
               Last {data.trendData.length} prompts
             </span>
           </div>
@@ -544,19 +347,15 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
       )}
 
       {/* Recent Prompts */}
-      <div style={sectionStyle}>
-        <div style={sectionHeaderStyle}>
-          <span style={sectionTitleStyle}>Recent Prompts</span>
+      <div className="sidebar-analytics__section">
+        <div className="sidebar-analytics__section-header">
+          <span className="sidebar-analytics__section-title">Recent Prompts</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="sidebar-analytics__prompts-list">
           {data.recentPrompts.slice(0, 5).map((prompt, index) => (
             <div
               key={prompt.id}
-              style={{
-                animation: 'slideUp 200ms ease-out',
-                animationDelay: `${index * 50}ms`,
-                animationFillMode: 'backwards',
-              }}
+              className="sidebar-analytics__prompt-item"
             >
               <PromptCard
                 text={prompt.text}
@@ -572,15 +371,7 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
 
       {/* Offline/Error indicator at bottom */}
       {error && data && (
-        <div style={{
-          padding: '8px 12px',
-          backgroundColor: 'var(--ctx-score-growth-bg)',
-          border: '1px solid var(--ctx-score-growth)',
-          borderRadius: 'var(--ctx-radius)',
-          fontSize: '11px',
-          color: 'var(--ctx-score-growth)',
-          marginTop: '16px',
-        }}>
+        <div className="sidebar-analytics__error-footer">
           {error}
         </div>
       )}

@@ -12,7 +12,8 @@ import { StatusPanel, type ProjectStatusData, type StatusSectionState } from "./
 import { NotInstalledPanel } from "./components/NotInstalledPanel";
 import { DocumentsPanel, type DocumentItem, type ProjectDocument } from "./components/DocumentsPanel";
 import { BmadSettingsPanel, type BmadVersionInfo } from "./components/BmadSettingsPanel";
-import { TeamPanel, type TeamStatsData, type TeamTimeRange } from "./components/TeamPanel";
+import { TeamPanel, type TeamStatsData, type TeamTimeRange, type TeamInfo } from "./components/TeamPanel";
+import type { DimensionScore, PromptDimensions } from "../../shared/types";
 
 // ============================================
 // VS Code Webview API Types
@@ -37,12 +38,6 @@ export interface UserProfile {
   email: string;
   name?: string;
   avatar_url?: string;
-}
-
-interface DimensionScore {
-  score: number;
-  trend: "up" | "down" | "stable";
-  change?: number;
 }
 
 export interface AnalyticsData {
@@ -140,7 +135,12 @@ type ExtensionMessage =
   | { type: "documents-loading"; isLoading: boolean }
   // BMAD version messages
   | { type: "bmad-version-info"; versionInfo: BmadVersionInfo }
-  | { type: "bmad-version-loading"; isLoading: boolean };
+  | { type: "bmad-version-loading"; isLoading: boolean }
+  // Teams messages
+  | { type: "teams"; teams: TeamInfo[] }
+  | { type: "teams-loading"; isLoading: boolean }
+  | { type: "team-stats"; data: TeamStatsData }
+  | { type: "team-stats-loading"; isLoading: boolean };
 
 type WebviewMessage =
   | { type: "refresh" }
@@ -162,6 +162,7 @@ type WebviewMessage =
   // Status messages
   | { type: "fetch-project-status" }
   | { type: "open-status-file" }
+  | { type: "run-validation"; epicId: string; storyId?: string }
   // Terminal command messages
   | { type: "run-terminal-command"; command: string }
   // Conversation messages (Phase 3)
@@ -182,7 +183,8 @@ type WebviewMessage =
   | { type: "fetch-bmad-version" }
   | { type: "upgrade-bmad" }
   // Team stats actions
-  | { type: "fetch-team-stats"; timeRange?: TeamTimeRange };
+  | { type: "fetch-teams" }
+  | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange };
 
 // ============================================
 // App State
@@ -229,6 +231,9 @@ interface AppState {
   bmadVersionInfo: BmadVersionInfo | null;
   bmadVersionLoading: boolean;
   // Team stats
+  teams: TeamInfo[];
+  teamsLoading: boolean;
+  selectedTeamId: string | null;
   teamStats: TeamStatsData | null;
   teamStatsLoading: boolean;
   // Server status
@@ -285,6 +290,9 @@ const initialState: AppState = {
   bmadVersionInfo: null,
   bmadVersionLoading: false,
   // Team stats
+  teams: [],
+  teamsLoading: false,
+  selectedTeamId: null,
   teamStats: null,
   teamStatsLoading: false,
   // Server status
@@ -650,6 +658,27 @@ const App: React.FC = () => {
           }));
           break;
 
+        // Teams list messages
+        case "teams":
+          setState((prev) => {
+            // Auto-select first team if none selected
+            const selectedTeamId = prev.selectedTeamId || (message.teams.length > 0 ? message.teams[0].id : null);
+            return {
+              ...prev,
+              teams: message.teams,
+              teamsLoading: false,
+              selectedTeamId,
+            };
+          });
+          break;
+
+        case "teams-loading":
+          setState((prev) => ({
+            ...prev,
+            teamsLoading: message.isLoading,
+          }));
+          break;
+
         // Team stats messages
         case "team-stats":
           setState((prev) => ({
@@ -700,6 +729,16 @@ const App: React.FC = () => {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  // Auto-fetch team stats when selectedTeamId changes
+  useEffect(() => {
+    if (state.selectedTeamId && state.teams.length > 0 && !state.teamStats) {
+      vscodeRef.current?.postMessage({
+        type: "fetch-team-stats",
+        teamId: state.selectedTeamId,
+      } satisfies WebviewMessage);
+    }
+  }, [state.selectedTeamId, state.teams.length, state.teamStats]);
+
   // Tab change handler - tracks last tab per section for memory
   const handleTabChange = useCallback((tab: TabId) => {
     // Determine which section this tab belongs to
@@ -738,8 +777,8 @@ const App: React.FC = () => {
       setState((prev) => ({ ...prev, bmadVersionLoading: true }));
       vscodeRef.current?.postMessage({ type: "fetch-bmad-version" } satisfies WebviewMessage);
     } else if (tab === "team") {
-      setState((prev) => ({ ...prev, teamStatsLoading: true }));
-      vscodeRef.current?.postMessage({ type: "fetch-team-stats" } satisfies WebviewMessage);
+      setState((prev) => ({ ...prev, teamsLoading: true }));
+      vscodeRef.current?.postMessage({ type: "fetch-teams" } satisfies WebviewMessage);
     }
   }, []);
 
@@ -872,6 +911,10 @@ const App: React.FC = () => {
     vscodeRef.current?.postMessage({ type: "open-status-file" } satisfies WebviewMessage);
   }, []);
 
+  const handleRunValidation = useCallback((epicId: string, storyId?: string) => {
+    vscodeRef.current?.postMessage({ type: "run-validation", epicId, storyId } satisfies WebviewMessage);
+  }, []);
+
   // Section toggle handler for Status panel
   const handleStatusSectionToggle = useCallback((section: keyof StatusSectionState) => {
     setState((prev) => {
@@ -971,13 +1014,23 @@ const App: React.FC = () => {
   }, []);
 
   // Team stats handlers
-  const handleFetchTeamStats = useCallback((timeRange?: TeamTimeRange) => {
-    setState((prev) => ({ ...prev, teamStatsLoading: true }));
-    vscodeRef.current?.postMessage({ type: "fetch-team-stats", timeRange } satisfies WebviewMessage);
+  const handleFetchTeams = useCallback(() => {
+    setState((prev) => ({ ...prev, teamsLoading: true }));
+    vscodeRef.current?.postMessage({ type: "fetch-teams" } satisfies WebviewMessage);
   }, []);
 
-  const handleTeamTimeRangeChange = useCallback((timeRange: TeamTimeRange) => {
-    handleFetchTeamStats(timeRange);
+  const handleFetchTeamStats = useCallback((teamId?: string, timeRange?: TeamTimeRange) => {
+    setState((prev) => ({ ...prev, teamStatsLoading: true }));
+    vscodeRef.current?.postMessage({ type: "fetch-team-stats", teamId, timeRange } satisfies WebviewMessage);
+  }, []);
+
+  const handleTeamChange = useCallback((teamId: string) => {
+    setState((prev) => ({ ...prev, selectedTeamId: teamId, teamStatsLoading: true }));
+    vscodeRef.current?.postMessage({ type: "fetch-team-stats", teamId } satisfies WebviewMessage);
+  }, []);
+
+  const handleTeamTimeRangeChange = useCallback((teamId: string, timeRange: TeamTimeRange) => {
+    handleFetchTeamStats(teamId, timeRange);
   }, [handleFetchTeamStats]);
 
   // Render based on state
@@ -1193,10 +1246,14 @@ const App: React.FC = () => {
 
         {state.activeTab === "team" && !showContextorNotInstalled && (
           <TeamPanel
+            teams={state.teams}
+            teamsLoading={state.teamsLoading}
+            selectedTeamId={state.selectedTeamId}
             data={state.teamStats}
             isLoading={state.teamStatsLoading}
+            onTeamChange={handleTeamChange}
             onTimeRangeChange={handleTeamTimeRangeChange}
-            onRefresh={() => handleFetchTeamStats()}
+            onRefresh={handleFetchTeams}
           />
         )}
 
@@ -1255,6 +1312,7 @@ const App: React.FC = () => {
             onOpenFile={handleOpenStatusFile}
             sectionState={state.statusSectionState}
             onSectionToggle={handleStatusSectionToggle}
+            onRunValidation={handleRunValidation}
           />
         )}
 

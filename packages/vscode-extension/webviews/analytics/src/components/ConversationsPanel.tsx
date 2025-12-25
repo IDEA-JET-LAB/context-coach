@@ -36,14 +36,19 @@ interface ConversationsPanelProps {
   onOpenInBrowser: () => void;
 }
 
-// Stage colors (matching design system)
-const STAGE_COLORS: Record<string, { bg: string; text: string }> = {
-  architecture: { bg: "rgba(59, 130, 246, 0.15)", text: "#3B82F6" },
-  specification: { bg: "rgba(139, 92, 246, 0.15)", text: "#8B5CF6" },
-  development: { bg: "rgba(34, 197, 94, 0.15)", text: "#22C55E" },
-  debugging: { bg: "rgba(245, 158, 11, 0.15)", text: "#F59E0B" },
-  enhancement: { bg: "rgba(20, 184, 166, 0.15)", text: "#14B8A6" },
-};
+// Valid stage types for CSS class mapping
+const VALID_STAGES = new Set([
+  "architecture",
+  "specification",
+  "development",
+  "debugging",
+  "enhancement",
+]);
+
+// Helper to get stage class name
+function getStageClassName(stage: string): string {
+  return VALID_STAGES.has(stage) ? `stage-${stage}` : "stage-unknown";
+}
 
 // Format duration
 function formatDuration(startedAt: string, endedAt: string | null): string {
@@ -167,10 +172,6 @@ const ConversationCard: React.FC<{
   conversation: ConversationSummary;
   onClick: () => void;
 }> = ({ conversation, onClick }) => {
-  const stageColor = conversation.primaryStage
-    ? STAGE_COLORS[conversation.primaryStage]
-    : null;
-
   return (
     <div className="conversation-card" onClick={onClick}>
       {/* Header */}
@@ -199,11 +200,8 @@ const ConversationCard: React.FC<{
 
       {/* Badges */}
       <div className="conversation-card-badges">
-        {stageColor && (
-          <span
-            className="badge stage-badge"
-            style={{ backgroundColor: stageColor.bg, color: stageColor.text }}
-          >
+        {conversation.primaryStage && (
+          <span className={`badge stage-badge ${getStageClassName(conversation.primaryStage)}`}>
             {conversation.primaryStage}
           </span>
         )}
@@ -326,12 +324,8 @@ const MessageBubbleVS: React.FC<{ message: ConversationMessage }> = ({
 
 // Badge components
 const StageBadge: React.FC<{ stage: string }> = ({ stage }) => {
-  const color = STAGE_COLORS[stage] || { bg: "#333", text: "#999" };
   return (
-    <span
-      className="badge stage-badge"
-      style={{ backgroundColor: color.bg, color: color.text }}
-    >
+    <span className={`badge stage-badge ${getStageClassName(stage)}`}>
       {stage}
     </span>
   );

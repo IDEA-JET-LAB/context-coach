@@ -1,0 +1,171 @@
+/* ============================================
+   TipCard Component Styles
+   Story 19-5: Quick Coaching Tips
+   ============================================ */
+
+/* Animations */
+@keyframes tipSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Main container */
+.tip-card {
+  border-left: 3px solid var(--tip-priority-color, var(--vscode-inputValidation-infoBorder, #3794ff));
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: var(--ctx-surface, var(--vscode-editor-background));
+  border-radius: var(--ctx-radius, 4px);
+  transition: opacity 200ms ease, transform 200ms ease;
+  animation: tipSlideIn 200ms ease-out;
+}
+
+.tip-card--dismissing {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* Header */
+.tip-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Dimension badge - uses CSS custom property for color */
+.tip-card__dimension-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background-color: var(--tip-dimension-bg, rgba(59, 130, 246, 0.125));
+  color: var(--tip-dimension-color, #3b82f6);
+}
+
+/* Dismiss button */
+.tip-card__dismiss-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--ctx-foreground-muted, var(--vscode-descriptionForeground));
+  cursor: pointer;
+  transition: opacity 100ms ease, background-color 100ms ease;
+  flex-shrink: 0;
+}
+
+.tip-card__dismiss-btn--hidden {
+  opacity: 0.5;
+}
+
+.tip-card__dismiss-btn--visible {
+  opacity: 1;
+}
+
+.tip-card__dismiss-btn:hover {
+  background-color: var(--ctx-surface-hover, var(--vscode-toolbar-hoverBackground));
+  opacity: 1;
+}
+
+/* Title */
+.tip-card__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ctx-foreground, var(--vscode-foreground));
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+/* Description */
+.tip-card__description {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ctx-foreground-muted, var(--vscode-descriptionForeground));
+}
+
+.tip-card__description--with-example {
+  margin-bottom: 8px;
+}
+
+/* Example toggle button */
+.tip-card__example-toggle {
+  font-size: 10px;
+  color: var(--ctx-link, var(--vscode-textLink-foreground));
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Example container */
+.tip-card__example {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: var(--ctx-background, var(--vscode-sideBar-background));
+  border-radius: 4px;
+  font-size: 11px;
+  animation: fadeIn 150ms ease-out;
+}
+
+.tip-card__example-section {
+  margin-bottom: 8px;
+}
+
+.tip-card__example-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Example label */
+.tip-card__example-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ctx-foreground-muted, var(--vscode-descriptionForeground));
+  margin-bottom: 4px;
+}
+
+/* Example code base styles */
+.tip-card__example-code {
+  font-family: var(--ctx-font-mono, var(--vscode-editor-font-family), monospace);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--ctx-foreground, var(--vscode-foreground));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Before example - strikethrough and muted */
+.tip-card__example-code--before {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+/* After example - success color */
+.tip-card__example-code--after {
+  color: var(--ctx-score-high, #22c55e);
+}

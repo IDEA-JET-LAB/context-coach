@@ -1,16 +1,11 @@
 import React from "react";
 import { ScoreCard } from "./ScoreCard";
 import { DimensionList } from "./DimensionList";
+import type { DimensionScore, PromptDimensions } from "../../../shared/types";
 
 /**
  * Analytics data structure matching extension types
  */
-interface DimensionScore {
-  score: number;
-  trend: "up" | "down" | "stable";
-  change?: number;
-}
-
 interface AnalyticsData {
   summary: {
     overallScore: number;
@@ -19,13 +14,7 @@ interface AnalyticsData {
     scoreChange?: number;
     countChange?: number;
   };
-  dimensions: {
-    clarity: DimensionScore;
-    context: DimensionScore;
-    specificity: DimensionScore;
-    actionability: DimensionScore;
-    efficiency: DimensionScore;
-  };
+  dimensions: PromptDimensions;
   lastUpdated: string;
 }
 

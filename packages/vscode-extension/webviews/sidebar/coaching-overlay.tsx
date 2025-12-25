@@ -56,144 +56,55 @@ export const HoverCard: React.FC<HoverCardProps> = ({
 
   const colors = typeColors[type];
 
-  const containerStyle: React.CSSProperties = {
-    maxWidth: '320px',
-    backgroundColor: 'var(--ctx-surface)',
-    border: '1px solid var(--ctx-border)',
-    borderRadius: '6px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-    overflow: 'hidden',
-    fontFamily: 'var(--ctx-font-family)',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 12px',
-    backgroundColor: colors.bg,
-    borderBottom: `1px solid ${colors.accent}20`,
-  };
-
-  const iconStyle: React.CSSProperties = {
-    flexShrink: 0,
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: 'var(--ctx-foreground)',
-  };
-
-  const bodyStyle: React.CSSProperties = {
-    padding: '12px',
-  };
-
-  const messageStyle: React.CSSProperties = {
-    fontSize: '11px',
-    lineHeight: '1.5',
-    color: 'var(--ctx-foreground)',
-    marginBottom: example ? '12px' : '0',
-  };
-
-  const exampleContainerStyle: React.CSSProperties = {
-    backgroundColor: 'var(--ctx-background)',
-    borderRadius: '4px',
-    padding: '10px',
-    marginBottom: '12px',
-  };
-
-  const exampleLabelStyle: React.CSSProperties = {
-    fontSize: '9px',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: 'var(--ctx-foreground-muted)',
-    marginBottom: '4px',
-  };
-
-  const exampleTextStyle: React.CSSProperties = {
-    fontSize: '11px',
-    fontFamily: 'var(--ctx-font-mono)',
-    lineHeight: '1.4',
-    color: 'var(--ctx-foreground)',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  };
-
-  const beforeStyle: React.CSSProperties = {
-    ...exampleTextStyle,
-    textDecoration: 'line-through',
-    opacity: 0.6,
-  };
-
-  const afterStyle: React.CSSProperties = {
-    ...exampleTextStyle,
-    color: colors.accent,
-  };
-
-  const actionsStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px',
-    paddingTop: '8px',
-    borderTop: '1px solid var(--ctx-border-subtle)',
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    padding: '4px 10px',
-    fontSize: '11px',
-    fontWeight: 500,
-    borderRadius: '3px',
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'all 100ms ease',
-  };
-
-  const applyButtonStyle: React.CSSProperties = {
-    ...buttonStyle,
-    backgroundColor: colors.accent,
-    color: '#fff',
-  };
-
-  const learnMoreStyle: React.CSSProperties = {
-    ...buttonStyle,
-    backgroundColor: 'transparent',
-    color: 'var(--ctx-link)',
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <div style={iconStyle}>
+    <div className="coaching-hover-card">
+      <div className={`coaching-hover-card__header coaching-hover-card__header--${type}`}>
+        <div className="coaching-hover-card__icon">
           <CoachingIcon size={14} color={colors.accent} />
         </div>
-        <span style={titleStyle}>{title}</span>
+        <span className="coaching-hover-card__title">{title}</span>
       </div>
-      <div style={bodyStyle}>
-        <p style={messageStyle}>{message}</p>
+      <div className="coaching-hover-card__body">
+        <p className={`coaching-hover-card__message ${example ? 'coaching-hover-card__message--with-example' : ''}`}>
+          {message}
+        </p>
 
         {example && (
-          <div style={exampleContainerStyle}>
-            <div style={{ marginBottom: '8px' }}>
-              <div style={exampleLabelStyle}>Before</div>
-              <div style={beforeStyle}>{example.before}</div>
+          <div className="coaching-hover-card__example">
+            <div className="coaching-hover-card__example-section">
+              <div className="coaching-hover-card__example-label">Before</div>
+              <div className="coaching-hover-card__example-text coaching-hover-card__example-text--before">
+                {example.before}
+              </div>
             </div>
-            <div>
-              <div style={exampleLabelStyle}>After</div>
-              <div style={afterStyle}>{example.after}</div>
+            <div className="coaching-hover-card__example-section">
+              <div className="coaching-hover-card__example-label">After</div>
+              <div
+                className="coaching-hover-card__example-text coaching-hover-card__example-text--after"
+                style={{ '--example-after-color': colors.accent } as React.CSSProperties}
+              >
+                {example.after}
+              </div>
             </div>
           </div>
         )}
 
         {(onApply || onLearnMore) && (
-          <div style={actionsStyle}>
+          <div className="coaching-hover-card__actions">
             {onApply && (
-              <button style={applyButtonStyle} onClick={onApply}>
+              <button
+                className="coaching-hover-card__button coaching-hover-card__button--apply"
+                onClick={onApply}
+                style={{ '--apply-button-bg': colors.accent } as React.CSSProperties}
+              >
                 Apply Fix
               </button>
             )}
             {onLearnMore && (
-              <button style={learnMoreStyle} onClick={onLearnMore}>
+              <button
+                className="coaching-hover-card__button coaching-hover-card__button--learn-more"
+                onClick={onLearnMore}
+              >
                 Learn More
               </button>
             )}
@@ -227,25 +138,14 @@ export const InlineDecorationPreview: React.FC<InlineDecorationProps> = ({
 
   const color = severityColors[severity];
 
-  const containerStyle: React.CSSProperties = {
-    fontFamily: 'var(--ctx-font-mono)',
-    fontSize: '13px',
-    lineHeight: '1.6',
-    padding: '12px',
-    backgroundColor: 'var(--ctx-surface)',
-    borderRadius: '4px',
-  };
-
   let decoratedText: React.ReactNode;
 
   switch (type) {
     case 'underline':
       decoratedText = (
         <span
-          style={{
-            borderBottom: `2px wavy ${color}`,
-            paddingBottom: '2px',
-          }}
+          className="coaching-inline-decoration__underline"
+          style={{ '--decoration-color': color } as React.CSSProperties}
         >
           {text}
         </span>
@@ -254,11 +154,8 @@ export const InlineDecorationPreview: React.FC<InlineDecorationProps> = ({
     case 'highlight':
       decoratedText = (
         <span
-          style={{
-            backgroundColor: `${color}20`,
-            borderRadius: '2px',
-            padding: '0 2px',
-          }}
+          className="coaching-inline-decoration__highlight"
+          style={{ '--decoration-bg': `${color}20` } as React.CSSProperties}
         >
           {text}
         </span>
@@ -266,16 +163,10 @@ export const InlineDecorationPreview: React.FC<InlineDecorationProps> = ({
       break;
     case 'gutter':
       decoratedText = (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        <div className="coaching-inline-decoration__gutter">
           <div
-            style={{
-              width: '4px',
-              height: '100%',
-              minHeight: '20px',
-              backgroundColor: color,
-              borderRadius: '2px',
-              flexShrink: 0,
-            }}
+            className="coaching-inline-decoration__gutter-bar"
+            style={{ '--gutter-color': color } as React.CSSProperties}
           />
           <span>{text}</span>
         </div>
@@ -285,7 +176,7 @@ export const InlineDecorationPreview: React.FC<InlineDecorationProps> = ({
       decoratedText = text;
   }
 
-  return <div style={containerStyle}>{decoratedText}</div>;
+  return <div className="coaching-inline-decoration">{decoratedText}</div>;
 };
 
 // ============================================
@@ -303,54 +194,13 @@ export interface QuickFixProps {
 }
 
 export const QuickFixMenu: React.FC<QuickFixProps> = ({ fixes, onSelectFix }) => {
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: 'var(--ctx-surface)',
-    border: '1px solid var(--ctx-border)',
-    borderRadius: '4px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-    overflow: 'hidden',
-    minWidth: '200px',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    padding: '6px 10px',
-    fontSize: '10px',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: 'var(--ctx-foreground-muted)',
-    backgroundColor: 'var(--ctx-background)',
-    borderBottom: '1px solid var(--ctx-border-subtle)',
-  };
-
-  const itemStyle = (isPreferred: boolean): React.CSSProperties => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    padding: '8px 10px',
-    cursor: 'pointer',
-    backgroundColor: isPreferred ? 'var(--ctx-score-growth-bg)' : 'transparent',
-    borderLeft: isPreferred ? '3px solid var(--ctx-score-growth)' : '3px solid transparent',
-    transition: 'all 100ms ease',
-  });
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: '12px',
-    color: 'var(--ctx-foreground)',
-  };
-
-  const descStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: 'var(--ctx-foreground-muted)',
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>Quick Fixes</div>
-      {fixes.map((fix, index) => (
+    <div className="coaching-quick-fix-menu">
+      <div className="coaching-quick-fix-menu__header">Quick Fixes</div>
+      {fixes.map((fix) => (
         <div
           key={fix.id}
-          style={itemStyle(fix.isPreferred || false)}
+          className={`coaching-quick-fix-menu__item ${fix.isPreferred ? 'coaching-quick-fix-menu__item--preferred' : ''}`}
           onClick={() => onSelectFix(fix.id)}
           onMouseEnter={(e) => {
             if (!fix.isPreferred) {
@@ -366,11 +216,13 @@ export const QuickFixMenu: React.FC<QuickFixProps> = ({ fixes, onSelectFix }) =>
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onSelectFix(fix.id)}
         >
-          <span style={labelStyle}>
-            {fix.isPreferred && <span style={{ color: 'var(--ctx-score-growth)' }}>★ </span>}
+          <span className="coaching-quick-fix-menu__label">
+            {fix.isPreferred && <span className="coaching-quick-fix-menu__star">★ </span>}
             {fix.label}
           </span>
-          {fix.description && <span style={descStyle}>{fix.description}</span>}
+          {fix.description && (
+            <span className="coaching-quick-fix-menu__description">{fix.description}</span>
+          )}
         </div>
       ))}
     </div>
@@ -394,64 +246,19 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 }) => {
   if (!isAnalyzing) return null;
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 10px',
-    backgroundColor: 'var(--ctx-score-growth-bg)',
-    borderRadius: '4px',
-    fontSize: '11px',
-    color: 'var(--ctx-foreground)',
-  };
-
-  const spinnerStyle: React.CSSProperties = {
-    width: '12px',
-    height: '12px',
-    border: '2px solid var(--ctx-score-growth)30',
-    borderTopColor: 'var(--ctx-score-growth)',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  };
-
-  const progressBarStyle: React.CSSProperties = {
-    flex: 1,
-    height: '3px',
-    backgroundColor: 'var(--ctx-score-growth)30',
-    borderRadius: '2px',
-    overflow: 'hidden',
-  };
-
-  const progressFillStyle: React.CSSProperties = {
-    height: '100%',
-    width: progress !== undefined ? `${progress}%` : '30%',
-    backgroundColor: 'var(--ctx-score-growth)',
-    borderRadius: '2px',
-    transition: 'width 200ms ease',
-    animation: progress === undefined ? 'indeterminate 1.5s ease-in-out infinite' : 'none',
-  };
-
   return (
-    <>
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes indeterminate {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(400%); }
-        }
-      `}</style>
-      <div style={containerStyle}>
-        <div style={spinnerStyle} />
-        <span>{message}</span>
-        {progress !== undefined && (
-          <div style={progressBarStyle}>
-            <div style={progressFillStyle} />
-          </div>
-        )}
-      </div>
-    </>
+    <div className="coaching-progress-indicator">
+      <div className="coaching-progress-indicator__spinner" />
+      <span>{message}</span>
+      {progress !== undefined && (
+        <div className="coaching-progress-indicator__progress-bar">
+          <div
+            className={`coaching-progress-indicator__progress-fill ${progress === undefined ? 'coaching-progress-indicator__progress-fill--indeterminate' : ''}`}
+            style={{ width: progress !== undefined ? `${progress}%` : undefined }}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 

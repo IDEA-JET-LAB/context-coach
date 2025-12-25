@@ -1,0 +1,253 @@
+/* ============================================
+   PromptDetail Component Styles
+   Story 19-4: Real-time Analytics Display
+   Story 19-5: Quick Coaching Tips - Enhanced suggestions display
+   ============================================ */
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Main container */
+.prompt-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--ctx-background);
+}
+
+/* Header */
+.prompt-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ctx-border-subtle);
+  flex-shrink: 0;
+}
+
+/* Back button */
+.prompt-detail__back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--ctx-radius-sm);
+  color: var(--ctx-foreground-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.prompt-detail__back-btn:hover {
+  color: var(--ctx-foreground);
+  background-color: var(--ctx-surface-hover);
+}
+
+/* Close button */
+.prompt-detail__close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: var(--ctx-radius-sm);
+  color: var(--ctx-foreground-muted);
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.prompt-detail__close-btn:hover {
+  color: var(--ctx-foreground);
+  background-color: var(--ctx-surface-hover);
+}
+
+/* Content area */
+.prompt-detail__content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Section */
+.prompt-detail__section {
+  margin-bottom: 20px;
+}
+
+/* Section title */
+.prompt-detail__section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ctx-foreground-muted);
+  margin-bottom: 12px;
+}
+
+.prompt-detail__section-title--with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Score header */
+.prompt-detail__score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.prompt-detail__timestamp {
+  font-size: 10px;
+  color: var(--ctx-foreground-muted);
+}
+
+/* Prompt text */
+.prompt-detail__text {
+  padding: 12px;
+  background-color: var(--ctx-surface);
+  border: 1px solid var(--ctx-border-subtle);
+  border-radius: var(--ctx-radius);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ctx-foreground);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* Dimensions container */
+.prompt-detail__dimensions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Suggestions group */
+.prompt-detail__suggestions-group {
+  margin-bottom: 12px;
+}
+
+.prompt-detail__suggestions-group:last-child {
+  margin-bottom: 0;
+}
+
+.prompt-detail__suggestions-group-title {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.prompt-detail__suggestions-group-title--reinforcement {
+  color: var(--prompt-detail-score-high, var(--ctx-score-high));
+}
+
+.prompt-detail__suggestions-group-title--improvement {
+  color: var(--prompt-detail-score-medium, var(--ctx-score-medium));
+}
+
+/* Suggestion card */
+.prompt-detail__suggestion {
+  padding: 10px 12px;
+  background-color: var(--ctx-surface);
+  border: 1px solid var(--ctx-border-subtle);
+  border-radius: var(--ctx-radius);
+  margin-bottom: 8px;
+}
+
+.prompt-detail__suggestion--reinforcement {
+  border-left: 3px solid var(--prompt-detail-score-high, var(--ctx-score-high));
+}
+
+.prompt-detail__suggestion--improvement {
+  border-left: 3px solid var(--prompt-detail-score-medium, var(--ctx-score-medium));
+}
+
+/* Dimension badge in suggestion */
+.prompt-detail__suggestion-dimension {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background-color: var(--prompt-detail-dim-bg);
+  color: var(--prompt-detail-dim-color);
+  margin-bottom: 4px;
+}
+
+/* Suggestion message */
+.prompt-detail__suggestion-message {
+  font-size: 12px;
+  color: var(--ctx-foreground);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Example toggle */
+.prompt-detail__example-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--ctx-link, var(--vscode-textLink-foreground));
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.prompt-detail__example-toggle-icon {
+  transition: transform 150ms ease;
+}
+
+.prompt-detail__example-toggle-icon--expanded {
+  transform: rotate(180deg);
+}
+
+/* Example container */
+.prompt-detail__example {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: var(--ctx-background);
+  border-radius: var(--ctx-radius-sm);
+  font-size: 11px;
+  font-family: var(--ctx-font-mono);
+  color: var(--ctx-foreground-muted);
+  white-space: pre-wrap;
+  animation: fadeIn 150ms ease-out;
+}
+
+.prompt-detail__example-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--prompt-detail-score-high, var(--ctx-score-high));
+  margin-bottom: 4px;
+}
+
+.prompt-detail__example-code {
+  display: block;
+  color: var(--ctx-foreground);
+  font-family: var(--ctx-font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+}

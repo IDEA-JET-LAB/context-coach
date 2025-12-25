@@ -1,19 +1,8 @@
 import React from "react";
-
-interface DimensionScore {
-  score: number;
-  trend: "up" | "down" | "stable";
-  change?: number;
-}
+import type { DimensionScore, PromptDimensions } from "../../../shared/types";
 
 interface DimensionListProps {
-  dimensions: {
-    clarity: DimensionScore;
-    context: DimensionScore;
-    specificity: DimensionScore;
-    actionability: DimensionScore;
-    efficiency: DimensionScore;
-  };
+  dimensions: PromptDimensions;
 }
 
 const dimensionLabels: Record<string, string> = {

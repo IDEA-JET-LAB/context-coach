@@ -8,6 +8,7 @@ export interface StoryData {
   id: string;
   name: string;
   status: StoryStatus;
+  isValidated?: boolean;
 }
 
 export interface EpicData {
@@ -16,6 +17,7 @@ export interface EpicData {
   status: EpicStatus;
   description?: string;
   stories: StoryData[];
+  isValidated?: boolean;
 }
 
 export interface ProjectStatusData {
@@ -40,30 +42,8 @@ interface StatusPanelProps {
   onOpenFile?: () => void;
   sectionState?: StatusSectionState;
   onSectionToggle?: (section: keyof StatusSectionState) => void;
+  onRunValidation?: (epicId: string, storyId?: string) => void;
 }
-
-// Status color mapping
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case "done":
-      return "var(--ctx-success)";
-    case "in-progress":
-      return "var(--ctx-primary)";
-    case "ready-for-dev":
-      return "var(--ctx-warning)";
-    case "backlog":
-      return "var(--ctx-foreground-muted)";
-    case "deferred":
-    case "future":
-      return "var(--ctx-foreground-subtle)";
-    case "design-only":
-      return "#9333EA"; // purple
-    case "optional":
-      return "var(--ctx-foreground-subtle)";
-    default:
-      return "var(--ctx-foreground-muted)";
-  }
-};
 
 // Icons
 const RefreshIcon = () => (
@@ -134,11 +114,49 @@ const SkipIcon = () => (
   </svg>
 );
 
+// Validation icons
+const ValidatedIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M9 12l2 2 4-4" />
+    <path d="M12 3a9 9 0 1 0 9 9" />
+    <path d="M21 3l-9 9" />
+  </svg>
+);
+
+const NotValidatedIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
+// Validation icon component
+const ValidationIcon: React.FC<{
+  isValidated: boolean | undefined;
+  onClick?: () => void;
+  title?: string;
+}> = ({ isValidated, onClick, title }) => {
+  if (isValidated === undefined) return null;
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick?.();
+  };
+
+  return (
+    <span
+      className={`validation-icon ${isValidated ? "validated" : "not-validated"} ${onClick ? "clickable" : ""}`}
+      onClick={onClick ? handleClick : undefined}
+      title={title || (isValidated ? "Validated" : "Not validated - click to run validation")}
+    >
+      {isValidated ? <ValidatedIcon /> : <NotValidatedIcon />}
+    </span>
+  );
+};
+
 // Status icon component - icon only, colored
 const StatusIcon: React.FC<{ status: string; size?: "sm" | "md" }> = ({ status, size = "md" }) => {
-  const color = getStatusColor(status);
-  const scale = size === "sm" ? 0.85 : 1;
-
   const getIcon = () => {
     switch (status) {
       case "done":
@@ -161,10 +179,13 @@ const StatusIcon: React.FC<{ status: string; size?: "sm" | "md" }> = ({ status, 
     }
   };
 
+  // Map status to CSS class name
+  const statusClass = status.replace(/-/g, "-");
+  const sizeClass = size === "sm" ? "status-icon--sm" : "";
+
   return (
     <span
-      className="status-icon"
-      style={{ color, transform: `scale(${scale})` }}
+      className={`status-icon status-icon--${statusClass} ${sizeClass}`}
       title={status.replace(/-/g, " ")}
     >
       {getIcon()}
@@ -194,9 +215,14 @@ const getEpicProgress = (epic: EpicData): { done: number; total: number; percent
 };
 
 // Collapsible Epic component
-const EpicCard: React.FC<{ epic: EpicData; defaultExpanded?: boolean }> = ({
+const EpicCard: React.FC<{
+  epic: EpicData;
+  defaultExpanded?: boolean;
+  onRunValidation?: (epicId: string, storyId?: string) => void;
+}> = ({
   epic,
-  defaultExpanded = false
+  defaultExpanded = false,
+  onRunValidation
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
   const progress = getEpicProgress(epic);
@@ -216,6 +242,10 @@ const EpicCard: React.FC<{ epic: EpicData; defaultExpanded?: boolean }> = ({
           </span>
           <span className="epic-number">{epicNumber}</span>
           <span className="epic-title">{epic.name}</span>
+          <ValidationIcon
+            isValidated={epic.isValidated}
+            onClick={!epic.isValidated && onRunValidation ? () => onRunValidation(epic.id) : undefined}
+          />
           <StatusIcon status={epic.status} />
         </div>
 
@@ -223,11 +253,8 @@ const EpicCard: React.FC<{ epic: EpicData; defaultExpanded?: boolean }> = ({
           <div className="epic-progress">
             <div className="progress-bar-mini">
               <div
-                className="progress-fill-mini"
-                style={{
-                  width: `${progress.percent}%`,
-                  backgroundColor: getStatusColor(epic.status),
-                }}
+                className={`progress-fill-mini progress-fill-mini--${epic.status}`}
+                style={{ width: `${progress.percent}%` }}
               />
             </div>
             <span className="progress-text">{progress.done}/{progress.total}</span>
@@ -241,6 +268,10 @@ const EpicCard: React.FC<{ epic: EpicData; defaultExpanded?: boolean }> = ({
             <div key={story.id} className={`story-item ${story.status}`}>
               <span className="story-number">{getStoryNumber(story.id)}</span>
               <span className="story-name">{story.name}</span>
+              <ValidationIcon
+                isValidated={story.isValidated}
+                onClick={!story.isValidated && onRunValidation ? () => onRunValidation(epic.id, story.id) : undefined}
+              />
               <StatusIcon status={story.status} size="sm" />
             </div>
           ))}
@@ -348,6 +379,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
   onOpenFile,
   sectionState = defaultSectionState,
   onSectionToggle,
+  onRunValidation,
 }) => {
   if (isLoading) {
     return (
@@ -433,7 +465,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
             onToggle={() => onSectionToggle?.("inProgress")}
           >
             {inProgressEpics.map((epic) => (
-              <EpicCard key={epic.id} epic={epic} defaultExpanded />
+              <EpicCard key={epic.id} epic={epic} defaultExpanded onRunValidation={onRunValidation} />
             ))}
           </CollapsibleSection>
         )}
@@ -446,7 +478,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
             onToggle={() => onSectionToggle?.("backlog")}
           >
             {backlogEpics.map((epic) => (
-              <EpicCard key={epic.id} epic={epic} />
+              <EpicCard key={epic.id} epic={epic} onRunValidation={onRunValidation} />
             ))}
           </CollapsibleSection>
         )}
@@ -459,7 +491,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
             onToggle={() => onSectionToggle?.("completed")}
           >
             {doneEpics.map((epic) => (
-              <EpicCard key={epic.id} epic={epic} />
+              <EpicCard key={epic.id} epic={epic} onRunValidation={onRunValidation} />
             ))}
           </CollapsibleSection>
         )}
@@ -472,7 +504,7 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({
             onToggle={() => onSectionToggle?.("deferred")}
           >
             {deferredEpics.map((epic) => (
-              <EpicCard key={epic.id} epic={epic} />
+              <EpicCard key={epic.id} epic={epic} onRunValidation={onRunValidation} />
             ))}
           </CollapsibleSection>
         )}
