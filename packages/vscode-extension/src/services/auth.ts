@@ -492,6 +492,105 @@ export class AuthService {
   }
 
   /**
+   * Signs up a new user with email and password.
+   * Returns a result indicating success, failure, or email confirmation required.
+   */
+  async signup(email: string, password: string): Promise<{
+    success: boolean;
+    message: string;
+    requiresEmailConfirmation?: boolean;
+    error?: string;
+  }> {
+    this.log(`Starting signup for: ${email}`);
+
+    try {
+      const response = await fetch(`${this.apiEndpoint}/auth/vscode/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, confirmPassword: password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error?.message || "Signup failed";
+        this.log(`Signup failed: ${errorMessage}`);
+        return {
+          success: false,
+          message: errorMessage,
+          error: data.error?.code || "SIGNUP_FAILED",
+        };
+      }
+
+      // Check if email confirmation is required
+      if (data.requiresEmailConfirmation) {
+        this.log("Signup successful - email confirmation required");
+        return {
+          success: true,
+          message: data.message || "Please check your email to verify your account.",
+          requiresEmailConfirmation: true,
+        };
+      }
+
+      // If tokens were returned, store them and authenticate
+      if (data.tokens) {
+        await this.storeTokens(data.tokens);
+        this.log(`Signup successful - user authenticated: ${data.tokens.user.email}`);
+        vscode.window.showInformationMessage(
+          `Welcome to Contextor, ${data.tokens.user.name || data.tokens.user.email}!`
+        );
+        this._onDidChangeAuth.fire();
+        return {
+          success: true,
+          message: "Account created successfully!",
+          requiresEmailConfirmation: false,
+        };
+      }
+
+      // Success without tokens - user needs to sign in
+      this.log("Signup successful - user needs to sign in");
+      return {
+        success: true,
+        message: data.message || "Account created! Please sign in to continue.",
+        requiresEmailConfirmation: false,
+      };
+    } catch (error) {
+      this.logError("Signup error", error);
+      return {
+        success: false,
+        message: "Unable to create account. Please check your connection and try again.",
+        error: "NETWORK_ERROR",
+      };
+    }
+  }
+
+  /**
+   * Opens Google OAuth signup in the browser.
+   * After signing up, the user will need to use "Sign In" to authenticate the extension.
+   */
+  async signupWithGoogle(): Promise<void> {
+    this.log("Opening Google signup in browser");
+
+    // Open the web app's signup page with OAuth focus
+    const signupUrl = new URL(`${this.apiEndpoint.replace("/api", "")}/signup`);
+    signupUrl.searchParams.set("from", "vscode");
+
+    const opened = await vscode.env.openExternal(
+      vscode.Uri.parse(signupUrl.toString())
+    );
+
+    if (!opened) {
+      throw new Error("Failed to open browser for Google signup");
+    }
+
+    vscode.window.showInformationMessage(
+      "Complete signup in your browser, then use 'Sign In' to connect the extension."
+    );
+  }
+
+  /**
    * Stores tokens and user profile in SecretStorage.
    */
   private async storeTokens(tokenResponse: TokenResponse): Promise<void> {

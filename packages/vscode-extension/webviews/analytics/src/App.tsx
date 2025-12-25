@@ -110,6 +110,9 @@ type ExtensionMessage =
   | { type: "refreshing"; isRefreshing: boolean }
   // Server status
   | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number }
+  // Signup messages
+  | { type: "signup-result"; success: boolean; message: string; requiresEmailConfirmation?: boolean }
+  | { type: "signup-loading"; isLoading: boolean }
   // Session messages
   | { type: "sessions"; sessions: Session[] }
   | { type: "sessions-loading"; isLoading: boolean }
@@ -145,6 +148,8 @@ type WebviewMessage =
   | { type: "ready" }
   | { type: "login" }
   | { type: "logout" }
+  | { type: "signup"; email: string; password: string }
+  | { type: "signup-google" }
   // Session messages
   | { type: "scan-sessions" }
   | { type: "recover-session"; sessionId: string }
@@ -229,6 +234,14 @@ interface AppState {
   // Server status
   isServerOnline: boolean;
   retryCountdown: number;
+  // Signup state
+  isSignupMode: boolean;
+  signupLoading: boolean;
+  signupMessage: string | null;
+  signupSuccess: boolean | null;
+  signupEmail: string;
+  signupPassword: string;
+  signupConfirmPassword: string;
 }
 
 const initialState: AppState = {
@@ -277,6 +290,14 @@ const initialState: AppState = {
   // Server status
   isServerOnline: true,
   retryCountdown: 0,
+  // Signup state
+  isSignupMode: false,
+  signupLoading: false,
+  signupMessage: null,
+  signupSuccess: null,
+  signupEmail: "",
+  signupPassword: "",
+  signupConfirmPassword: "",
 };
 
 // ============================================
@@ -653,6 +674,25 @@ const App: React.FC = () => {
             retryCountdown: message.retryCountdown ?? 0,
           }));
           break;
+
+        // Signup messages
+        case "signup-result":
+          setState((prev) => ({
+            ...prev,
+            signupMessage: message.message,
+            signupSuccess: message.success,
+            signupLoading: false,
+            // If email confirmation required, show message but stay on form
+            // If success without confirmation, auth state will update and hide form
+          }));
+          break;
+
+        case "signup-loading":
+          setState((prev) => ({
+            ...prev,
+            signupLoading: message.isLoading,
+          }));
+          break;
       }
     };
 
@@ -722,6 +762,65 @@ const App: React.FC = () => {
 
   const handleSignOut = useCallback(() => {
     vscodeRef.current?.postMessage({ type: "logout" } satisfies WebviewMessage);
+  }, []);
+
+  // Signup handlers
+  const handleToggleSignupMode = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      isSignupMode: !prev.isSignupMode,
+      signupMessage: null,
+      signupSuccess: null,
+      signupEmail: "",
+      signupPassword: "",
+      signupConfirmPassword: "",
+    }));
+  }, []);
+
+  const handleSignupEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setState((prev) => ({ ...prev, signupEmail: e.target.value, signupMessage: null }));
+  }, []);
+
+  const handleSignupPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setState((prev) => ({ ...prev, signupPassword: e.target.value, signupMessage: null }));
+  }, []);
+
+  const handleSignupConfirmPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setState((prev) => ({ ...prev, signupConfirmPassword: e.target.value, signupMessage: null }));
+  }, []);
+
+  const handleSignup = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate passwords match
+    if (state.signupPassword !== state.signupConfirmPassword) {
+      setState((prev) => ({
+        ...prev,
+        signupMessage: "Passwords do not match",
+        signupSuccess: false,
+      }));
+      return;
+    }
+
+    // Validate password length
+    if (state.signupPassword.length < 12) {
+      setState((prev) => ({
+        ...prev,
+        signupMessage: "Password must be at least 12 characters",
+        signupSuccess: false,
+      }));
+      return;
+    }
+
+    vscodeRef.current?.postMessage({
+      type: "signup",
+      email: state.signupEmail,
+      password: state.signupPassword,
+    } satisfies WebviewMessage);
+  }, [state.signupEmail, state.signupPassword, state.signupConfirmPassword]);
+
+  const handleSignupWithGoogle = useCallback(() => {
+    vscodeRef.current?.postMessage({ type: "signup-google" } satisfies WebviewMessage);
   }, []);
 
   // Session handlers
@@ -913,13 +1012,119 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <button
-          className="sign-in-button"
-          onClick={handleSignIn}
-          disabled={!state.isServerOnline}
-        >
-          Sign In
-        </button>
+        {/* Signup result message */}
+        {state.signupMessage && (
+          <div className={`auth-message ${state.signupSuccess ? "success" : "error"}`}>
+            {state.signupMessage}
+          </div>
+        )}
+
+        {/* Sign In Mode */}
+        {!state.isSignupMode && (
+          <>
+            <button
+              className="sign-in-button"
+              onClick={handleSignIn}
+              disabled={!state.isServerOnline}
+            >
+              Sign In
+            </button>
+
+            <div className="auth-toggle">
+              <span>Don't have an account?</span>
+              <button
+                className="auth-toggle-link"
+                onClick={handleToggleSignupMode}
+                disabled={!state.isServerOnline}
+              >
+                Sign Up
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Sign Up Mode */}
+        {state.isSignupMode && (
+          <form className="signup-form" onSubmit={handleSignup}>
+            <div className="form-field">
+              <label htmlFor="signup-email">Email</label>
+              <input
+                id="signup-email"
+                type="email"
+                value={state.signupEmail}
+                onChange={handleSignupEmailChange}
+                placeholder="you@example.com"
+                required
+                disabled={state.signupLoading || !state.isServerOnline}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="signup-password">Password</label>
+              <input
+                id="signup-password"
+                type="password"
+                value={state.signupPassword}
+                onChange={handleSignupPasswordChange}
+                placeholder="Min 12 characters"
+                required
+                minLength={12}
+                disabled={state.signupLoading || !state.isServerOnline}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="signup-confirm">Confirm Password</label>
+              <input
+                id="signup-confirm"
+                type="password"
+                value={state.signupConfirmPassword}
+                onChange={handleSignupConfirmPasswordChange}
+                placeholder="Confirm password"
+                required
+                disabled={state.signupLoading || !state.isServerOnline}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="sign-in-button"
+              disabled={state.signupLoading || !state.isServerOnline}
+            >
+              {state.signupLoading ? "Creating Account..." : "Create Account"}
+            </button>
+
+            <div className="auth-divider">
+              <span>or</span>
+            </div>
+
+            <button
+              type="button"
+              className="google-signup-button"
+              onClick={handleSignupWithGoogle}
+              disabled={!state.isServerOnline}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="auth-toggle">
+              <span>Already have an account?</span>
+              <button
+                type="button"
+                className="auth-toggle-link"
+                onClick={handleToggleSignupMode}
+              >
+                Sign In
+              </button>
+            </div>
+          </form>
+        )}
 
         {!state.isServerOnline && (
           <p className="server-offline-hint">

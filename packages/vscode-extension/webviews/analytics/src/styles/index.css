@@ -40,6 +40,11 @@
   --ctx-foreground-muted: var(--vscode-descriptionForeground, #858585);
   --ctx-foreground-subtle: var(--vscode-disabledForeground, #6B6B6B);
 
+  /* Additional surfaces */
+  --ctx-background-secondary: var(--vscode-input-background, #3C3C3C);
+  --ctx-background-hover: var(--vscode-list-hoverBackground, #2A2D2E);
+  --ctx-input-background: var(--vscode-input-background, #3C3C3C);
+
   /* Font */
   --ctx-font: var(--vscode-font-family, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   --ctx-font-mono: var(--vscode-editor-font-family, 'SF Mono', Monaco, Consolas, monospace);
@@ -358,6 +363,158 @@ body {
   font-size: 11px;
   color: var(--ctx-foreground-muted);
   max-width: 200px;
+}
+
+/* Auth Message */
+.auth-message {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  max-width: 280px;
+}
+
+.auth-message.success {
+  background: color-mix(in srgb, var(--ctx-success) 15%, transparent);
+  border: 1px solid var(--ctx-success);
+  color: var(--ctx-success);
+}
+
+.auth-message.error {
+  background: color-mix(in srgb, var(--ctx-error) 15%, transparent);
+  border: 1px solid var(--ctx-error);
+  color: var(--ctx-error);
+}
+
+/* Auth Toggle */
+.auth-toggle {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ctx-foreground-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-toggle-link {
+  background: none;
+  border: none;
+  color: var(--ctx-primary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.auth-toggle-link:hover {
+  color: var(--ctx-primary-hover);
+}
+
+.auth-toggle-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Signup Form */
+.signup-form {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ctx-foreground-muted);
+}
+
+.form-field input {
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--ctx-border);
+  border-radius: 4px;
+  background: var(--ctx-input-background);
+  color: var(--ctx-foreground);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.form-field input:focus {
+  border-color: var(--ctx-primary);
+}
+
+.form-field input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-field input::placeholder {
+  color: var(--ctx-foreground-muted);
+  opacity: 0.6;
+}
+
+/* Auth Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ctx-border);
+}
+
+.auth-divider span {
+  font-size: 11px;
+  color: var(--ctx-foreground-muted);
+  text-transform: uppercase;
+}
+
+/* Google Signup Button */
+.google-signup-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ctx-foreground);
+  background: var(--ctx-background-secondary);
+  border: 1px solid var(--ctx-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.google-signup-button:hover {
+  background: var(--ctx-background-hover);
+  border-color: var(--ctx-foreground-muted);
+}
+
+.google-signup-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.google-signup-button svg {
+  flex-shrink: 0;
 }
 
 /* ============================================

@@ -125,7 +125,11 @@ export type ExtensionToWebviewMessage =
   | { type: "team-stats-loading"; isLoading: boolean }
 
   // Server status messages
-  | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number };
+  | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number }
+
+  // Signup result messages
+  | { type: "signup-result"; success: boolean; message: string; requiresEmailConfirmation?: boolean }
+  | { type: "signup-loading"; isLoading: boolean };
 
 /**
  * Conversation summary for webview display (Phase 3)
@@ -261,6 +265,8 @@ export type WebviewToExtensionMessage =
   // Authentication
   | { type: "login" }
   | { type: "logout" }
+  | { type: "signup"; email: string; password: string }
+  | { type: "signup-google" }
 
   // Analytics actions
   | { type: "refresh" }

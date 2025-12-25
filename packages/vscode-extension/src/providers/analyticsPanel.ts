@@ -597,6 +597,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         await vscode.commands.executeCommand("contextor.signOut");
         break;
 
+      case "signup":
+        this.log("Signup requested from webview");
+        await this.handleSignup(message.email, message.password);
+        break;
+
+      case "signup-google":
+        this.log("Google signup requested from webview");
+        await this.handleSignupWithGoogle();
+        break;
+
       // Coaching message handlers (Story 19-5)
       case "refresh-coaching":
         this.log("Coaching refresh requested");
@@ -2933,6 +2943,51 @@ exit 0
     } catch (error) {
       this.logError("Failed to fetch team stats", error);
       this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles email/password signup request from the webview.
+   */
+  private async handleSignup(email: string, password: string): Promise<void> {
+    this.postMessage({ type: "signup-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const result = await this.authService.signup(email, password);
+
+      this.postMessage({
+        type: "signup-result",
+        success: result.success,
+        message: result.message,
+        requiresEmailConfirmation: result.requiresEmailConfirmation,
+      } as ExtensionToWebviewMessage);
+
+      if (result.success && !result.requiresEmailConfirmation) {
+        // Signup was successful and user is authenticated - refresh auth state
+        await this.sendAuthState();
+      }
+    } catch (error) {
+      this.logError("Signup failed", error);
+      this.postMessage({
+        type: "signup-result",
+        success: false,
+        message: "An unexpected error occurred. Please try again.",
+      } as ExtensionToWebviewMessage);
+    } finally {
+      this.postMessage({ type: "signup-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles Google signup request from the webview.
+   * Opens the web app signup page in the browser.
+   */
+  private async handleSignupWithGoogle(): Promise<void> {
+    try {
+      await this.authService.signupWithGoogle();
+    } catch (error) {
+      this.logError("Google signup failed", error);
+      vscode.window.showErrorMessage("Failed to open browser for signup. Please try again.");
     }
   }
 }
