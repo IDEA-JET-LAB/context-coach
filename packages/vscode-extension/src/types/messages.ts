@@ -118,7 +118,11 @@ export type ExtensionToWebviewMessage =
 
   // BMAD version messages
   | { type: "bmad-version-info"; versionInfo: BmadVersionInfo }
-  | { type: "bmad-version-loading"; isLoading: boolean };
+  | { type: "bmad-version-loading"; isLoading: boolean }
+
+  // Team stats messages
+  | { type: "team-stats"; data: TeamStatsData }
+  | { type: "team-stats-loading"; isLoading: boolean };
 
 /**
  * Conversation summary for webview display (Phase 3)
@@ -313,7 +317,10 @@ export type WebviewToExtensionMessage =
 
   // BMAD version actions
   | { type: "fetch-bmad-version" }
-  | { type: "upgrade-bmad" };
+  | { type: "upgrade-bmad" }
+
+  // Team stats actions
+  | { type: "fetch-team-stats"; timeRange?: TeamTimeRange };
 
 /**
  * Project document info for creation workflow
@@ -358,4 +365,33 @@ export interface LegacyAnalyticsData {
     type: "prompt" | "session_start" | "session_end";
     description: string;
   }>;
+}
+
+/**
+ * Team time range for filtering
+ */
+export type TeamTimeRange = "today" | "week" | "month";
+
+/**
+ * Team member stats for webview display
+ */
+export interface TeamMemberStats {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  promptCount: number;
+  avgScore: number;
+  scoreChange: number | null;
+  avgCharCount: number;
+  rank: number;
+}
+
+/**
+ * Team stats data for webview display
+ */
+export interface TeamStatsData {
+  members: TeamMemberStats[];
+  teamName: string;
+  timeRange: TeamTimeRange;
+  currentUserId: string;
 }

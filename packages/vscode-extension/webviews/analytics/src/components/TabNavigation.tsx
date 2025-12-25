@@ -1,7 +1,7 @@
 import React from "react";
 
 // All possible tab IDs
-export type TabId = "analytics" | "lastPrompt" | "conversations" | "sessions" | "import" | "commands" | "status" | "documents" | "bmadSettings";
+export type TabId = "analytics" | "team" | "lastPrompt" | "conversations" | "sessions" | "import" | "commands" | "status" | "documents" | "bmadSettings";
 
 // Primary section IDs
 export type PrimarySectionId = "contextor" | "bmad";
@@ -27,6 +27,15 @@ const AnalyticsIcon = () => (
     <path d="M18 20V10" />
     <path d="M12 20V4" />
     <path d="M6 20v-6" />
+  </svg>
+);
+
+const TeamIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
 );
 
@@ -93,6 +102,7 @@ const SettingsIcon = () => (
 // Tabs organized by primary section
 const contextorTabs: Tab[] = [
   { id: "analytics", label: "Analytics", icon: <AnalyticsIcon /> },
+  { id: "team", label: "Team", icon: <TeamIcon /> },
   { id: "lastPrompt", label: "Last Prompt", icon: <LastPromptIcon /> },
   { id: "conversations", label: "Conversations", icon: <ConversationsIcon /> },
   { id: "sessions", label: "Sessions", icon: <SessionsIcon /> },
@@ -100,9 +110,9 @@ const contextorTabs: Tab[] = [
 ];
 
 const bmadTabs: Tab[] = [
+  { id: "documents", label: "Documents", icon: <DocumentsIcon /> },
   { id: "commands", label: "Commands", icon: <CommandsIcon /> },
   { id: "status", label: "Status", icon: <StatusIcon /> },
-  { id: "documents", label: "Documents", icon: <DocumentsIcon /> },
   { id: "bmadSettings", label: "Settings", icon: <SettingsIcon /> },
 ];
 
@@ -118,7 +128,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   sessionCount = 0,
   isImporting = false,
   lastContextorTab = "analytics",
-  lastBmadTab = "commands",
+  lastBmadTab = "documents",
 }) => {
   const activeSection = getSection(activeTab);
   const secondaryTabs = activeSection === "bmad" ? bmadTabs : contextorTabs;

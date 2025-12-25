@@ -276,7 +276,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({
   onRefresh,
   onCreateDocument,
 }) => {
-  const [activeTab, setActiveTab] = useState<DocumentsTab>("all");
+  const [activeTab, setActiveTab] = useState<DocumentsTab>("project");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     () => new Set(["_bmad-output", "stories"]) // Default expanded folders
   );
@@ -445,7 +445,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({
   return (
     <div className="documents-panel">
       <div className="documents-header">
-        <h3>Project Documents</h3>
+        <h3>BMAD Project Documents</h3>
         <button className="icon-button" onClick={onRefresh} title="Refresh documents">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="23 4 23 10 17 10" />
@@ -454,7 +454,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({
         </button>
       </div>
 
-      {/* Sub-tabs */}
+      {/* Sub-tabs: All | Project | Workflow */}
       <div className="documents-tabs">
         <button
           className={`doc-tab ${activeTab === "all" ? "active" : ""}`}
@@ -463,16 +463,16 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({
           All
         </button>
         <button
-          className={`doc-tab ${activeTab === "workflow" ? "active" : ""}`}
-          onClick={() => setActiveTab("workflow")}
-        >
-          Workflow
-        </button>
-        <button
           className={`doc-tab ${activeTab === "project" ? "active" : ""}`}
           onClick={() => setActiveTab("project")}
         >
           Project
+        </button>
+        <button
+          className={`doc-tab ${activeTab === "workflow" ? "active" : ""}`}
+          onClick={() => setActiveTab("workflow")}
+        >
+          Workflow
         </button>
       </div>
 

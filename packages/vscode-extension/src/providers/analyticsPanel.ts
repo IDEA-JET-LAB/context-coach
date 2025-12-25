@@ -39,6 +39,8 @@ import {
   AnalyticsPanelState,
   DocumentItem,
   BmadVersionInfo,
+  TeamTimeRange,
+  TeamStatsData,
 } from "../types/messages";
 
 /**
@@ -616,6 +618,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       case "upgrade-bmad":
         this.log("BMAD upgrade requested");
         this.handleUpgradeBmad();
+        break;
+
+      case "fetch-team-stats":
+        this.log("Team stats requested");
+        await this.handleFetchTeamStats(message.timeRange);
         break;
     }
   }
@@ -2771,5 +2778,48 @@ exit 0
     );
 
     this.log("BMAD upgrade started: npx bmad-method@alpha install");
+  }
+
+  /**
+   * Fetches team stats from the API.
+   */
+  private async handleFetchTeamStats(timeRange?: TeamTimeRange): Promise<void> {
+    this.postMessage({ type: "team-stats-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const token = await this.authService.getToken();
+      if (!token) {
+        this.log("No auth token for team stats");
+        this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      const settings = this.settingsService.getSettings();
+      const apiUrl = settings.apiUrl || "https://contextor.co/api";
+      const range = timeRange || "week";
+
+      const response = await fetch(`${apiUrl}/extension/team-stats?timeRange=${range}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch team stats: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.data) {
+        this.postMessage({
+          type: "team-stats",
+          data: result.data as TeamStatsData,
+        } as ExtensionToWebviewMessage);
+      }
+    } catch (error) {
+      this.logError("Failed to fetch team stats", error);
+      this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
   }
 }

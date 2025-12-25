@@ -12,6 +12,7 @@ import { StatusPanel, type ProjectStatusData, type StatusSectionState } from "./
 import { NotInstalledPanel } from "./components/NotInstalledPanel";
 import { DocumentsPanel, type DocumentItem, type ProjectDocument } from "./components/DocumentsPanel";
 import { BmadSettingsPanel, type BmadVersionInfo } from "./components/BmadSettingsPanel";
+import { TeamPanel, type TeamStatsData, type TeamTimeRange } from "./components/TeamPanel";
 
 // ============================================
 // VS Code Webview API Types
@@ -172,7 +173,9 @@ type WebviewMessage =
   | { type: "start-conversation" }
   // BMAD version actions
   | { type: "fetch-bmad-version" }
-  | { type: "upgrade-bmad" };
+  | { type: "upgrade-bmad" }
+  // Team stats actions
+  | { type: "fetch-team-stats"; timeRange?: TeamTimeRange };
 
 // ============================================
 // App State
@@ -218,6 +221,9 @@ interface AppState {
   // BMAD version
   bmadVersionInfo: BmadVersionInfo | null;
   bmadVersionLoading: boolean;
+  // Team stats
+  teamStats: TeamStatsData | null;
+  teamStatsLoading: boolean;
 }
 
 const initialState: AppState = {
@@ -260,6 +266,9 @@ const initialState: AppState = {
   // BMAD version
   bmadVersionInfo: null,
   bmadVersionLoading: false,
+  // Team stats
+  teamStats: null,
+  teamStatsLoading: false,
 };
 
 // ============================================
@@ -611,6 +620,22 @@ const App: React.FC = () => {
             bmadVersionLoading: message.isLoading,
           }));
           break;
+
+        // Team stats messages
+        case "team-stats":
+          setState((prev) => ({
+            ...prev,
+            teamStats: message.data,
+            teamStatsLoading: false,
+          }));
+          break;
+
+        case "team-stats-loading":
+          setState((prev) => ({
+            ...prev,
+            teamStatsLoading: message.isLoading,
+          }));
+          break;
       }
     };
 
@@ -655,6 +680,9 @@ const App: React.FC = () => {
     } else if (tab === "bmadSettings") {
       setState((prev) => ({ ...prev, bmadVersionLoading: true }));
       vscodeRef.current?.postMessage({ type: "fetch-bmad-version" } satisfies WebviewMessage);
+    } else if (tab === "team") {
+      setState((prev) => ({ ...prev, teamStatsLoading: true }));
+      vscodeRef.current?.postMessage({ type: "fetch-team-stats" } satisfies WebviewMessage);
     }
   }, []);
 
@@ -826,6 +854,16 @@ const App: React.FC = () => {
     vscodeRef.current?.postMessage({ type: "upgrade-bmad" } satisfies WebviewMessage);
   }, []);
 
+  // Team stats handlers
+  const handleFetchTeamStats = useCallback((timeRange?: TeamTimeRange) => {
+    setState((prev) => ({ ...prev, teamStatsLoading: true }));
+    vscodeRef.current?.postMessage({ type: "fetch-team-stats", timeRange } satisfies WebviewMessage);
+  }, []);
+
+  const handleTeamTimeRangeChange = useCallback((timeRange: TeamTimeRange) => {
+    handleFetchTeamStats(timeRange);
+  }, [handleFetchTeamStats]);
+
   // Render based on state
   if (state.isLoading) {
     return <Loading />;
@@ -900,6 +938,15 @@ const App: React.FC = () => {
             user={state.user}
             isRefreshing={state.isRefreshing}
             onRefresh={handleRefresh}
+          />
+        )}
+
+        {state.activeTab === "team" && !showContextorNotInstalled && (
+          <TeamPanel
+            data={state.teamStats}
+            isLoading={state.teamStatsLoading}
+            onTimeRangeChange={handleTeamTimeRangeChange}
+            onRefresh={() => handleFetchTeamStats()}
           />
         )}
 
