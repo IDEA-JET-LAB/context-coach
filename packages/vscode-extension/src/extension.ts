@@ -226,17 +226,18 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   // Set up session watcher callbacks (Story 18-4)
-  sessionWatcher.onSessionChange(async () => {
-    // Re-scan for interrupted sessions when files change
-    outputChannel.appendLine("[SessionWatcher] Session files changed, re-scanning...");
-    await crashDetector.detectInterruptedSessions();
-  });
+  // DISABLED: Automatic session detection notifications
+  // sessionWatcher.onSessionChange(async () => {
+  //   // Re-scan for interrupted sessions when files change
+  //   outputChannel.appendLine("[SessionWatcher] Session files changed, re-scanning...");
+  //   await crashDetector.detectInterruptedSessions();
+  // });
 
-  sessionWatcher.onSessionStale(async (sessionPath) => {
-    outputChannel.appendLine(`[SessionWatcher] Session became stale: ${sessionPath}`);
-    // The crash detector will pick this up on next scan
-    await crashDetector.detectInterruptedSessions();
-  });
+  // sessionWatcher.onSessionStale(async (sessionPath) => {
+  //   outputChannel.appendLine(`[SessionWatcher] Session became stale: ${sessionPath}`);
+  //   // The crash detector will pick this up on next scan
+  //   await crashDetector.detectInterruptedSessions();
+  // });
 
   // Register commands
   context.subscriptions.push(
@@ -362,7 +363,8 @@ export function activate(context: vscode.ExtensionContext): void {
   checkAuthStatus();
 
   // Scan for interrupted sessions on startup if enabled (Story 18-1)
-  scanForInterruptedSessionsOnStartup();
+  // DISABLED: Automatic session detection notifications
+  // scanForInterruptedSessionsOnStartup();
 
   // Log activation complete
   outputChannel.appendLine("Contextor: All commands registered");

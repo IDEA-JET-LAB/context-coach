@@ -38,6 +38,7 @@ import {
   WebviewToExtensionMessage,
   AnalyticsPanelState,
   DocumentItem,
+  BmadVersionInfo,
 } from "../types/messages";
 
 /**
@@ -606,6 +607,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
           await this.handleCreateDocument(message.doc);
         }
         break;
+
+      case "fetch-bmad-version":
+        this.log("BMAD version check requested");
+        await this.handleFetchBmadVersion();
+        break;
+
+      case "upgrade-bmad":
+        this.log("BMAD upgrade requested");
+        this.handleUpgradeBmad();
+        break;
     }
   }
 
@@ -914,7 +925,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     });
 
     terminal.show();
-    terminal.sendText("claude");
+    terminal.sendText("claude --dangerously-skip-permissions");
 
     vscode.window.showInformationMessage(
       "Contextor: Starting new Claude Code conversation..."
@@ -1192,17 +1203,28 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    * Opens a new terminal and runs the V6 alpha installation command.
    */
   private handleInstallBmad(): void {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    if (!workspacePath) {
+      vscode.window.showErrorMessage("Please open a workspace folder first.");
+      return;
+    }
+
     const terminal = vscode.window.createTerminal({
-      name: "BMAD Installer",
-      cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+      name: "BMAD Installation",
+      cwd: workspacePath,
     });
 
-    // BMAD V6 Alpha installation command
-    const installCommand = 'npx --yes @anthropic/bmad-v6-alpha init';
-    terminal.sendText(installCommand);
     terminal.show();
 
-    this.log(`BMAD installation started in terminal: ${installCommand}`);
+    // Run BMAD v6 Alpha installation command directly
+    terminal.sendText("npx bmad-method@alpha install");
+
+    vscode.window.showInformationMessage(
+      "Installing BMAD Method v6 Alpha. Follow the prompts in the terminal."
+    );
+
+    this.log("BMAD installation started: npx bmad-method@alpha install");
   }
 
   /**
@@ -1554,21 +1576,22 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       });
       terminal.show();
 
-      // Build the command to run
+      // Build the command to run (skip permissions for smoother UX)
       let command: string;
+      const skipPerms = "--dangerously-skip-permissions";
 
       if (doc.workflow) {
         // Has a dedicated workflow - run it directly
-        command = `claude "${doc.workflow}"`;
+        command = `claude ${skipPerms} "${doc.workflow}"`;
       } else if (doc.agent) {
         // No workflow, but has an agent - start conversation with agent about the document
         const agentSkill = `/bmad:bmm:agents:${doc.agent}`;
         const prompt = `Please help me create the ${doc.name} document (${doc.filename}) for this project. Let's discuss what should be included.`;
-        command = `claude "${agentSkill}" --prompt "${prompt.replace(/"/g, '\\"')}"`;
+        command = `claude ${skipPerms} "${agentSkill}" --prompt "${prompt.replace(/"/g, '\\"')}"`;
       } else {
         // Fallback - just ask Claude about creating the document
         const prompt = `Please help me create the ${doc.name} document (${doc.filename}) for this project following BMAD methodology.`;
-        command = `claude --prompt "${prompt.replace(/"/g, '\\"')}"`;
+        command = `claude ${skipPerms} --prompt "${prompt.replace(/"/g, '\\"')}"`;
       }
 
       // Send the command to the terminal
@@ -2505,5 +2528,248 @@ debug_log "INFO: Capturing prompt (\${#PROMPT} chars) to \${API_ENDPOINT}/prompt
 
 exit 0
 `;
+  }
+
+  // ============================================
+  // BMAD Version Methods
+  // ============================================
+
+  /**
+   * Fetches BMAD version information.
+   * Checks installed version from _bmad folder and latest from npm registry.
+   */
+  private async handleFetchBmadVersion(): Promise<void> {
+    this.postMessage({ type: "bmad-version-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        this.postMessage({
+          type: "bmad-version-info",
+          versionInfo: {
+            installedVersion: null,
+            latestVersion: null,
+            updateAvailable: false,
+            lastChecked: new Date().toISOString(),
+          },
+        } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      const workspaceRoot = workspaceFolders[0].uri;
+
+      // Check for installed BMAD version
+      const installedVersion = await this.getInstalledBmadVersion(workspaceRoot);
+
+      // Check for latest version from npm
+      const latestVersion = await this.getLatestBmadVersion();
+
+      // Compare versions
+      const updateAvailable = installedVersion !== null && latestVersion !== null
+        ? this.isNewerVersion(latestVersion, installedVersion)
+        : false;
+
+      const versionInfo: BmadVersionInfo = {
+        installedVersion,
+        latestVersion,
+        updateAvailable,
+        lastChecked: new Date().toISOString(),
+      };
+
+      this.log(`BMAD version info: installed=${installedVersion}, latest=${latestVersion}, update=${updateAvailable}`);
+      this.postMessage({ type: "bmad-version-info", versionInfo } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to fetch BMAD version", error);
+      this.postMessage({
+        type: "bmad-version-info",
+        versionInfo: {
+          installedVersion: null,
+          latestVersion: null,
+          updateAvailable: false,
+          lastChecked: new Date().toISOString(),
+        },
+      } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Gets the installed BMAD version from _bmad/_config/manifest.yaml
+   */
+  private async getInstalledBmadVersion(workspaceRoot: vscode.Uri): Promise<string | null> {
+    try {
+      // Read version from _bmad/_config/manifest.yaml
+      const manifestPath = vscode.Uri.joinPath(workspaceRoot, "_bmad", "_config", "manifest.yaml");
+      try {
+        const content = await vscode.workspace.fs.readFile(manifestPath);
+        const yamlContent = Buffer.from(content).toString("utf-8");
+
+        // Parse YAML manually (simple regex for version field)
+        const versionMatch = yamlContent.match(/^\s*version:\s*(.+)$/m);
+        if (versionMatch && versionMatch[1]) {
+          return versionMatch[1].trim();
+        }
+      } catch {
+        // manifest.yaml doesn't exist
+      }
+
+      // Check if _bmad folder exists at all (legacy detection)
+      try {
+        const bmadFolder = vscode.Uri.joinPath(workspaceRoot, "_bmad");
+        const stat = await vscode.workspace.fs.stat(bmadFolder);
+        if (stat.type === vscode.FileType.Directory) {
+          // BMAD is installed but version unknown (old installation)
+          return "unknown";
+        }
+      } catch {
+        // _bmad folder doesn't exist
+      }
+
+      return null;
+    } catch (error) {
+      this.logError("Error checking installed BMAD version", error);
+      return null;
+    }
+  }
+
+  /**
+   * Gets the latest BMAD v6 alpha version from npm registry.
+   * We only support v6 alpha - v4.x is outdated.
+   */
+  private async getLatestBmadVersion(): Promise<string | null> {
+    try {
+      const https = await import("https");
+
+      return new Promise((resolve) => {
+        // Fetch the main package info to get dist-tags
+        const req = https.get("https://registry.npmjs.org/bmad-method", {
+          headers: { "Accept": "application/json" },
+          timeout: 5000,
+        }, (res) => {
+          let data = "";
+
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+
+          res.on("end", () => {
+            try {
+              const pkg = JSON.parse(data);
+              // Get the alpha dist-tag (v6 alpha), not latest (v4.x is outdated)
+              const alphaVersion = pkg["dist-tags"]?.alpha;
+              if (alphaVersion) {
+                resolve(alphaVersion);
+              } else {
+                this.log("No alpha dist-tag found in npm registry");
+                resolve(null);
+              }
+            } catch {
+              this.log("Failed to parse npm registry response");
+              resolve(null);
+            }
+          });
+        });
+
+        req.on("error", (error) => {
+          this.logError("Failed to fetch latest BMAD version from npm", error);
+          resolve(null);
+        });
+
+        req.on("timeout", () => {
+          req.destroy();
+          this.log("npm registry request timed out");
+          resolve(null);
+        });
+      });
+    } catch (error) {
+      this.logError("Error fetching latest BMAD version", error);
+      return null;
+    }
+  }
+
+  /**
+   * Compares two semver versions including prerelease (alpha) versions.
+   * Returns true if newVersion is newer than currentVersion.
+   * Handles formats like: 6.0.0-alpha.19, 6.0.0-alpha.20
+   */
+  private isNewerVersion(newVersion: string, currentVersion: string): boolean {
+    if (currentVersion === "unknown") return true;
+
+    try {
+      const parseSemver = (v: string) => {
+        const clean = v.replace(/^v/, "");
+        // Split into base version and prerelease
+        const [base, prerelease] = clean.split("-");
+        const parts = base.split(".").map(n => parseInt(n, 10) || 0);
+
+        // Parse prerelease (e.g., "alpha.19" -> { tag: "alpha", num: 19 })
+        let prereleaseNum = 0;
+        if (prerelease) {
+          const match = prerelease.match(/\.(\d+)$/);
+          if (match) {
+            prereleaseNum = parseInt(match[1], 10) || 0;
+          }
+        }
+
+        return {
+          major: parts[0] || 0,
+          minor: parts[1] || 0,
+          patch: parts[2] || 0,
+          prerelease: prerelease || null,
+          prereleaseNum,
+        };
+      };
+
+      const current = parseSemver(currentVersion);
+      const latest = parseSemver(newVersion);
+
+      // Compare major.minor.patch first
+      if (latest.major > current.major) return true;
+      if (latest.major < current.major) return false;
+      if (latest.minor > current.minor) return true;
+      if (latest.minor < current.minor) return false;
+      if (latest.patch > current.patch) return true;
+      if (latest.patch < current.patch) return false;
+
+      // Same base version, compare prerelease numbers
+      // Both are alpha versions (e.g., 6.0.0-alpha.19 vs 6.0.0-alpha.20)
+      if (current.prerelease && latest.prerelease) {
+        return latest.prereleaseNum > current.prereleaseNum;
+      }
+
+      // Latest is stable (no prerelease) but current is prerelease -> latest is newer
+      if (current.prerelease && !latest.prerelease) return true;
+
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Opens a terminal with the BMAD upgrade command.
+   */
+  private handleUpgradeBmad(): void {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    if (!workspacePath) {
+      vscode.window.showErrorMessage("Please open a workspace folder first.");
+      return;
+    }
+
+    const terminal = vscode.window.createTerminal({
+      name: "BMAD Upgrade",
+      cwd: workspacePath,
+    });
+
+    terminal.show();
+
+    // Run BMAD v6 Alpha upgrade command
+    terminal.sendText("npx bmad-method@alpha install");
+
+    vscode.window.showInformationMessage(
+      "Upgrading BMAD Method v6 Alpha. Follow the prompts in the terminal."
+    );
+
+    this.log("BMAD upgrade started: npx bmad-method@alpha install");
   }
 }

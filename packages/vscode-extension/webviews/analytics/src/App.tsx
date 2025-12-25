@@ -11,6 +11,7 @@ import { ConversationsPanel } from "./components/ConversationsPanel";
 import { StatusPanel, type ProjectStatusData, type StatusSectionState } from "./components/StatusPanel";
 import { NotInstalledPanel } from "./components/NotInstalledPanel";
 import { DocumentsPanel, type DocumentItem, type ProjectDocument } from "./components/DocumentsPanel";
+import { BmadSettingsPanel, type BmadVersionInfo } from "./components/BmadSettingsPanel";
 
 // ============================================
 // VS Code Webview API Types
@@ -130,7 +131,10 @@ type ExtensionMessage =
   | { type: "workspace-status"; status: WorkspaceStatus }
   // Documents messages
   | { type: "documents"; documents: DocumentItem[] }
-  | { type: "documents-loading"; isLoading: boolean };
+  | { type: "documents-loading"; isLoading: boolean }
+  // BMAD version messages
+  | { type: "bmad-version-info"; versionInfo: BmadVersionInfo }
+  | { type: "bmad-version-loading"; isLoading: boolean };
 
 type WebviewMessage =
   | { type: "refresh" }
@@ -165,7 +169,10 @@ type WebviewMessage =
   | { type: "fetch-documents" }
   | { type: "open-document"; path: string }
   // Start conversation action
-  | { type: "start-conversation" };
+  | { type: "start-conversation" }
+  // BMAD version actions
+  | { type: "fetch-bmad-version" }
+  | { type: "upgrade-bmad" };
 
 // ============================================
 // App State
@@ -208,6 +215,9 @@ interface AppState {
   // Documents
   documents: DocumentItem[];
   documentsLoading: boolean;
+  // BMAD version
+  bmadVersionInfo: BmadVersionInfo | null;
+  bmadVersionLoading: boolean;
 }
 
 const initialState: AppState = {
@@ -247,6 +257,9 @@ const initialState: AppState = {
   // Documents
   documents: [],
   documentsLoading: false,
+  // BMAD version
+  bmadVersionInfo: null,
+  bmadVersionLoading: false,
 };
 
 // ============================================
@@ -582,6 +595,22 @@ const App: React.FC = () => {
             documentsLoading: message.isLoading,
           }));
           break;
+
+        // BMAD version messages
+        case "bmad-version-info":
+          setState((prev) => ({
+            ...prev,
+            bmadVersionInfo: message.versionInfo,
+            bmadVersionLoading: false,
+          }));
+          break;
+
+        case "bmad-version-loading":
+          setState((prev) => ({
+            ...prev,
+            bmadVersionLoading: message.isLoading,
+          }));
+          break;
       }
     };
 
@@ -592,7 +621,7 @@ const App: React.FC = () => {
   // Tab change handler - tracks last tab per section for memory
   const handleTabChange = useCallback((tab: TabId) => {
     // Determine which section this tab belongs to
-    const isBmadTab = tab === "commands" || tab === "status" || tab === "documents";
+    const isBmadTab = tab === "commands" || tab === "status" || tab === "documents" || tab === "bmadSettings";
 
     setState((prev) => {
       const newState = {
@@ -623,6 +652,9 @@ const App: React.FC = () => {
     } else if (tab === "documents") {
       setState((prev) => ({ ...prev, documentsLoading: true }));
       vscodeRef.current?.postMessage({ type: "fetch-documents" } satisfies WebviewMessage);
+    } else if (tab === "bmadSettings") {
+      setState((prev) => ({ ...prev, bmadVersionLoading: true }));
+      vscodeRef.current?.postMessage({ type: "fetch-bmad-version" } satisfies WebviewMessage);
     }
   }, []);
 
@@ -784,6 +816,16 @@ const App: React.FC = () => {
     } satisfies WebviewMessage);
   }, []);
 
+  // BMAD version handlers
+  const handleCheckBmadVersion = useCallback(() => {
+    setState((prev) => ({ ...prev, bmadVersionLoading: true }));
+    vscodeRef.current?.postMessage({ type: "fetch-bmad-version" } satisfies WebviewMessage);
+  }, []);
+
+  const handleUpgradeBmad = useCallback(() => {
+    vscodeRef.current?.postMessage({ type: "upgrade-bmad" } satisfies WebviewMessage);
+  }, []);
+
   // Render based on state
   if (state.isLoading) {
     return <Loading />;
@@ -817,7 +859,7 @@ const App: React.FC = () => {
 
   // Determine which tabs show the not-installed panel
   const isContextorTab = ["analytics", "sessions", "import", "lastPrompt", "conversations"].includes(state.activeTab);
-  const isBmadTab = ["commands", "status", "documents"].includes(state.activeTab);
+  const isBmadTab = ["commands", "status", "documents", "bmadSettings"].includes(state.activeTab);
   const showContextorNotInstalled = isContextorTab && !contextorInstalled && state.workspaceStatus !== null;
   const showBmadNotInstalled = isBmadTab && !bmadInstalled && state.workspaceStatus !== null;
 
@@ -926,6 +968,15 @@ const App: React.FC = () => {
             onOpenDocument={handleOpenDocument}
             onRefresh={handleFetchDocuments}
             onCreateDocument={handleCreateDocument}
+          />
+        )}
+
+        {state.activeTab === "bmadSettings" && !showBmadNotInstalled && (
+          <BmadSettingsPanel
+            versionInfo={state.bmadVersionInfo}
+            isLoading={state.bmadVersionLoading}
+            onCheckVersion={handleCheckBmadVersion}
+            onUpgrade={handleUpgradeBmad}
           />
         )}
       </div>

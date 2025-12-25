@@ -114,7 +114,11 @@ export type ExtensionToWebviewMessage =
 
   // Documents messages
   | { type: "documents"; documents: DocumentItem[] }
-  | { type: "documents-loading"; isLoading: boolean };
+  | { type: "documents-loading"; isLoading: boolean }
+
+  // BMAD version messages
+  | { type: "bmad-version-info"; versionInfo: BmadVersionInfo }
+  | { type: "bmad-version-loading"; isLoading: boolean };
 
 /**
  * Conversation summary for webview display (Phase 3)
@@ -305,7 +309,11 @@ export type WebviewToExtensionMessage =
   // Documents actions
   | { type: "fetch-documents" }
   | { type: "open-document"; path: string }
-  | { type: "create-document"; doc: ProjectDocumentInfo };
+  | { type: "create-document"; doc: ProjectDocumentInfo }
+
+  // BMAD version actions
+  | { type: "fetch-bmad-version" }
+  | { type: "upgrade-bmad" };
 
 /**
  * Project document info for creation workflow
@@ -316,6 +324,16 @@ export interface ProjectDocumentInfo {
   filename: string;
   workflow: string | null;
   agent: string | null;
+}
+
+/**
+ * BMAD version information for settings panel
+ */
+export interface BmadVersionInfo {
+  installedVersion: string | null;
+  latestVersion: string | null;
+  updateAvailable: boolean;
+  lastChecked: string | null;
 }
 
 /**
