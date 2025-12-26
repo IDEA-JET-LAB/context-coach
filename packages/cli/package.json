@@ -1,6 +1,6 @@
 {
   "name": "@contextor/cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI tool for installing Contextor prompt coaching in your projects",
   "type": "module",
   "main": "./dist/index.js",
