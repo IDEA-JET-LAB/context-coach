@@ -29,7 +29,7 @@ import {
   type UserConfig,
 } from '../lib/config.js';
 import { ensureGitignore } from '../lib/gitignore.js';
-import { setupClaudeHooks, CLAUDE_DIR, HOOKS_DIR, CAPTURE_SCRIPT, SETTINGS_FILE } from '../lib/hooks.js';
+import { setupClaudeHooks, CLAUDE_DIR, HOOKS_DIR, CAPTURE_SCRIPT, RESPONSE_SCRIPT, SETTINGS_FILE } from '../lib/hooks.js';
 
 export function registerInitCommand(program: Command): void {
   program
@@ -111,8 +111,11 @@ export function registerInitCommand(program: Command): void {
         case InstallState.CONFIGURED:
           console.log(chalk.green('Contextor is already set up for this project.'));
           console.log(`Project: ${existingConfig?.project_name}`);
-          console.log('Run `npx @contextor/cli status` to check your configuration.');
-          process.exit(0);
+          console.log(chalk.blue('Updating hooks to latest version...'));
+          sharedConfig = existingConfig;
+          userConfig = existingUserConfig;
+          createShared = false;
+          // Skip config creation but still update hooks below
           break;
 
         case InstallState.KEY_CHANGED:
@@ -150,12 +153,14 @@ export function registerInitCommand(program: Command): void {
           sharedSpinner.succeed(`Created ${CONTEXTOR_DIR}/${CONFIG_FILE}`);
         }
 
-        // Always create user config
-        const userSpinner = ora('Creating personal configuration...').start();
-        userConfig = createUserConfig(token);
-        await writeUserConfig(userConfig, cwd);
-        createdFiles.push(join(CONTEXTOR_DIR, USER_FILE));
-        userSpinner.succeed(`Created ${CONTEXTOR_DIR}/${USER_FILE}`);
+        // Create user config if needed (skip if already exists from CONFIGURED state)
+        if (!userConfig) {
+          const userSpinner = ora('Creating personal configuration...').start();
+          userConfig = createUserConfig(token);
+          await writeUserConfig(userConfig, cwd);
+          createdFiles.push(join(CONTEXTOR_DIR, USER_FILE));
+          userSpinner.succeed(`Created ${CONTEXTOR_DIR}/${USER_FILE}`);
+        }
 
         // Ensure gitignore
         const gitignoreSpinner = ora('Updating .gitignore...').start();
@@ -166,10 +171,10 @@ export function registerInitCommand(program: Command): void {
           gitignoreSpinner.succeed('.gitignore already configured');
         }
 
-        // Configure Claude Code hooks
-        const hookSpinner = ora('Configuring Claude Code hook...').start();
+        // Configure Claude Code hooks (both UserPromptSubmit and Stop hooks)
+        const hookSpinner = ora('Configuring Claude Code hooks...').start();
         await setupClaudeHooks(cwd);
-        hookSpinner.succeed('Claude Code hook configured');
+        hookSpinner.succeed('Claude Code hooks configured (prompt + response capture)');
 
         // Test connection to API
         const testSpinner = ora('Testing connection...').start();
@@ -185,6 +190,7 @@ export function registerInitCommand(program: Command): void {
           `${CONTEXTOR_DIR}/${USER_FILE}`,
           `${CLAUDE_DIR}/${SETTINGS_FILE}`,
           `${CLAUDE_DIR}/${HOOKS_DIR}/${CAPTURE_SCRIPT}`,
+          `${CLAUDE_DIR}/${HOOKS_DIR}/${RESPONSE_SCRIPT}`,
         ];
 
         if (testResult.success) {
