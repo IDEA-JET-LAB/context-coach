@@ -41,6 +41,7 @@ import {
   BmadVersionInfo,
   TeamTimeRange,
   TeamStatsData,
+  TeamInfo,
 } from "../types/messages";
 
 /**
@@ -695,6 +696,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         await this.handleOpenStatusFile();
         break;
 
+      case "run-validation":
+        this.log(`Validation requested for epic: ${message.epicId}, story: ${message.storyId || "all"}`);
+        await this.handleRunValidation(message.epicId, message.storyId);
+        break;
+
       case "install-bmad":
         this.log("BMAD installation requested");
         this.handleInstallBmad();
@@ -739,9 +745,14 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         this.handleUpgradeBmad();
         break;
 
+      case "fetch-teams":
+        this.log("Teams list requested");
+        await this.handleFetchTeams();
+        break;
+
       case "fetch-team-stats":
         this.log("Team stats requested");
-        await this.handleFetchTeamStats(message.timeRange);
+        await this.handleFetchTeamStats(message.teamId, message.timeRange);
         break;
     }
   }
@@ -1097,7 +1108,51 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       // Parse YAML (simple parser for development_status format)
       const status = this.parseSprintStatus(text);
 
-      this.log(`Project status loaded: ${status.epics.length} epics`);
+      // Check for validation files in _bmad-output/stories/
+      const validationPattern = new vscode.RelativePattern(
+        workspaceFolders[0],
+        "_bmad-output/stories/validation-*.md"
+      );
+      const validationFiles = await vscode.workspace.findFiles(validationPattern, null, 500);
+
+      // Build a set of validated story IDs (e.g., "1-1", "2-3")
+      const validatedStoryIds = new Set<string>();
+      for (const file of validationFiles) {
+        // Extract story ID from filename (e.g., "validation-1-1-name.md" → "1-1")
+        const filename = file.path.split("/").pop() || "";
+        const match = filename.match(/^validation-(\d+(?:\.\d+)?-\d+)/);
+        if (match) {
+          validatedStoryIds.add(match[1]);
+        }
+      }
+
+      // Add validation status to epics and stories
+      for (const epic of status.epics) {
+        const epicNumber = epic.id.replace(/^epic-/, "");
+
+        // Check if epic was already marked as validated from comments in sprint-status.yaml
+        const epicValidatedFromComments = epic.isValidated === true;
+        let epicValidated = true; // Epic is validated if all non-optional stories are validated
+
+        for (const story of epic.stories) {
+          // Extract story number from ID (e.g., "1-1-name" → "1-1")
+          const storyMatch = story.id.match(/^(\d+(?:\.\d+)?-\d+)/);
+          const storyNumber = storyMatch ? storyMatch[1] : "";
+
+          // Story is validated if: has validation file OR epic is validated in comments
+          story.isValidated = validatedStoryIds.has(storyNumber) || epicValidatedFromComments;
+
+          // Epic is not validated if any non-optional story is not validated
+          if (!story.isValidated && story.status !== "optional") {
+            epicValidated = false;
+          }
+        }
+
+        // Epic is validated if: marked in comments OR all non-optional stories are validated
+        epic.isValidated = epic.stories.length > 0 ? (epicValidatedFromComments || epicValidated) : undefined;
+      }
+
+      this.log(`Project status loaded: ${status.epics.length} epics, ${validatedStoryIds.size} validated stories`);
       this.postMessage({ type: "project-status", status } as ExtensionToWebviewMessage);
       this.postMessage({ type: "project-status-loading", isLoading: false } as ExtensionToWebviewMessage);
     } catch (error) {
@@ -1121,7 +1176,8 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       name: string;
       status: string;
       description?: string;
-      stories: Array<{ id: string; name: string; status: string }>;
+      isValidated?: boolean;
+      stories: Array<{ id: string; name: string; status: string; isValidated?: boolean }>;
     }>;
   } {
     const lines = content.split("\n");
@@ -1130,7 +1186,8 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       name: string;
       status: string;
       description?: string;
-      stories: Array<{ id: string; name: string; status: string }>;
+      isValidated?: boolean;
+      stories: Array<{ id: string; name: string; status: string; isValidated?: boolean }>;
     }> = [];
 
     let project = "Unknown";
@@ -1140,7 +1197,8 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       name: string;
       status: string;
       description?: string;
-      stories: Array<{ id: string; name: string; status: string }>;
+      isValidated?: boolean;
+      stories: Array<{ id: string; name: string; status: string; isValidated?: boolean }>;
     } | null = null;
 
     for (const line of lines) {
@@ -1159,8 +1217,8 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       // Skip comments and empty lines
       if (line.trim().startsWith("#") || !line.trim()) continue;
 
-      // Check for epic line (e.g., "epic-1: done")
-      const epicMatch = line.match(/^\s*(epic-\d+(?:\.\d+)?(?:-\w+)?)\s*:\s*(\w+)/);
+      // Check for epic line (e.g., "epic-1: done", "epic-24: in-progress")
+      const epicMatch = line.match(/^\s*(epic-\d+(?:\.\d+)?(?:-\w+)?)\s*:\s*([\w-]+)/);
       if (epicMatch) {
         const [, epicId, status] = epicMatch;
 
@@ -1169,14 +1227,17 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
           epics.push(currentEpic);
         }
 
-        // Find epic name from comments above (look back in lines)
-        const epicName = this.findEpicName(lines, lines.indexOf(line), epicId);
+        // Find epic name and validation status from comments above (look back in lines)
+        const epicLineIndex = lines.indexOf(line);
+        const epicName = this.findEpicName(lines, epicLineIndex, epicId);
+        const isValidatedInComments = this.isEpicValidatedInComments(lines, epicLineIndex);
 
         currentEpic = {
           id: epicId,
           name: epicName,
           status: status,
           stories: [],
+          isValidated: isValidatedInComments ? true : undefined, // Will be refined later based on story validation
         };
         continue;
       }
@@ -1211,8 +1272,8 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    * Finds epic name from comments above the epic line.
    */
   private findEpicName(lines: string[], epicLineIndex: number, epicId: string): string {
-    // Look backwards for a comment containing the epic name
-    for (let i = epicLineIndex - 1; i >= 0 && i >= epicLineIndex - 5; i--) {
+    // Look backwards for a comment containing the epic name (increased to 10 lines for Phase 3 epics with more metadata)
+    for (let i = epicLineIndex - 1; i >= 0 && i >= epicLineIndex - 10; i--) {
       const line = lines[i].trim();
       if (line.startsWith("#") && line.includes("Epic")) {
         // Extract name after "Epic N:" or just the description
@@ -1225,6 +1286,28 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
     // Fallback: format the epic ID
     return epicId.replace(/-/g, " ").replace(/epic /i, "Epic ");
+  }
+
+  /**
+   * Checks if an epic is marked as validated in comments above the epic line.
+   * Looks for patterns like "# Status: VALIDATED" or "VALIDATED & READY"
+   */
+  private isEpicValidatedInComments(lines: string[], epicLineIndex: number): boolean {
+    // Look backwards for a comment containing validation status
+    for (let i = epicLineIndex - 1; i >= 0 && i >= epicLineIndex - 10; i--) {
+      const line = lines[i].trim();
+      if (line.startsWith("#")) {
+        // Check for "VALIDATED" keyword (case-insensitive)
+        if (/\bVALIDATED\b/i.test(line)) {
+          return true;
+        }
+      }
+      // Stop if we hit another epic or non-comment content
+      if (!line.startsWith("#") && line.trim() !== "") {
+        break;
+      }
+    }
+    return false;
   }
 
   /**
@@ -1268,6 +1351,61 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /**
+   * Runs validation for an epic or story in a new terminal.
+   * Opens Claude with permissions and pastes the validation command.
+   */
+  private async handleRunValidation(epicId: string, storyId?: string): Promise<void> {
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showWarningMessage("No workspace folder open");
+        return;
+      }
+
+      // Extract epic number from ID (e.g., "epic-1" → "1")
+      const epicNumber = epicId.replace(/^epic-/, "");
+
+      // Build the validation command
+      let validationTarget: string;
+      let terminalName: string;
+
+      if (storyId) {
+        // Story validation - extract story number (e.g., "1-1-name" → "1-1")
+        const storyMatch = storyId.match(/^(\d+(?:\.\d+)?-\d+)/);
+        const storyNumber = storyMatch ? storyMatch[1] : storyId;
+        validationTarget = `story ${storyNumber}`;
+        terminalName = `Validate Story ${storyNumber}`;
+      } else {
+        // Epic validation
+        validationTarget = `epic ${epicNumber}`;
+        terminalName = `Validate Epic ${epicNumber}`;
+      }
+
+      // Create a new terminal
+      const terminal = vscode.window.createTerminal({
+        name: terminalName,
+        cwd: workspaceFolders[0].uri.fsPath,
+      });
+
+      // Show the terminal
+      terminal.show();
+
+      // Build the Claude command with dangerously skip permissions
+      // The validation workflow will check PRD and architecture alignment
+      const command = `claude --dangerously-skip-permissions "Run BMAD validation workflow for ${validationTarget}. Check alignment with PRD and architecture files. Generate validation report in _bmad-output/stories/ folder."`;
+
+      // Send the command to the terminal
+      terminal.sendText(command);
+
+      this.log(`Started validation for ${validationTarget}`);
+      vscode.window.showInformationMessage(`Starting validation for ${validationTarget}...`);
+    } catch (error) {
+      this.logError("Failed to run validation", error);
+      vscode.window.showErrorMessage("Failed to start validation");
+    }
+  }
+
   // ============================================
   // Workspace Status Methods
   // ============================================
@@ -1297,16 +1435,26 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     const contextorConfig = await this.workspaceConfigService.getWorkspaceConfig();
     const contextorInstalled = contextorConfig !== null;
 
-    // Check BMAD installation (look for _bmad folder)
+    // Check BMAD installation (look for _bmad or .bmad folder - supports both v6+ and legacy)
     let bmadInstalled = false;
     try {
-      const bmadPattern = new vscode.RelativePattern(workspaceFolders[0], "_bmad");
-      const bmadFolders = await vscode.workspace.findFiles(
+      // Check for v6+ structure (_bmad folder)
+      const bmadV6Folders = await vscode.workspace.findFiles(
         new vscode.RelativePattern(workspaceFolders[0], "_bmad/**/*"),
         null,
         1
       );
-      bmadInstalled = bmadFolders.length > 0;
+      if (bmadV6Folders.length > 0) {
+        bmadInstalled = true;
+      } else {
+        // Check for legacy structure (.bmad folder)
+        const bmadLegacyFolders = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(workspaceFolders[0], ".bmad/**/*"),
+          null,
+          1
+        );
+        bmadInstalled = bmadLegacyFolders.length > 0;
+      }
     } catch {
       bmadInstalled = false;
     }
@@ -2723,11 +2871,12 @@ exit 0
   }
 
   /**
-   * Gets the installed BMAD version from _bmad/_config/manifest.yaml
+   * Gets the installed BMAD version from _bmad/_config/manifest.yaml or .bmad folder
+   * Supports both v6+ (_bmad) and legacy (.bmad) folder structures
    */
   private async getInstalledBmadVersion(workspaceRoot: vscode.Uri): Promise<string | null> {
     try {
-      // Read version from _bmad/_config/manifest.yaml
+      // Try v6+ structure first: _bmad/_config/manifest.yaml
       const manifestPath = vscode.Uri.joinPath(workspaceRoot, "_bmad", "_config", "manifest.yaml");
       try {
         const content = await vscode.workspace.fs.readFile(manifestPath);
@@ -2742,16 +2891,28 @@ exit 0
         // manifest.yaml doesn't exist
       }
 
-      // Check if _bmad folder exists at all (legacy detection)
+      // Check if _bmad folder exists (v6+ without manifest)
       try {
         const bmadFolder = vscode.Uri.joinPath(workspaceRoot, "_bmad");
         const stat = await vscode.workspace.fs.stat(bmadFolder);
         if (stat.type === vscode.FileType.Directory) {
-          // BMAD is installed but version unknown (old installation)
+          // BMAD v6+ is installed but version unknown
           return "unknown";
         }
       } catch {
         // _bmad folder doesn't exist
+      }
+
+      // Check for legacy .bmad folder structure (pre-v6)
+      try {
+        const legacyBmadFolder = vscode.Uri.joinPath(workspaceRoot, ".bmad");
+        const stat = await vscode.workspace.fs.stat(legacyBmadFolder);
+        if (stat.type === vscode.FileType.Directory) {
+          // Legacy BMAD installation detected
+          return "legacy (pre-v6)";
+        }
+      } catch {
+        // .bmad folder doesn't exist
       }
 
       return null;
@@ -2904,24 +3065,80 @@ exit 0
   }
 
   /**
+   * Fetches the list of teams the user belongs to.
+   */
+  private async handleFetchTeams(): Promise<void> {
+    this.postMessage({ type: "teams-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const token = await this.authService.getAccessToken();
+      if (!token) {
+        this.log("No auth token for teams - user not authenticated");
+        this.postMessage({ type: "teams", teams: [] } as ExtensionToWebviewMessage);
+        this.postMessage({ type: "teams-loading", isLoading: false } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      const apiUrl = this.settingsService.apiEndpoint;
+
+      this.log(`Fetching teams from ${apiUrl}/extension/teams`);
+
+      const response = await fetch(`${apiUrl}/extension/teams`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        this.logError(`Teams API error: ${response.status}`, errorText);
+        throw new Error(`Failed to fetch teams: ${response.status}`);
+      }
+
+      const result = await response.json() as { data?: { teams?: TeamInfo[] } };
+      this.log(`Teams API response: ${JSON.stringify(result)}`);
+
+      if (result.data) {
+        this.postMessage({
+          type: "teams",
+          teams: result.data.teams || [],
+        } as ExtensionToWebviewMessage);
+      } else {
+        this.log("No data in teams response");
+        this.postMessage({ type: "teams", teams: [] } as ExtensionToWebviewMessage);
+      }
+      this.postMessage({ type: "teams-loading", isLoading: false } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to fetch teams", error);
+      this.postMessage({ type: "teams", teams: [] } as ExtensionToWebviewMessage);
+      this.postMessage({ type: "teams-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
    * Fetches team stats from the API.
    */
-  private async handleFetchTeamStats(timeRange?: TeamTimeRange): Promise<void> {
+  private async handleFetchTeamStats(teamId?: string, timeRange?: TeamTimeRange): Promise<void> {
     this.postMessage({ type: "team-stats-loading", isLoading: true } as ExtensionToWebviewMessage);
 
     try {
-      const token = await this.authService.getToken();
+      const token = await this.authService.getAccessToken();
       if (!token) {
         this.log("No auth token for team stats");
         this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);
         return;
       }
 
-      const settings = this.settingsService.getSettings();
-      const apiUrl = settings.apiUrl || "https://contextor.co/api";
+      const apiUrl = this.settingsService.apiEndpoint;
       const range = timeRange || "week";
 
-      const response = await fetch(`${apiUrl}/extension/team-stats?timeRange=${range}`, {
+      const params = new URLSearchParams({ timeRange: range });
+      if (teamId) {
+        params.append("teamId", teamId);
+      }
+
+      const response = await fetch(`${apiUrl}/extension/team-stats?${params.toString()}`, {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -2932,14 +3149,15 @@ exit 0
         throw new Error(`Failed to fetch team stats: ${response.status}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as { data?: TeamStatsData };
 
       if (result.data) {
         this.postMessage({
           type: "team-stats",
-          data: result.data as TeamStatsData,
+          data: result.data,
         } as ExtensionToWebviewMessage);
       }
+      this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);
     } catch (error) {
       this.logError("Failed to fetch team stats", error);
       this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);

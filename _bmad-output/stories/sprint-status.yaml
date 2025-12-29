@@ -388,3 +388,101 @@ development_status:
   D-7-admin-config-ui-design: done         # Admin config UI design
   D-8-apply-component-library: done        # Applied component library to existing UI
   epic-D-retrospective: optional
+
+  # =============================================================================
+  # Epic 23: VS Code Extension Improvements ✅ COMPLETED
+  # Enhanced navigation, workspace detection, and BMAD integration.
+  # Story files at: _bmad-output/stories/23-*.md
+  # Completed: 2025-12-24
+  # =============================================================================
+  epic-23: done
+  23-1-two-level-navigation: done              # Primary tabs (Contextor | BMAD) + secondary page tabs
+  23-2-tab-memory-per-section: done            # Remembers last active tab when switching sections
+  23-3-collapsible-status-panel: done          # Expandable epic categories in status panel
+  23-4-workspace-installation-detection: done  # Detect Contextor and BMAD installation
+  23-5-register-project-flow: done             # Team selection via QuickPick
+  23-6-install-bmad-button: done               # Terminal automation for BMAD install
+  23-7-bmad-documents-panel: done              # Recursive file tree viewer
+  23-8-smart-project-documents: done           # Sub-tabs, missing doc detection, one-click creation
+  epic-23-retrospective: optional
+
+  # =============================================================================
+  # PHASE 3 EPICS (Conversation Intelligence)
+  # =============================================================================
+
+  # =============================================================================
+  # Epic 24: Schema Extensions (P0 - Foundation) ✅ COMPLETED
+  # Database schema changes for Phase 3 conversation intelligence features.
+  # Story files at: _bmad-output/stories/24-*.md
+  # Completed: 2025-12-25
+  # Dependencies: None (foundation epic)
+  # =============================================================================
+  epic-24: done
+  24-1-sessions-table-extensions: done  # primary_stage, has_debugging_loop, user_message_count, conversation_score, stage_breakdown
+  24-2-prompts-table-extensions: done   # prompt_classification, prompt_type_confidence, message_uuid, parent_message_uuid, is_in_debugging_loop, detected_stage
+  24-3-prompt-responses-table-extensions: done  # thinking_summary, thinking_word_count, stop_reason, cache_stats
+  24-4-session-aggregation-functions: done      # update_session_stats(), calculate_conversation_score(), get_prompt_scoring_weight()
+  24-5-apply-migrations: done                   # Migration deployment instructions
+  epic-24-retrospective: optional
+
+  # =============================================================================
+  # Epic 25: Conversations API (P0 - Core Experience) ✅ COMPLETED
+  # API endpoints to serve the conversations UI with real data.
+  # Story files at: _bmad-output/stories/25-*.md
+  # Completed: 2025-12-26
+  # Dependencies: Epic 24 must complete first
+  # =============================================================================
+  epic-25: done
+  25-1-response-capture-endpoint: done   # POST /api/responses/capture for Stop hook
+  25-2-conversations-list-endpoint: done # GET /api/conversations with filters
+  25-3-conversation-thread-endpoint: done  # GET /api/conversations/[sessionId]
+  25-4-conversation-context-endpoint: done # GET /api/sessions/[id]/context with token budget
+  25-5-connect-conversations-ui: done      # TanStack Query hooks and real-time updates (15 unit tests + E2E)
+  epic-25-retrospective: optional
+
+  # =============================================================================
+  # Epic 26: Enhanced Capture Pipeline (P0 - Data Flow) ✅ COMPLETED
+  # Two-hook capture for responses and prompts.
+  # Story files at: _bmad-output/stories/26-*.md
+  # Completed: 2025-12-26
+  # Dependencies: Epic 24 (schema), Epic 25-1 (response capture endpoint)
+  # =============================================================================
+  epic-26: done
+  26-1-stop-hook-script: done           # contextor-response.sh for Stop hook (46 tests)
+  26-2-cli-hook-configuration: done     # CLI configures both hooks in settings.json
+  26-3-update-prompt-capture-hook: done # Simplified prompt hook with session_id
+  26-4-response-extraction-logic: done  # TypeScript transcript JSONL parsing
+  26-5-thinking-compression: done       # Sentence-boundary truncation to 500 chars
+  epic-26-retrospective: optional
+
+  # =============================================================================
+  # Epic 27: Context-Aware Analysis (P1 - Intelligence) ✅ COMPLETED
+  # Prompt classification and context-aware scoring.
+  # Story files at: _bmad-output/stories/27-*.md
+  # Completed: 2025-12-26
+  # Dependencies: Epic 24, Epic 25, Epic 26
+  # =============================================================================
+  epic-27: done
+  27-1-prompt-classification-service: done # Main classification with heuristic-first strategy (35 tests)
+  27-2-heuristic-classification: done       # Pattern matching for confirmation, selection, correction
+  27-3-context-building-for-analysis: done  # DB context retrieval with token budget (45 tests)
+  27-4-context-aware-scoring: done          # Dimension weight adjustments by prompt type (168 tests)
+  27-5-update-analysis-pipeline: done             # Pipeline orchestration in lib/analysis (1312 tests)
+  27-6-conversation-score-aggregation: done       # TypeScript wrapper + 24 tests (DB functions from 24-4)
+  epic-27-retrospective: optional
+
+  # =============================================================================
+  # Epic 28: Project Mapping (P2 - Deferred)
+  # Map Claude Code project paths to Contextor projects.
+  # Status: Deferred - not needed for initial E2E testing
+  # =============================================================================
+  epic-28: deferred
+  epic-28-retrospective: optional
+
+  # =============================================================================
+  # Epic 29: Team Analytics (P2 - Deferred)
+  # Team-level conversation analytics and mentorship.
+  # Status: Deferred - not needed for initial E2E testing
+  # =============================================================================
+  epic-29: deferred
+  epic-29-retrospective: optional

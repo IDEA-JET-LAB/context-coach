@@ -58,6 +58,42 @@ describe("isValidSessionId", () => {
     });
   });
 
+  describe("raw UUID format (Claude Code native)", () => {
+    it("should return true for raw UUID", () => {
+      expect(isValidSessionId("550e8400-e29b-41d4-a716-446655440000")).toBe(true);
+    });
+
+    it("should return true for raw UUID with uppercase", () => {
+      expect(isValidSessionId("550E8400-E29B-41D4-A716-446655440000")).toBe(true);
+    });
+  });
+
+  describe("derived session IDs", () => {
+    it("should return true for derived session ID", () => {
+      expect(isValidSessionId("derived-a1b2c3d4e5f6")).toBe(true);
+    });
+
+    it("should return true for derived session ID with 32-char hash", () => {
+      expect(isValidSessionId("derived-a1b2c3d4e5f6a1b2c3d4e5f6a1b2")).toBe(true);
+    });
+  });
+
+  describe("custom session ID formats", () => {
+    it("should return true for alphanumeric session ID", () => {
+      expect(isValidSessionId("my-session-12345")).toBe(true);
+    });
+
+    it("should return true for underscore-separated session ID", () => {
+      expect(isValidSessionId("test_session_abc123")).toBe(true);
+    });
+
+    it("should return true for alternative prefix format", () => {
+      expect(
+        isValidSessionId("sess_550e8400-e29b-41d4-a716-446655440000")
+      ).toBe(true);
+    });
+  });
+
   describe("invalid session IDs", () => {
     it("should return false for null", () => {
       expect(isValidSessionId(null)).toBe(false);
@@ -71,24 +107,20 @@ describe("isValidSessionId", () => {
       expect(isValidSessionId("")).toBe(false);
     });
 
-    it("should return false for plain UUID without prefix", () => {
-      expect(isValidSessionId("550e8400-e29b-41d4-a716-446655440000")).toBe(
-        false
-      );
+    it("should return false for too short string", () => {
+      expect(isValidSessionId("short")).toBe(false);
     });
 
-    it("should return false for wrong prefix", () => {
-      expect(
-        isValidSessionId("sess_550e8400-e29b-41d4-a716-446655440000")
-      ).toBe(false);
+    it("should return false for string with only spaces", () => {
+      expect(isValidSessionId("          ")).toBe(false);
     });
 
-    it("should return false for invalid UUID part", () => {
-      expect(isValidSessionId("session_not-a-valid-uuid")).toBe(false);
+    it("should return false for string with control characters", () => {
+      expect(isValidSessionId("session\x00id")).toBe(false);
     });
 
-    it("should return false for session_ prefix only", () => {
-      expect(isValidSessionId("session_")).toBe(false);
+    it("should return false for string with special characters", () => {
+      expect(isValidSessionId("session@id#123")).toBe(false);
     });
 
     it("should return false for number", () => {
@@ -101,6 +133,10 @@ describe("isValidSessionId", () => {
 
     it("should return false for array", () => {
       expect(isValidSessionId(["session_xxx"])).toBe(false);
+    });
+
+    it("should return false for too long string", () => {
+      expect(isValidSessionId("a".repeat(129))).toBe(false);
     });
   });
 });

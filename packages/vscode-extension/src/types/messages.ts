@@ -121,6 +121,8 @@ export type ExtensionToWebviewMessage =
   | { type: "bmad-version-loading"; isLoading: boolean }
 
   // Team stats messages
+  | { type: "teams"; teams: TeamInfo[] }
+  | { type: "teams-loading"; isLoading: boolean }
   | { type: "team-stats"; data: TeamStatsData }
   | { type: "team-stats-loading"; isLoading: boolean }
 
@@ -313,6 +315,7 @@ export type WebviewToExtensionMessage =
   // Project status actions (BMAD)
   | { type: "fetch-project-status" }
   | { type: "open-status-file" }
+  | { type: "run-validation"; epicId: string; storyId?: string }
 
   // Workspace installation actions
   | { type: "install-bmad" }
@@ -329,7 +332,8 @@ export type WebviewToExtensionMessage =
   | { type: "upgrade-bmad" }
 
   // Team stats actions
-  | { type: "fetch-team-stats"; timeRange?: TeamTimeRange };
+  | { type: "fetch-teams" }
+  | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange };
 
 /**
  * Project document info for creation workflow
@@ -380,6 +384,15 @@ export interface LegacyAnalyticsData {
  * Team time range for filtering
  */
 export type TeamTimeRange = "today" | "week" | "month";
+
+/**
+ * Team info for dropdown display
+ */
+export interface TeamInfo {
+  id: string;
+  name: string;
+  memberCount: number;
+}
 
 /**
  * Team member stats for webview display

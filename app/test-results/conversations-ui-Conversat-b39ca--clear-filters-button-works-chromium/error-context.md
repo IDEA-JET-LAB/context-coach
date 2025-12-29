@@ -1,0 +1,112 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - navigation "Main navigation" [ref=e4]:
+        - link "Feed" [ref=e5] [cursor=pointer]:
+          - /url: /prompts
+          - img [ref=e6]
+        - link "Analytics" [ref=e8] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e9]
+        - link "Team" [ref=e10] [cursor=pointer]:
+          - /url: /team
+          - img [ref=e11]
+        - link "Projects" [ref=e16] [cursor=pointer]:
+          - /url: /projects
+          - img [ref=e17]
+        - link "Docs" [ref=e19] [cursor=pointer]:
+          - /url: /docs
+          - img [ref=e20]
+        - link "Settings" [ref=e22] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e23]
+    - generic [ref=e26]:
+      - banner [ref=e27]:
+        - button "Switch team" [ref=e29] [cursor=pointer]:
+          - img
+          - text: Select Team
+          - img
+        - generic [ref=e31]:
+          - generic [ref=e33]: CO
+          - generic [ref=e34]: conv-ui-test-1766712843636@example.com
+          - button "Sign out" [ref=e35] [cursor=pointer]:
+            - img
+      - main [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - heading "Conversations" [level=1] [ref=e40]
+              - paragraph [ref=e41]: Browse and analyze your Claude Code sessions
+            - button "Refresh" [ref=e42] [cursor=pointer]:
+              - img
+              - text: Refresh
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - generic [ref=e46]:
+                - img [ref=e47]
+                - textbox "Search conversations..." [ref=e50]
+              - combobox [ref=e51] [cursor=pointer]:
+                - generic: All Projects
+                - img
+              - combobox [ref=e52] [cursor=pointer]:
+                - generic: All Stages
+                - img
+              - combobox [ref=e53] [cursor=pointer]:
+                - generic: All
+                - img
+              - combobox [ref=e54] [cursor=pointer]:
+                - generic: Newest
+                - img
+            - generic [ref=e55]:
+              - img [ref=e56]
+              - generic [ref=e58]: 2 of 2 conversations
+          - generic [ref=e60]:
+            - generic [ref=e62]:
+              - text: Test Project 1766712844209
+              - generic [ref=e63]: (2)
+            - generic [ref=e65]:
+              - generic [ref=e67] [cursor=pointer]:
+                - generic [ref=e68]:
+                  - heading "Fix Database Issues" [level=3] [ref=e69]
+                  - generic [ref=e70]: 1h ago
+                - generic [ref=e72]:
+                  - img [ref=e73]
+                  - text: Test Project 1766712844209
+                - generic [ref=e75]:
+                  - generic [ref=e76]:
+                    - img [ref=e77]
+                    - text: 26 messages
+                  - generic [ref=e79]:
+                    - img [ref=e80]
+                    - text: 1h
+                - generic [ref=e83]:
+                  - generic [ref=e84]: Debugging
+                  - generic [ref=e85]:
+                    - img [ref=e86]
+                    - text: Loop!
+                  - 'generic "Score: 6.5 out of 10" [ref=e88]': "6.5"
+              - generic [ref=e90] [cursor=pointer]:
+                - generic [ref=e91]:
+                  - heading "Implement Auth Flow" [level=3] [ref=e92]
+                  - generic [ref=e93]: 2h ago
+                - generic [ref=e95]:
+                  - img [ref=e96]
+                  - text: Test Project 1766712844209
+                - generic [ref=e98]:
+                  - generic [ref=e99]:
+                    - img [ref=e100]
+                    - text: 11 messages
+                  - generic [ref=e102]:
+                    - img [ref=e103]
+                    - text: 2h
+                - generic [ref=e106]:
+                  - generic [ref=e107]: Development
+                  - 'generic "Score: 8.5 out of 10" [ref=e108]': "8.5"
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e114] [cursor=pointer]:
+    - img [ref=e115]
+  - alert [ref=e118]
+```

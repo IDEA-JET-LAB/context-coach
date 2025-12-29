@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   MessageSquare,
+  MessagesSquare,
   BarChart2,
   Users,
   FolderOpen,
@@ -25,6 +26,7 @@ import { useCurrentTeam } from '@/lib/hooks/use-current-team';
 
 const navItems = [
   { icon: MessageSquare, label: 'Feed', href: '/prompts' },
+  { icon: MessagesSquare, label: 'Conversations', href: '/conversations' },
   { icon: BarChart2, label: 'Analytics', href: '/analytics' },
   { icon: Users, label: 'Team', href: '/team' },
   { icon: FolderOpen, label: 'Projects', href: '/projects' },

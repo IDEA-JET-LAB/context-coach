@@ -82,6 +82,26 @@ function getPreviousPeriodRange(timeRange: TimeRange): { startDate: Date; endDat
   return { startDate, endDate };
 }
 
+/**
+ * Verify VS Code access token and get user ID.
+ */
+async function verifyVSCodeToken(
+  accessToken: string,
+  adminClient: ReturnType<typeof createAdminClient>
+): Promise<string | null> {
+  const { data: tokenRecord, error } = await adminClient
+    .from('vscode_tokens')
+    .select('user_id, access_token_expires_at, revoked_at')
+    .eq('access_token', accessToken)
+    .single();
+
+  if (error || !tokenRecord) return null;
+  if (tokenRecord.revoked_at) return null;
+  if (new Date(tokenRecord.access_token_expires_at) < new Date()) return null;
+
+  return tokenRecord.user_id;
+}
+
 export async function GET(request: Request) {
   try {
     // Get authorization header (VS Code extension token)
@@ -93,38 +113,56 @@ export async function GET(request: Request) {
       );
     }
 
-    const token = authHeader.slice(7);
-
-    // Verify token with Supabase
+    const accessToken = authHeader.slice(7);
     const supabase = createAdminClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (authError || !user) {
+    // Verify VS Code access token
+    const userId = await verifyVSCodeToken(accessToken, supabase);
+
+    if (!userId) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Invalid token' } },
         { status: 401 }
       );
     }
 
-    // Get user's current team
-    const { data: membership, error: memberError } = await supabase
+    // Parse URL params
+    const url = new URL(request.url);
+    const requestedTeamId = url.searchParams.get('teamId');
+
+    // Get user's teams
+    const { data: memberships, error: memberError } = await supabase
       .from('team_members')
       .select('team_id, teams(id, name)')
-      .eq('user_id', user.id)
-      .single();
+      .eq('user_id', userId);
 
-    if (memberError || !membership) {
+    if (memberError || !memberships || memberships.length === 0) {
       return NextResponse.json(
         { error: { code: 'NOT_FOUND', message: 'User is not a member of any team' } },
         { status: 404 }
       );
     }
 
-    const teamId = membership.team_id;
-    const teamName = (membership.teams as { id: string; name: string })?.name || 'Team';
+    // Use requested team or default to first team
+    // We already checked memberships.length > 0 above, so memberships[0] is safe
+    let selectedMembership = memberships[0]!;
+    if (requestedTeamId) {
+      const found = memberships.find(m => m.team_id === requestedTeamId);
+      if (found) {
+        selectedMembership = found;
+      } else {
+        return NextResponse.json(
+          { error: { code: 'FORBIDDEN', message: 'User is not a member of this team' } },
+          { status: 403 }
+        );
+      }
+    }
+
+    const teamId = selectedMembership.team_id;
+    // Supabase returns the joined team as a single object for many-to-one relationships
+    const teamName = (selectedMembership.teams as unknown as { id: string; name: string })?.name || 'Team';
 
     // Parse time range
-    const url = new URL(request.url);
     const timeRangeParam = url.searchParams.get('timeRange') as TimeRange | null;
     const timeRange: TimeRange = ['today', 'week', 'month'].includes(timeRangeParam || '')
       ? (timeRangeParam as TimeRange)
@@ -216,7 +254,8 @@ export async function GET(request: Request) {
     // Build member stats array
     const members: TeamMemberStats[] = teamMembers.map((member) => {
       const stats = memberStats.get(member.user_id)!;
-      const userData = member.users as { id: string; email: string; full_name: string | null; avatar_url: string | null };
+      // Supabase returns the joined user as a single object for many-to-one relationships
+      const userData = member.users as unknown as { id: string; email: string; full_name: string | null; avatar_url: string | null };
 
       const avgScore = stats.promptCount > 0
         ? Math.round((stats.totalScore / stats.promptCount) * 10) / 10
@@ -236,7 +275,7 @@ export async function GET(request: Request) {
 
       return {
         userId: member.user_id,
-        name: userData.full_name || userData.email.split('@')[0],
+        name: userData.full_name || userData.email.split('@')[0] || 'Unknown',
         avatarUrl: userData.avatar_url,
         promptCount: stats.promptCount,
         avgScore,
@@ -254,7 +293,7 @@ export async function GET(request: Request) {
 
     logger.log('Team stats fetched', {
       teamId,
-      userId: user.id,
+      userId,
       timeRange,
       memberCount: members.length,
     });
@@ -263,7 +302,7 @@ export async function GET(request: Request) {
       members,
       teamName,
       timeRange,
-      currentUserId: user.id,
+      currentUserId: userId,
     };
 
     return NextResponse.json({ data: response });

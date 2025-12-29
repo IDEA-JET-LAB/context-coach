@@ -3550,3 +3550,126 @@ The following epics extend Contextor with advanced capabilities including respon
 - Epic 20 (Real-time Coaching) - blocked by D-4
 - Epic 21 (Advanced Analytics) - blocked by D-6
 - Epic 22 (Config & A/B) - blocked by D-7
+
+---
+
+## Phase 3: Conversation Intelligence
+
+Phase 3 transforms Contextor from prompt-by-prompt analysis to **conversation-aware coaching**. The key insight is that prompts must be evaluated in context — "Yes" is a perfect response when Claude asks "Should I proceed?" but meaningless as an opening prompt.
+
+**Core Architectural Changes:**
+1. **Two-Hook Capture** — Stop hook captures responses, UserPromptSubmit captures prompts
+2. **Response Before Prompt** — Response is stored BEFORE the next prompt arrives
+3. **Context-Aware Scoring** — Analysis queries DB for full conversation history
+4. **Prompt Classification** — Some prompts (selection, confirmation) are not scored
+
+**See:** `_bmad-output/epics-phase3.md` for detailed stories.
+
+---
+
+### Epic 23: VS Code Extension Improvements
+
+Enhanced navigation, workspace detection, and BMAD integration for the VS Code extension.
+
+**Status:** ✅ Complete (2025-12-24)
+
+**Stories:**
+- 23-1: Two-level navigation with primary tabs (Contextor | BMAD) + secondary page tabs
+- 23-2: Tab memory per section - remembers last active tab
+- 23-3: Collapsible status panel with expandable epic categories
+- 23-4: Workspace installation detection for Contextor and BMAD
+- 23-5: Register Project flow with team selection via QuickPick
+- 23-6: Install BMAD button with terminal automation
+- 23-7: BMAD Documents panel with recursive file tree viewer
+- 23-8: Smart Project Documents - Sub-tabs, missing doc detection
+
+---
+
+### Epic 24: Schema Extensions (P0 - Foundation)
+
+Database schema changes for Phase 3 conversation intelligence features.
+
+**Status:** Ready for Dev (2025-12-25)
+
+**Stories:**
+- 24-1: Sessions table extensions (primary_stage, has_debugging_loop, conversation_score)
+- 24-2: Prompts table extensions (prompt_type, message_uuid, parent_message_uuid)
+- 24-3: Prompt responses table extensions (thinking_summary, tools_used)
+- 24-4: Session aggregation functions (update_session_stats, calculate_conversation_score)
+- 24-5: Apply migrations
+
+---
+
+### Epic 25: Conversations API (P0 - Core Experience)
+
+API endpoints to serve the conversations UI with real data.
+
+**Status:** Ready for Dev (2025-12-25)
+
+**Stories:**
+- 25-1: Response capture endpoint (POST /api/responses/capture)
+- 25-2: Conversations list endpoint (GET /api/conversations)
+- 25-3: Conversation thread endpoint (GET /api/conversations/[sessionId])
+- 25-4: Conversation context endpoint (GET /api/sessions/[id]/context)
+- 25-5: Connect conversations UI with TanStack Query hooks
+
+---
+
+### Epic 26: Enhanced Capture Pipeline (P0 - Data Flow)
+
+Two-hook capture for responses and prompts.
+
+**Status:** Ready for Dev (2025-12-25)
+
+**Stories:**
+- 26-1: Stop hook script (contextor-response.sh)
+- 26-2: CLI hook configuration for both hooks
+- 26-3: Update prompt capture hook with session_id
+- 26-4: Response extraction logic from transcript JSONL
+- 26-5: Thinking compression to 500 chars
+
+---
+
+### Epic 27: Context-Aware Analysis (P1 - Intelligence)
+
+Prompt classification and context-aware scoring.
+
+**Status:** Ready for Dev (2025-12-25)
+
+**Stories:**
+- 27-1: Prompt classification service (heuristic + LLM)
+- 27-2: Heuristic classification patterns
+- 27-3: Context building for analysis with token budget
+- 27-4: Context-aware scoring with dimension adjustments
+- 27-5: Update analysis pipeline for context-aware flow
+- 27-6: Conversation score aggregation
+
+---
+
+### Epic 28: Project Mapping (P2 - Deferred)
+
+Map Claude Code project paths to Contextor projects for automatic association.
+
+**Status:** Deferred - not needed for initial E2E testing
+
+---
+
+### Epic 29: Team Analytics (P2 - Deferred)
+
+Team-level conversation analytics and mentorship features.
+
+**Status:** Deferred - not needed for initial E2E testing
+
+---
+
+### Phase 3 Execution Order
+
+```
+Epic 24 (Schema)
+    ↓
+Epic 25 (API) ←──┬── Epic 26 (Capture)
+    ↓            │
+    └────────────┴─→ Epic 27 (Analysis)
+```
+
+Epic 24 must complete first. Epics 25 and 26 can run in parallel. Epic 27 depends on both.

@@ -1,5 +1,6 @@
 #!/bin/bash
 # Contextor Capture - Silent background prompt capture
+# Phase 3: Simplified - response capture handled by Stop hook
 # Errors are logged to debug file if DEBUG_CONTEXTOR=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -49,17 +50,35 @@ if [[ -z "${API_ENDPOINT}" ]]; then
   exit 0
 fi
 
-# Read prompt from stdin
+# Read hook input from stdin
 INPUT=$(cat)
 PROMPT=$(echo "${INPUT}" | jq -r '.prompt // empty' 2>/dev/null)
+SESSION_ID=$(echo "${INPUT}" | jq -r '.session_id // empty' 2>/dev/null)
+CWD=$(echo "${INPUT}" | jq -r '.cwd // empty' 2>/dev/null)
+
 if [[ -z "${PROMPT}" ]]; then
   debug_log "ERROR: No prompt found in input JSON"
   exit 0
 fi
 
-debug_log "INFO: Capturing prompt (${#PROMPT} chars) to ${API_ENDPOINT}/prompts/capture"
+# Session ID derivation fallback: if not provided, derive from cwd + date
+# This ensures prompts are never orphaned without a session
+if [[ -z "${SESSION_ID}" ]]; then
+  DATE_PART=$(date +%Y%m%d)
+  # Use md5 on macOS, md5sum on Linux
+  if command -v md5 >/dev/null 2>&1; then
+    DERIVED_HASH=$(echo -n "${CWD}${DATE_PART}" | md5 | cut -c1-16)
+  else
+    DERIVED_HASH=$(echo -n "${CWD}${DATE_PART}" | md5sum | cut -c1-16)
+  fi
+  SESSION_ID="derived-${DERIVED_HASH}"
+  debug_log "INFO: Derived session_id: ${SESSION_ID} (from cwd + date)"
+fi
+
+debug_log "INFO: Capturing prompt (${#PROMPT} chars) session: ${SESSION_ID}"
 
 # Send to API in background (non-blocking, 10s timeout)
+# NOTE: Response data is captured by Stop hook, not here
 {
   RESPONSE=$(curl -s --max-time 10 -w "\n%{http_code}" -X POST "${API_ENDPOINT}/prompts/capture" \
     -H "Content-Type: application/json" \
@@ -68,7 +87,19 @@ debug_log "INFO: Capturing prompt (${#PROMPT} chars) to ${API_ENDPOINT}/prompts/
       --arg user_id "${USER_ID}" \
       --arg prompt "${PROMPT}" \
       --arg project_id "${PROJECT_ID}" \
-      '{user_id:$user_id,prompt:$prompt,timestamp:(now|todate),metadata:{source:"claude-code-hook",project_id:$project_id}}')" 2>&1)
+      --arg session_id "${SESSION_ID}" \
+      --arg cwd "${CWD}" \
+      '{
+        user_id: $user_id,
+        prompt: $prompt,
+        timestamp: (now | todate),
+        metadata: {
+          source: "claude-code-hook",
+          project_id: $project_id,
+          session_id: $session_id,
+          cwd: $cwd
+        }
+      }')" 2>&1)
 
   HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
   BODY=$(echo "${RESPONSE}" | sed '$d')

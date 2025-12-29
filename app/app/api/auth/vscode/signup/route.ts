@@ -87,13 +87,13 @@ export async function POST(request: NextRequest) {
     signupSchema.parse(body);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstIssue = error.issues[0];
       return NextResponse.json(
         {
           error: {
             code: "VALIDATION_ERROR",
-            message: firstError?.message || "Invalid input",
-            field: firstError?.path?.[0],
+            message: firstIssue?.message || "Invalid input",
+            field: firstIssue?.path?.[0],
           },
         },
         { status: 400 }

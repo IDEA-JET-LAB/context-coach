@@ -3451,23 +3451,32 @@ Enhance the capture pipeline to:
 
 ### Stories
 
-#### Story 24.1: Response Completion Detection
+#### Story 24.1: Response Capture via Stop Hook
 
 **As a** real-time capture system
-**I want** to detect when LLM finishes responding
-**So that** analysis can consider the full response
+**I want** to capture LLM responses when they complete
+**So that** responses are stored before the next prompt arrives
 
 **Acceptance Criteria:**
-- [ ] Hook monitors transcript file for response completion
-- [ ] Detection based on `stop_reason` field in assistant message
-- [ ] Timeout fallback (30 seconds no new content)
-- [ ] Event emitted when response complete
-- [ ] Works for streaming and non-streaming responses
+- [ ] Stop hook fires when Claude finishes responding
+- [ ] Hook receives `transcript_path` in stdin JSON
+- [ ] Extract last assistant message from transcript file
+- [ ] Send response data to `/api/responses/capture` endpoint
+- [ ] Response stored in database immediately
 
 **Technical Notes:**
-- Use file watcher on session JSONL
-- Parse last assistant message for completion signals
-- Emit `response:complete` event to trigger analysis
+- Claude Code provides native `Stop` hook that fires on response completion
+- No file watching or polling needed - hook is triggered automatically
+- Hook script reads transcript file to extract response text, thinking, tools, usage
+- Response is captured BEFORE user types their next prompt (natural conversation order)
+
+**Implementation:**
+```bash
+# .claude/hooks/contextor-response.sh
+HOOK_INPUT=$(cat)
+TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path')
+# Extract last assistant message and send to backend
+```
 
 ---
 
@@ -3516,18 +3525,34 @@ Enhance the capture pipeline to:
 
 ---
 
-#### Story 24.5: Enhanced VS Code Extension Capture
+#### Story 24.5: Two-Hook Capture Configuration
 
-**As a** VS Code extension
-**I want** to capture full conversation context
-**So that** analytics reflect complete picture
+**As a** CLI installer
+**I want** to configure both Stop and UserPromptSubmit hooks
+**So that** both responses and prompts are captured automatically
 
 **Acceptance Criteria:**
-- [ ] Extension captures response after prompt
-- [ ] Waits for response completion (with timeout)
-- [ ] Sends prompt + response pair to backend
-- [ ] Handles interrupted sessions gracefully
-- [ ] Status indicator shows capture progress
+- [ ] CLI configures Stop hook for response capture (contextor-response.sh)
+- [ ] CLI configures UserPromptSubmit hook for prompt capture (contextor-capture.sh)
+- [ ] Both hooks are added to .claude/settings.json
+- [ ] Hooks are idempotent (re-running CLI doesn't duplicate)
+- [ ] Hooks fail silently if not configured (no disruption to user)
+
+**Technical Notes:**
+- Two separate hooks, two separate capture flows
+- Response captured by Stop hook → stored immediately
+- Prompt captured by UserPromptSubmit hook → triggers analysis
+- Analysis queries database for conversation context (already populated by Stop hook)
+
+**Hook Configuration in .claude/settings.json:**
+```json
+{
+  "hooks": {
+    "Stop": [{ "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/contextor-response.sh" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/contextor-capture.sh" }] }]
+  }
+}
+```
 
 ---
 

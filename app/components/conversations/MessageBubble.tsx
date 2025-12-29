@@ -129,7 +129,7 @@ function UserMessageBubble({
               <span className="text-xs font-medium text-muted-foreground">
                 Analysis
               </span>
-              <ScoreBadge score={message.score ? message.score / 10 : analysis.overallScore / 10} />
+              <ScoreBadge score={message.score ?? analysis.overallScore} />
             </div>
 
             {/* Dimension Bars */}

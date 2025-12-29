@@ -24,6 +24,13 @@ export {
   getSessionBySessionId,
 } from "./session-detection";
 
+// Story 25-1: Session upsert for response capture
+export {
+  type UpsertSessionResult,
+  type ResponseSessionCreate,
+  upsertSessionForResponse,
+} from "./upsert-session";
+
 // Session context resolution
 export {
   type ResolveContextInput,

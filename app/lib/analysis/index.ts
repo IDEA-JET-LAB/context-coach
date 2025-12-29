@@ -271,3 +271,61 @@ export {
   // Factory function
   createEmptyProfile,
 } from './technical-depth';
+
+// Heuristic Classification Patterns (Story 27-2)
+export {
+  // Main classifier
+  classifyByHeuristics,
+  // Pattern sets (for testing/debugging)
+  CONFIRMATION_EXACT_MATCHES,
+  CONFIRMATION_PATTERNS,
+  SELECTION_PATTERNS,
+  SELECTION_MAX_LENGTH,
+  CORRECTION_INDICATORS,
+  CLARIFICATION_PATTERNS,
+  // Helper functions
+  normalizePrompt,
+  isConfirmation,
+  isSelection,
+  isCorrection,
+  isClarification,
+} from './classificationPatterns';
+
+// Option Extractor (Story 27-2)
+export {
+  // Types
+  type ExtractedOption,
+  // Main functions
+  extractOptionsFromResponse,
+  extractOptionsWithMetadata,
+  hasOptions,
+  // Individual extractors (for testing)
+  extractNumberedOptions,
+  extractLetteredOptions,
+  extractLabeledOptions,
+  extractBulletOptions,
+  // Constants
+  MAX_OPTION_TEXT_LENGTH,
+  MAX_OPTIONS,
+} from './optionExtractor';
+
+// Prompt Classifier (Story 27-1)
+export {
+  // Main classifier
+  classifyPrompt,
+  // Helpers
+  getScoringWeight,
+  shouldSkipScoring,
+  // Constants
+  SCORING_WEIGHTS,
+  HEURISTIC_CONFIDENCE_THRESHOLD,
+} from './promptClassifier';
+
+// LLM Classifier (Story 27-1)
+export {
+  // Main classifier
+  classifyByLLM,
+  // Helpers (for testing)
+  buildClassificationPrompt,
+  parseClassificationResponse,
+} from './llmClassifier';

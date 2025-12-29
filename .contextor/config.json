@@ -3,7 +3,7 @@
   "project_name": "Contextor dev",
   "team_id": "6c52481b-3303-431c-8d3b-375469096799",
   "team_name": "Idea Jet Lab",
-  "api_endpoint": "https://contextor.co/api",
+  "api_endpoint": "http://127.0.0.1:3050/api",
   "created_at": "2025-12-21T22:32:50.760Z",
   "created_by": "edgars"
 }

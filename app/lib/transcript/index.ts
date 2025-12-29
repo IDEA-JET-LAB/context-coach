@@ -64,3 +64,43 @@ export {
   isUserPrompt,
   isToolResult,
 } from './extract-prompts';
+
+// Types - Response Extraction (Story 26-4)
+export type {
+  RawAssistantMessage,
+  AssistantMessageInner,
+  TextContentBlock,
+  ThinkingContentBlock,
+  ToolUseContentBlock,
+  ToolResultContentBlock,
+  ContentBlock as RawContentBlock,
+  Usage,
+  ToolUse,
+  ThinkingResult,
+  CacheStats,
+  ExtractedResponse as RawExtractedResponse,
+} from './extractResponse';
+
+// Response extraction functions (Story 26-4)
+export {
+  extractResponse,
+  extractResponses as extractRawResponses,
+  extractTextContent as extractRawTextContent,
+  extractThinkingContent,
+  extractToolUses,
+  extractCacheStats,
+  isRawAssistantMessage,
+} from './extractResponse';
+
+// Types - Thinking Compressor
+export type { ThinkingSummary, ThinkingCompressionResult } from './thinkingCompressor';
+
+// Thinking compression functions
+export {
+  compressThinking,
+  countWords,
+  findLastSentenceBoundary,
+  findLastWordBoundary,
+  MAX_THINKING_LENGTH,
+  SENTENCE_BOUNDARY_THRESHOLD,
+} from './thinkingCompressor';

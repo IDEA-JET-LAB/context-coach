@@ -1,0 +1,100 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - navigation "Main navigation" [ref=e4]:
+        - link "Feed" [ref=e5] [cursor=pointer]:
+          - /url: /prompts
+          - img [ref=e6]
+        - link "Analytics" [ref=e8] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e9]
+        - link "Team" [ref=e10] [cursor=pointer]:
+          - /url: /team
+          - img [ref=e11]
+        - link "Projects" [ref=e16] [cursor=pointer]:
+          - /url: /projects
+          - img [ref=e17]
+        - link "Docs" [ref=e19] [cursor=pointer]:
+          - /url: /docs
+          - img [ref=e20]
+        - link "Settings" [ref=e22] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e23]
+    - generic [ref=e26]:
+      - banner [ref=e27]:
+        - button "Switch team" [ref=e29] [cursor=pointer]:
+          - img
+          - text: Select Team
+          - img
+        - generic [ref=e31]:
+          - generic [ref=e33]: CO
+          - generic [ref=e34]: conv-ui-test-1766712837492@example.com
+          - button "Sign out" [ref=e35] [cursor=pointer]:
+            - img
+      - main [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - heading "Conversations" [level=1] [ref=e40]
+              - paragraph [ref=e41]: Browse and analyze your Claude Code sessions
+            - button "Refresh" [ref=e42] [cursor=pointer]:
+              - img
+              - text: Refresh
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - generic [ref=e46]:
+                - img [ref=e47]
+                - textbox "Search conversations..." [ref=e50]
+              - combobox [ref=e51] [cursor=pointer]:
+                - generic: All Projects
+                - img
+              - combobox [active] [ref=e52] [cursor=pointer]:
+                - generic: Debugging
+                - img
+              - combobox [ref=e53] [cursor=pointer]:
+                - generic: All
+                - img
+              - combobox [ref=e54] [cursor=pointer]:
+                - generic: Newest
+                - img
+              - button "Clear filters" [ref=e55] [cursor=pointer]
+            - generic [ref=e56]:
+              - img [ref=e57]
+              - generic [ref=e59]: 1 of 1 conversations
+          - generic [ref=e61]:
+            - generic [ref=e63]:
+              - text: Test Project 1766712838054
+              - generic [ref=e64]: (1)
+            - generic [ref=e68] [cursor=pointer]:
+              - generic [ref=e69]:
+                - heading "Fix Database Issues" [level=3] [ref=e70]
+                - generic [ref=e71]: 1h ago
+              - generic [ref=e73]:
+                - img [ref=e74]
+                - text: Test Project 1766712838054
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - img [ref=e78]
+                  - text: 26 messages
+                - generic [ref=e80]:
+                  - img [ref=e81]
+                  - text: 1h
+              - generic [ref=e84]:
+                - generic [ref=e85]: Debugging
+                - generic [ref=e86]:
+                  - img [ref=e87]
+                  - text: Loop!
+                - 'generic "Score: 6.5 out of 10" [ref=e89]': "6.5"
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e95] [cursor=pointer]:
+    - generic [ref=e98]:
+      - text: Rendering
+      - generic [ref=e99]:
+        - generic [ref=e100]: .
+        - generic [ref=e101]: .
+        - generic [ref=e102]: .
+  - alert [ref=e103]
+```

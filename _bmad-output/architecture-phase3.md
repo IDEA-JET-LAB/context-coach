@@ -894,87 +894,126 @@ export async function aggregateSessionStage(
 
 ## Enhanced Capture Pipeline
 
-### Response Completion Detection
+### Two-Hook Capture Architecture
 
-**File Watcher Approach (VS Code Extension):**
+**Claude Code provides native hooks for capture:**
 
-```typescript
-// packages/vscode-extension/src/services/responseWatcher.ts
+| Hook | Fires When | Input Data | Purpose |
+|------|------------|------------|---------|
+| **Stop** | Claude finishes responding | `{transcript_path}` | Capture response |
+| **UserPromptSubmit** | User submits prompt | `{session_id, prompt}` | Capture prompt |
+| **SessionStart** | Session begins | `{session_id, source}` | Track session lifecycle |
 
-import * as chokidar from 'chokidar';
+**Key Insight:** The `Stop` hook fires when Claude completes a response, providing the transcript file path. This is a native Claude Code feature - no file watching or polling needed.
 
-export class ResponseWatcher {
-  private watcher: chokidar.FSWatcher | null = null;
-  private pendingPromptId: string | null = null;
-  private lastContent: string = '';
+### Response Capture via Stop Hook
 
-  async watchForResponse(
-    sessionId: string,
-    promptId: string
-  ): Promise<ResponseData | null> {
-    return new Promise((resolve, reject) => {
-      const transcriptPath = this.getTranscriptPath(sessionId);
-      const timeout = setTimeout(() => {
-        this.cleanup();
-        resolve(null); // Timeout without response
-      }, 30000);
+**Stop Hook Script (contextor-response.sh):**
 
-      this.watcher = chokidar.watch(transcriptPath, {
-        persistent: true,
-        awaitWriteFinish: {
-          stabilityThreshold: 500,
-          pollInterval: 100
-        }
-      });
+```bash
+#!/bin/bash
+# Contextor Response Capture - Captures LLM responses via Stop hook
 
-      this.watcher.on('change', async () => {
-        const content = await fs.readFile(transcriptPath, 'utf-8');
-        const newLines = this.getNewLines(content);
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-        for (const line of newLines) {
-          const message = JSON.parse(line);
+USER_CONFIG="${PROJECT_ROOT}/.contextor/.user"
+SHARED_CONFIG="${PROJECT_ROOT}/.contextor/config.json"
 
-          if (message.type === 'assistant' && this.isResponseComplete(message)) {
-            clearTimeout(timeout);
-            this.cleanup();
-            resolve(this.extractResponseData(message));
-            return;
-          }
-        }
-      });
-    });
-  }
+# Exit silently if not configured
+if [[ ! -f "${USER_CONFIG}" ]] || [[ ! -f "${SHARED_CONFIG}" ]]; then
+  exit 0
+fi
 
-  private isResponseComplete(message: TranscriptMessage): boolean {
-    return message.message?.stop_reason != null ||
-           message.message?.stop_sequence != null;
-  }
+# Read hook input from stdin
+HOOK_INPUT=$(cat)
+TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path // empty')
 
-  private extractResponseData(message: TranscriptMessage): ResponseData {
-    const content = message.message.content;
+if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
+  exit 0
+fi
 
-    return {
-      responseText: content
-        .filter((c: any) => c.type === 'text')
-        .map((c: any) => c.text)
-        .join('\n'),
-      thinkingContent: content
-        .filter((c: any) => c.type === 'thinking')
-        .map((c: any) => c.thinking)
-        .join('\n'),
-      toolUses: content
-        .filter((c: any) => c.type === 'tool_use')
-        .map((c: any) => ({
-          name: c.name,
-          id: c.id,
-          input: c.input
-        })),
-      model: message.message.model,
-      usage: message.message.usage,
-      stopReason: message.message.stop_reason
-    };
-  }
-}
+# Read config
+API_KEY=$(jq -r '.api_key // empty' "${USER_CONFIG}")
+API_ENDPOINT=$(jq -r '.api_endpoint // empty' "${SHARED_CONFIG}")
+
+# Extract session ID from transcript path (filename without .jsonl)
+SESSION_ID=$(basename "$TRANSCRIPT_PATH" .jsonl)
+
+# Find last assistant message in transcript
+LAST_ASSISTANT=$(grep '"type":"assistant"' "$TRANSCRIPT_PATH" | tail -1)
+
+if [[ -z "$LAST_ASSISTANT" ]]; then
+  exit 0
+fi
+
+# Extract response data
+RESPONSE_TEXT=$(echo "$LAST_ASSISTANT" | jq -r '
+  [.message.content[]? | select(.type == "text") | .text] | join("\n")
+')
+THINKING_TEXT=$(echo "$LAST_ASSISTANT" | jq -r '
+  [.message.content[]? | select(.type == "thinking") | .thinking] | join("\n")
+')
+TOOLS_USED=$(echo "$LAST_ASSISTANT" | jq -c '
+  [.message.content[]? | select(.type == "tool_use") | {name, id}]
+')
+MODEL=$(echo "$LAST_ASSISTANT" | jq -r '.message.model // empty')
+USAGE=$(echo "$LAST_ASSISTANT" | jq -c '.message.usage // {}')
+STOP_REASON=$(echo "$LAST_ASSISTANT" | jq -r '.message.stop_reason // empty')
+MESSAGE_UUID=$(echo "$LAST_ASSISTANT" | jq -r '.uuid // empty')
+
+# Send to API in background
+{
+  curl -s --max-time 10 -X POST "${API_ENDPOINT}/responses/capture" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${API_KEY}" \
+    -d "$(jq -n \
+      --arg session_id "$SESSION_ID" \
+      --arg message_uuid "$MESSAGE_UUID" \
+      --arg response_text "$RESPONSE_TEXT" \
+      --arg thinking_text "$THINKING_TEXT" \
+      --argjson tools_used "$TOOLS_USED" \
+      --arg model "$MODEL" \
+      --argjson usage "$USAGE" \
+      --arg stop_reason "$STOP_REASON" \
+      '{
+        session_id: $session_id,
+        message_uuid: $message_uuid,
+        response_text: $response_text,
+        thinking_summary: ($thinking_text | .[0:500]),
+        thinking_word_count: ($thinking_text | split(" ") | length),
+        tools_used: $tools_used,
+        model: $model,
+        usage: $usage,
+        stop_reason: $stop_reason,
+        timestamp: (now | todate)
+      }')"
+} &
+
+exit 0
+```
+
+### Prompt Capture via UserPromptSubmit Hook
+
+**Existing hook (contextor-capture.sh) remains largely the same**, but now:
+- Response data is NOT included (already captured by Stop hook)
+- Analysis is triggered, which queries DB for conversation context
+
+```bash
+# Key change: No response data sent with prompt
+# Backend triggers analysis which queries DB for full context
+curl -s --max-time 10 -X POST "${API_ENDPOINT}/prompts/capture" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${API_KEY}" \
+  -d "$(jq -n \
+    --arg session_id "$SESSION_ID" \
+    --arg prompt "$PROMPT" \
+    '{
+      session_id: $session_id,
+      prompt: $prompt,
+      timestamp: (now | todate)
+    }')"
+```
 ```
 
 ### Thinking Summary Compression
@@ -1022,101 +1061,139 @@ export function compressThinking(
 
 ### Capture Flow Architecture
 
-**Enhanced Capture Sequence:**
+**Two-Hook Capture Sequence:**
+
+The key insight is that responses are captured BEFORE the next prompt arrives. This means when analyzing a prompt, all previous conversation context is already in the database.
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  User Prompt    │────►│  Hook Capture   │────►│  Backend API    │
-│  (Claude Code)  │     │  (immediate)    │     │  /capture       │
-└─────────────────┘     └────────┬────────┘     └────────┬────────┘
-                                 │                       │
-                                 ▼                       ▼
-                        ┌─────────────────┐     ┌─────────────────┐
-                        │  VS Code Ext    │     │  Create Prompt  │
-                        │  ResponseWatcher│     │  & Session      │
-                        └────────┬────────┘     └────────┬────────┘
-                                 │                       │
-                                 │ (30s timeout)         │
-                                 ▼                       │
-                        ┌─────────────────┐              │
-                        │  Response       │              │
-                        │  Complete Event │              │
-                        └────────┬────────┘              │
-                                 │                       │
-                                 ▼                       ▼
-                        ┌─────────────────┐     ┌─────────────────┐
-                        │  Extract Data:  │────►│  Store Response │
-                        │  - Response     │     │  - Encrypted    │
-                        │  - Thinking     │     │  - Compressed   │
-                        │  - Tools        │     │  - Metadata     │
-                        └─────────────────┘     └────────┬────────┘
-                                                         │
-                                                         ▼
-                                                ┌─────────────────┐
-                                                │  Trigger        │
-                                                │  Analysis       │
-                                                │  Pipeline       │
-                                                └─────────────────┘
+TURN N: Claude Responds
+┌─────────────────────────────────────────────────────────────────────┐
+│  Claude finishes │     Stop hook      │     Backend API            │
+│  responding      │────►fires with ────►│     /responses/capture    │
+│                  │     transcript_path │                            │
+└─────────────────────────────────────────────────────────────────────┘
+                                                    │
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │  Store Response:    │
+                                         │  - Text (encrypted) │
+                                         │  - Thinking summary │
+                                         │  - Tools used       │
+                                         │  - Token usage      │
+                                         │  - Model, stop_reason│
+                                         └─────────────────────┘
+                                                    │
+                    (User reads response, thinks, types)
+                                                    │
+                                                    ▼
+TURN N+1: User Submits Prompt
+┌─────────────────────────────────────────────────────────────────────┐
+│  User submits    │  UserPromptSubmit  │     Backend API            │
+│  prompt          │────►hook fires ────►│     /prompts/capture      │
+│                  │     with prompt     │                            │
+└─────────────────────────────────────────────────────────────────────┘
+                                                    │
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │  Store Prompt       │
+                                         │  Link to session    │
+                                         └──────────┬──────────┘
+                                                    │
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │  Trigger Analysis   │
+                                         │  (async)            │
+                                         └──────────┬──────────┘
+                                                    │
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │  Query DB for full  │
+                                         │  conversation context│
+                                         │  (all previous msgs) │
+                                         └──────────┬──────────┘
+                                                    │
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │  Analyze prompt     │
+                                         │  IN CONTEXT         │
+                                         └─────────────────────┘
 ```
 
-**Updated Capture Endpoint:**
+**Response Capture Endpoint:**
 
 ```typescript
-// app/api/prompts/capture/route.ts (enhanced)
+// app/api/responses/capture/route.ts (NEW)
 
-interface CaptureRequest {
-  // Existing fields
-  prompt: string;
-  apiKey: string;
-  sessionId?: string;
-
-  // New Phase 3 fields
-  messageUuid?: string;
-  parentMessageUuid?: string;
-  response?: {
-    text: string;
-    thinking?: string;
-    model: string;
-    usage: TokenUsage;
-    stopReason: string;
-    toolUses?: ToolUse[];
-  };
+interface ResponseCaptureRequest {
+  session_id: string;
+  message_uuid: string;
+  response_text: string;
+  thinking_summary?: string;
+  thinking_word_count?: number;
+  tools_used: Array<{ name: string; id: string }>;
+  model: string;
+  usage: TokenUsage;
+  stop_reason: string;
+  timestamp: string;
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  // 1. Create/update session
-  const session = await upsertSession(body.sessionId, body);
+  // 1. Upsert session (creates if new)
+  const session = await upsertSession(body.session_id);
 
-  // 2. Create prompt with new fields
-  const prompt = await createPrompt({
-    ...body,
+  // 2. Store response with encryption
+  const response = await storeResponse({
     sessionUuid: session.id,
-    messageUuid: body.messageUuid,
-    parentMessageUuid: body.parentMessageUuid,
-    // Classification happens async
+    messageUuid: body.message_uuid,
+    responseText: body.response_text,  // Will be encrypted
+    thinkingSummary: body.thinking_summary,
+    thinkingWordCount: body.thinking_word_count,
+    toolsUsed: body.tools_used,
+    model: body.model,
+    usage: body.usage,
+    stopReason: body.stop_reason,
   });
 
-  // 3. Store response if provided
-  if (body.response) {
-    await storeResponse({
-      promptId: prompt.id,
-      responseText: body.response.text,
-      thinkingSummary: compressThinking(body.response.thinking),
-      model: body.response.model,
-      usage: body.response.usage,
-      stopReason: body.response.stopReason,
-      toolUses: body.response.toolUses
-    });
-  }
+  // 3. Update session aggregates
+  await updateSessionStats(session.id);
 
-  // 4. Queue analysis (async)
+  return NextResponse.json({ success: true, responseId: response.id });
+}
+```
+
+**Prompt Capture Endpoint (Updated):**
+
+```typescript
+// app/api/prompts/capture/route.ts (simplified)
+
+interface PromptCaptureRequest {
+  session_id: string;
+  prompt: string;
+  timestamp: string;
+  // Note: NO response data - it's already in DB from Stop hook
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // 1. Get or create session
+  const session = await upsertSession(body.session_id);
+
+  // 2. Create prompt record
+  const prompt = await createPrompt({
+    sessionUuid: session.id,
+    content: body.prompt,
+    createdAt: body.timestamp,
+  });
+
+  // 3. Queue analysis (async) - will query DB for context
   await queueAnalysis(prompt.id, {
     classifyPrompt: true,
     detectStage: true,
     detectLoop: true,
-    scoreWithContext: true
+    scoreWithContext: true,  // Analysis queries DB for all previous messages
   });
 
   return NextResponse.json({ success: true, promptId: prompt.id });
@@ -1131,6 +1208,7 @@ export async function POST(request: Request) {
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
+| `/api/responses/capture` | POST | **Capture response via Stop hook** |
 | `/api/sessions/[id]/context` | GET | Get conversation context for analysis |
 | `/api/sessions/[id]/stage` | GET | Get session stage classification |
 | `/api/sessions/[id]/loops` | GET | Get debugging loop instances |
@@ -1320,51 +1398,80 @@ export function activate(context: vscode.ExtensionContext) {
 
 ## Data Flow Diagrams
 
-### Real-Time Capture Flow
+### Two-Hook Capture Flow
+
+The key insight: **Response is captured BEFORE the next prompt arrives.** This is the natural order of a conversation - Claude responds first, then user types their prompt in response.
 
 ```
-┌──────────────┐          ┌──────────────┐          ┌──────────────┐
-│    User      │          │  Claude Code │          │  Contextor   │
-│              │          │              │          │  Hook        │
-└──────┬───────┘          └──────┬───────┘          └──────┬───────┘
-       │                         │                         │
-       │ prompt                  │                         │
-       ├────────────────────────►│                         │
-       │                         │                         │
-       │                         │ UserPromptSubmit        │
-       │                         ├────────────────────────►│
-       │                         │                         │
-       │                         │                         │ POST /api/capture
-       │                         │                         ├──────────────┐
-       │                         │                         │              │
-       │                         │ [LLM Response]          │              ▼
-       │◄────────────────────────┤                         │     ┌──────────────┐
-       │                         │                         │     │  Backend     │
-       │                         │                         │     │  • Session   │
-       │                         │                         │     │  • Prompt    │
-       │                         │                         │     └──────┬───────┘
-       │                         │                         │            │
-       │                         │                         │            ▼
-       │                         │                         │     ┌──────────────┐
-       │                         │                         │     │  VS Code Ext │
-       │                         │ File Change Event       │     │  Watcher     │
-       │                         ├───────────────────────────────►│              │
-       │                         │                         │     └──────┬───────┘
-       │                         │                         │            │
-       │                         │                         │            │ Response
-       │                         │                         │            │ Complete
-       │                         │                         │            ▼
-       │                         │                         │     ┌──────────────┐
-       │                         │                         │     │  Store       │
-       │                         │                         │     │  Response    │
-       │                         │                         │     └──────┬───────┘
-       │                         │                         │            │
-       │                         │                         │            ▼
-       │                         │                         │     ┌──────────────┐
-       │                         │                         │     │  Queue       │
-       │                         │                         │     │  Analysis    │
-       │                         │                         │     └──────────────┘
+CONVERSATION TURN N
+===================
+
+┌──────────────┐          ┌──────────────┐          ┌──────────────┐          ┌──────────────┐
+│    User      │          │  Claude Code │          │   Stop       │          │   Backend    │
+│              │          │              │          │   Hook       │          │              │
+└──────┬───────┘          └──────┬───────┘          └──────┬───────┘          └──────┬───────┘
+       │                         │                         │                         │
+       │                         │ [Claude responds...]    │                         │
+       │◄────────────────────────┤                         │                         │
+       │                         │                         │                         │
+       │                         │ Response Complete       │                         │
+       │                         ├────────────────────────►│                         │
+       │                         │ {transcript_path}       │                         │
+       │                         │                         │                         │
+       │                         │                         │ POST /api/responses/capture
+       │                         │                         ├────────────────────────►│
+       │                         │                         │ {response, tools, etc.} │
+       │                         │                         │                         │
+       │                         │                         │                  ┌──────┴──────┐
+       │                         │                         │                  │ Store:      │
+       │                         │                         │                  │ • Response  │
+       │                         │                         │                  │ • Thinking  │
+       │                         │                         │                  │ • Tools     │
+       │                         │                         │                  └─────────────┘
+
+[User reads response, thinks, types...]
+
+CONVERSATION TURN N+1
+=====================
+
+┌──────────────┐          ┌──────────────┐          ┌──────────────┐          ┌──────────────┐
+│    User      │          │  Claude Code │          │UserPromptSubmit│        │   Backend    │
+│              │          │              │          │   Hook       │          │              │
+└──────┬───────┘          └──────┬───────┘          └──────┬───────┘          └──────┬───────┘
+       │                         │                         │                         │
+       │ prompt                  │                         │                         │
+       ├────────────────────────►│                         │                         │
+       │                         │                         │                         │
+       │                         │ UserPromptSubmit        │                         │
+       │                         ├────────────────────────►│                         │
+       │                         │ {session_id, prompt}    │                         │
+       │                         │                         │                         │
+       │                         │                         │ POST /api/prompts/capture
+       │                         │                         ├────────────────────────►│
+       │                         │                         │                         │
+       │                         │                         │                  ┌──────┴──────┐
+       │                         │                         │                  │ Store Prompt│
+       │                         │                         │                  │ Link to     │
+       │                         │                         │                  │ Session     │
+       │                         │                         │                  └──────┬──────┘
+       │                         │                         │                         │
+       │                         │                         │                  ┌──────┴──────┐
+       │                         │                         │                  │ Query DB    │
+       │                         │                         │                  │ for context │
+       │                         │                         │                  │ (prev msgs) │
+       │                         │                         │                  └──────┬──────┘
+       │                         │                         │                         │
+       │                         │                         │                  ┌──────┴──────┐
+       │                         │                         │                  │ Analyze     │
+       │                         │                         │                  │ IN CONTEXT  │
+       │                         │                         │                  └─────────────┘
 ```
+
+**Key Points:**
+- Stop hook fires when Claude finishes → Response stored immediately
+- UserPromptSubmit fires when user types → Prompt stored, analysis triggered
+- Analysis queries DB for full conversation context (all previous messages)
+- No file watching or polling needed - native Claude Code hooks handle detection
 
 ### Analysis Pipeline Flow
 

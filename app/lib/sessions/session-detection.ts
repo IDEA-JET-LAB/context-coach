@@ -49,35 +49,74 @@ export interface FindOrCreateSessionResult {
 }
 
 /**
- * Session ID format pattern.
- * Claude Code session IDs have the format: session_<uuid>
- *
- * Examples:
- * - "session_550e8400-e29b-41d4-a716-446655440000"
- * - "session_a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ * Session ID validation constraints.
+ * Be liberal in what we accept - various formats are valid:
+ * - Prefixed UUIDs: "session_550e8400-e29b-41d4-a716-446655440000"
+ * - Raw UUIDs: "550e8400-e29b-41d4-a716-446655440000"
+ * - Derived IDs: "derived-a1b2c3d4e5f6"
+ * - Claude Code session IDs (any format they provide)
  */
-const SESSION_ID_PATTERN = /^session_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+const SESSION_ID_MIN_LENGTH = 8;
+const SESSION_ID_MAX_LENGTH = 128;
 
 /**
- * Validates if a string is a valid Claude Code session ID.
+ * Pattern for prefixed session IDs (legacy strict format).
+ * Used for backwards compatibility checks.
+ */
+const PREFIXED_SESSION_ID_PATTERN = /^session_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+
+/**
+ * Pattern for raw UUIDs (what Claude Code actually provides).
+ */
+const RAW_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Pattern for derived session IDs (fallback when Claude doesn't provide one).
+ */
+const DERIVED_SESSION_ID_PATTERN = /^derived-[0-9a-f]{8,32}$/i;
+
+/**
+ * Validates if a string is a valid session ID.
  *
- * Valid format: "session_<uuid>"
+ * Accepts multiple formats to be resilient to changes in Claude Code:
+ * - Prefixed UUIDs: "session_<uuid>"
+ * - Raw UUIDs: "<uuid>"
+ * - Derived IDs: "derived-<hash>"
+ * - Any reasonable string (8-128 chars, no control characters)
  *
  * @param sessionId - The string to validate
  * @returns true if valid session ID format, false otherwise
  *
  * @example
  * isValidSessionId("session_550e8400-e29b-41d4-a716-446655440000"); // true
- * isValidSessionId("550e8400-e29b-41d4-a716-446655440000"); // false (no prefix)
- * isValidSessionId("session_invalid"); // false (not a UUID)
- * isValidSessionId(""); // false
- * isValidSessionId(null); // false
+ * isValidSessionId("550e8400-e29b-41d4-a716-446655440000"); // true (raw UUID)
+ * isValidSessionId("derived-a1b2c3d4e5f6"); // true (derived)
+ * isValidSessionId("my-custom-session-123"); // true (custom format)
+ * isValidSessionId(""); // false (too short)
+ * isValidSessionId(null); // false (not a string)
  */
 export function isValidSessionId(sessionId: unknown): sessionId is string {
   if (typeof sessionId !== "string") {
     return false;
   }
-  return SESSION_ID_PATTERN.test(sessionId);
+
+  // Check length constraints
+  if (sessionId.length < SESSION_ID_MIN_LENGTH || sessionId.length > SESSION_ID_MAX_LENGTH) {
+    return false;
+  }
+
+  // Reject strings with control characters or only whitespace
+  if (/[\x00-\x1f]/.test(sessionId) || sessionId.trim().length === 0) {
+    return false;
+  }
+
+  // Accept any of these known patterns, or any reasonable alphanumeric string
+  return (
+    PREFIXED_SESSION_ID_PATTERN.test(sessionId) ||
+    RAW_UUID_PATTERN.test(sessionId) ||
+    DERIVED_SESSION_ID_PATTERN.test(sessionId) ||
+    /^[a-zA-Z0-9_-]+$/.test(sessionId) // Fallback: alphanumeric with underscores/hyphens
+  );
 }
 
 /**
