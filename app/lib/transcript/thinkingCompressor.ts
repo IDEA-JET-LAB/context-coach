@@ -164,7 +164,8 @@ export function findLastSentenceBoundary(text: string, maxIndex: number): number
 export function findLastWordBoundary(text: string, maxIndex: number): number {
   // Search backwards from maxIndex for whitespace
   for (let i = Math.min(maxIndex, text.length) - 1; i >= 0; i--) {
-    if (/\s/.test(text[i])) {
+    const char = text[i];
+    if (char && /\s/.test(char)) {
       return i;
     }
   }

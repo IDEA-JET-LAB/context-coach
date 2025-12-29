@@ -506,8 +506,9 @@ export async function getConversationThread(
       if (!response && unlinkedResponses.length > 0) {
         const promptTime = new Date(prompt.created_at).getTime();
         const nextPromptIdx = prompts.indexOf(prompt) + 1;
-        const nextPromptTime = nextPromptIdx < prompts.length
-          ? new Date(prompts[nextPromptIdx].created_at).getTime()
+        const nextPrompt = prompts[nextPromptIdx];
+        const nextPromptTime = nextPrompt
+          ? new Date(nextPrompt.created_at).getTime()
           : Infinity;
 
         // Find first unlinked response between this prompt and next prompt

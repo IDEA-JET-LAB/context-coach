@@ -392,7 +392,7 @@ export async function buildAnalysisContext(
 
       // Get decrypted response text
       let responseText = '';
-      if (response.id) {
+      if (response?.id) {
         const { data: decryptedResponse } = await supabase.rpc(
           'get_decrypted_response',
           { p_response_id: response.id }
@@ -427,7 +427,7 @@ export async function buildAnalysisContext(
             fullLength: responseText.length,
             askedQuestion: detectQuestion(responseText),
             presentedOptions: extractOptionsFromResponse(responseText),
-            toolsUsed: extractToolsUsed(response.tools_used) || [],
+            toolsUsed: extractToolsUsed(response?.tools_used) || [],
           };
         }
       }

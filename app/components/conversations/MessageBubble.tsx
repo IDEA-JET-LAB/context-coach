@@ -197,7 +197,11 @@ function AssistantMessageBubble({
   const { response } = message;
 
   // Check if content needs truncation (roughly 3 lines = ~300 chars or has newlines)
-  const needsTruncation = message.content.length > 300 || message.content.split("\n").length > 4;
+  const contentNeedsTruncation = message.content.length > 300 || message.content.split("\n").length > 4;
+
+  // Show expand button if content needs truncation OR if there's extra info to show
+  const hasExtraInfo = response?.thinkingSummary || (response?.toolsUsed && response.toolsUsed.length > 0);
+  const needsTruncation = contentNeedsTruncation || hasExtraInfo;
 
   // Get preview text (first ~3 lines)
   const getPreviewText = () => {
@@ -242,10 +246,21 @@ function AssistantMessageBubble({
 
         {/* Content - Collapsible */}
         <div className="px-3 py-2">
-          <p className="text-sm text-foreground whitespace-pre-wrap break-words">
-            {isExpanded || !needsTruncation ? message.content : getPreviewText()}
-            {!isExpanded && needsTruncation && "..."}
-          </p>
+          {message.content ? (
+            <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+              {isExpanded || !contentNeedsTruncation ? message.content : getPreviewText()}
+              {!isExpanded && contentNeedsTruncation && "..."}
+            </p>
+          ) : response?.toolsUsed && response.toolsUsed.length > 0 ? (
+            <p className="text-sm text-muted-foreground italic">
+              Used {response.toolsUsed.length} tool{response.toolsUsed.length !== 1 ? "s" : ""}: {response.toolsUsed.slice(0, 3).join(", ")}
+              {response.toolsUsed.length > 3 && ` and ${response.toolsUsed.length - 3} more`}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              (Tool execution - no visible output)
+            </p>
+          )}
         </div>
 
         {/* Expand/Collapse Toggle */}

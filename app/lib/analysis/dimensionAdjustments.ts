@@ -212,8 +212,9 @@ export function calculateAdjustedWeights(
   // Normalize to sum to 1.0
   const normalizedWeights: Record<DimensionName, number> = {} as Record<DimensionName, number>;
   for (const dimension of dimensionNames) {
+    const weight = rawWeights[dimension] ?? 1;
     normalizedWeights[dimension] =
-      totalWeight > 0 ? rawWeights[dimension] / totalWeight : 1 / dimensionNames.length;
+      totalWeight > 0 ? weight / totalWeight : 1 / dimensionNames.length;
   }
 
   return normalizedWeights;

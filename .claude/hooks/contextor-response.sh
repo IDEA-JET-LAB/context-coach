@@ -9,12 +9,14 @@ USER_CONFIG="${PROJECT_ROOT}/.contextor/.user"
 SHARED_CONFIG="${PROJECT_ROOT}/.contextor/config.json"
 DEBUG_LOG="${PROJECT_ROOT}/.contextor/.debug.log"
 
-# Debug logging function
+# Debug logging function - ALWAYS log for now to diagnose
 debug_log() {
-  if [[ "${DEBUG_CONTEXTOR}" == "1" ]]; then
-    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $1" >> "${DEBUG_LOG}" 2>/dev/null
-  fi
+  # Always log to help diagnose Stop hook issues
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $1" >> "${DEBUG_LOG}" 2>/dev/null
 }
+
+# Log that the hook was invoked at all
+debug_log "STOP_HOOK: Script invoked"
 
 # Exit silently if deps missing
 command -v jq >/dev/null 2>&1 || { debug_log "ERROR: jq not found"; exit 0; }
@@ -43,15 +45,24 @@ API_ENDPOINT=$(jq -r '.api_endpoint // empty' "${SHARED_CONFIG}")
 # Extract session ID from transcript path (filename without .jsonl)
 SESSION_ID=$(basename "$TRANSCRIPT_PATH" .jsonl)
 
-# Find last assistant message in transcript
-LAST_ASSISTANT=$(grep '"type":"assistant"' "$TRANSCRIPT_PATH" | tail -1)
+# Find last assistant message that has actual text content (not just thinking/tool_use)
+# First filter to only messages with text, then take the last one
+LAST_ASSISTANT=$(grep '"type":"assistant"' "$TRANSCRIPT_PATH" | while read -r line; do
+  if echo "$line" | jq -e '[.message.content[]? | select(.type == "text")] | length > 0' >/dev/null 2>&1; then
+    echo "$line"
+  fi
+done | tail -1)
 
 if [[ -z "$LAST_ASSISTANT" ]]; then
-  debug_log "INFO: No assistant message found"
+  debug_log "INFO: No assistant message with text content found"
   exit 0
 fi
 
-# Extract response data using jq
+# Log which message we selected
+SELECTED_UUID=$(echo "$LAST_ASSISTANT" | jq -r '.uuid // empty')
+debug_log "INFO: Selected message with text: $SELECTED_UUID"
+
+# Extract response text
 RESPONSE_TEXT=$(echo "$LAST_ASSISTANT" | jq -r '
   [.message.content[]? | select(.type == "text") | .text] | join("\n")
 ')

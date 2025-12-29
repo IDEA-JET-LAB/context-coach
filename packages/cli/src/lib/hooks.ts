@@ -20,11 +20,12 @@ export interface HookAction {
 }
 
 /**
- * Hook entry with matcher (new Claude Code format)
+ * Hook entry with optional matcher (Claude Code format)
  * matcher is a regex pattern string (e.g., ".*" for all)
+ * NOTE: Stop hooks do NOT support matcher field - it's optional
  */
 export interface HookEntry {
-  matcher: string;
+  matcher?: string;
   hooks: HookAction[];
 }
 
@@ -332,15 +333,20 @@ API_ENDPOINT=$(jq -r '.api_endpoint // empty' "\${SHARED_CONFIG}")
 # Extract session ID from transcript path (filename without .jsonl)
 SESSION_ID=$(basename "$TRANSCRIPT_PATH" .jsonl)
 
-# Find last assistant message in transcript
-LAST_ASSISTANT=$(grep '"type":"assistant"' "$TRANSCRIPT_PATH" | tail -1)
+# Find last assistant message that has actual text content (not just thinking/tool_use)
+# First filter to only messages with text, then take the last one
+LAST_ASSISTANT=$(grep '"type":"assistant"' "$TRANSCRIPT_PATH" | while read -r line; do
+  if echo "$line" | jq -e '[.message.content[]? | select(.type == "text")] | length > 0' >/dev/null 2>&1; then
+    echo "$line"
+  fi
+done | tail -1)
 
 if [[ -z "$LAST_ASSISTANT" ]]; then
-  debug_log "INFO: No assistant message found"
+  debug_log "INFO: No assistant message with text content found"
   exit 0
 fi
 
-# Extract response data using jq
+# Extract response text
 RESPONSE_TEXT=$(echo "$LAST_ASSISTANT" | jq -r '
   [.message.content[]? | select(.type == "text") | .text] | join("\\n")
 ')
@@ -417,12 +423,15 @@ export async function createResponseScript(cwd: string): Promise<void> {
 /**
  * Configure Contextor Stop hook in settings
  * Preserves existing hooks and updates/adds the Contextor hook
+ *
+ * NOTE: Stop hooks do NOT support the matcher field (unlike PreToolUse, PostToolUse).
+ * The Stop hook fires globally when Claude Code finishes responding.
  */
 export function configureStopHook(settings: ClaudeSettings): ClaudeSettings {
   // Use $CLAUDE_PROJECT_DIR for reliable path resolution
   const hookCommand = `bash "$CLAUDE_PROJECT_DIR"/${CLAUDE_DIR}/${HOOKS_DIR}/${RESPONSE_SCRIPT}`;
+  // IMPORTANT: Stop hooks must NOT have a matcher field - they are global events
   const newHookEntry: HookEntry = {
-    matcher: '.*',
     hooks: [{ type: 'command', command: hookCommand, timeout: TIMEOUTS.HOOK_EXECUTION_MS }],
   };
 
