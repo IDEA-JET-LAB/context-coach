@@ -398,11 +398,13 @@ describe('hooks', () => {
       expect(result.hooks?.Stop).toHaveLength(1);
     });
 
-    it('uses correct matcher pattern', () => {
+    it('does NOT set matcher for Stop hooks (global event)', () => {
       const settings: ClaudeSettings = {};
       const result = configureStopHook(settings);
 
-      expect(result.hooks?.Stop?.[0].matcher).toBe('.*');
+      // Stop hooks are global events and must NOT have a matcher
+      // (unlike PreToolUse, PostToolUse which use matchers for tool filtering)
+      expect(result.hooks?.Stop?.[0].matcher).toBeUndefined();
     });
 
     it('sets timeout on hook action', () => {

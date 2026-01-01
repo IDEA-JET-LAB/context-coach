@@ -44,15 +44,27 @@ const COMMAND_REGEX = /^(\/[a-zA-Z][a-zA-Z0-9_:-]*)\s*(.*)/;
 const NUMERIC_ARGS_REGEX = /^[\d\s-]*$/;
 
 /**
- * Minimum length for text after command to be considered "meaningful".
+ * Default minimum length for text after command to be considered "meaningful".
  * Short args like "123" or "fix" are likely IDs, not prompts.
+ * This is used when no config is provided; prefer passing config from capture_config table.
  */
-const MIN_MEANINGFUL_TEXT_LENGTH = 10;
+const DEFAULT_MIN_COMMAND_ARGS_LENGTH = 10;
+
+/**
+ * Options for prompt classification.
+ */
+export interface ClassifyOptions {
+  /** Whether to skip analysis for pure command-only prompts (default: true) */
+  skipCommandOnly?: boolean;
+  /** Minimum length of args after command to trigger analysis (default: 10) */
+  minCommandArgsLength?: number;
+}
 
 /**
  * Classifies a prompt into one of three types.
  *
  * @param text - The raw prompt text
+ * @param options - Optional classification configuration from capture_config
  * @returns Classification result with type, parts, and analysis flags
  *
  * @example
@@ -68,9 +80,15 @@ const MIN_MEANINGFUL_TEXT_LENGTH = 10;
  * // Command with prompt
  * classifyPrompt("/dev help me implement OAuth authentication")
  * // => { type: 'command_with_prompt', commandPart: '/dev', promptPart: 'help me implement OAuth authentication', shouldAnalyze: true, analysisStatus: 'pending' }
+ *
+ * // With config options
+ * classifyPrompt("/dev fix", { skipCommandOnly: false, minCommandArgsLength: 5 })
+ * // => { type: 'command_with_prompt', ..., shouldAnalyze: true }
  * ```
  */
-export function classifyPrompt(text: string): PromptClassification {
+export function classifyPrompt(text: string, options?: ClassifyOptions): PromptClassification {
+  const skipCommandOnly = options?.skipCommandOnly ?? true;
+  const minCommandArgsLength = options?.minCommandArgsLength ?? DEFAULT_MIN_COMMAND_ARGS_LENGTH;
   const trimmed = text.trim();
 
   // Not a command - regular prompt
@@ -100,6 +118,16 @@ export function classifyPrompt(text: string): PromptClassification {
 
   // Pure command - no text after, or just whitespace
   if (!remainderTrimmed) {
+    // If skipCommandOnly is false, analyze even pure commands
+    if (!skipCommandOnly) {
+      return {
+        type: "command",
+        commandPart: command,
+        promptPart: command,
+        shouldAnalyze: true,
+        analysisStatus: "pending",
+      };
+    }
     return {
       type: "command",
       commandPart: command,
@@ -119,7 +147,8 @@ export function classifyPrompt(text: string): PromptClassification {
   }
 
   // Command with short args - likely an ID or flag, not a prompt
-  if (remainderTrimmed.length < MIN_MEANINGFUL_TEXT_LENGTH) {
+  // Use configurable minimum length threshold
+  if (remainderTrimmed.length < minCommandArgsLength) {
     return {
       type: "command",
       commandPart: command,

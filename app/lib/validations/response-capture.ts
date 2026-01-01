@@ -36,6 +36,23 @@ export const usageSchema = z.object({
 });
 
 /**
+ * Valid stop reasons from Claude's API.
+ * - end_turn: Normal completion
+ * - max_tokens: Hit token limit
+ * - stop_sequence: Hit a stop sequence
+ * - tool_use: Called a tool (stop_reason may be null in transcript)
+ * - content_filter: Content was filtered
+ */
+export const VALID_STOP_REASONS = [
+  "end_turn",
+  "max_tokens",
+  "stop_sequence",
+  "tool_use",
+  "content_filter",
+  "unknown", // Default when null/missing
+] as const;
+
+/**
  * Main schema for response capture requests.
  *
  * Used by: POST /api/responses/capture
@@ -48,8 +65,8 @@ export const usageSchema = z.object({
  * - tools_used: array of tool name/id pairs
  * - model: required, model identifier
  * - usage: required token usage metrics
- * - stop_reason: required, why Claude stopped generating
- * - timestamp: required, ISO 8601 format
+ * - stop_reason: optional, defaults to "tool_use" (common when null in transcript)
+ * - timestamp: optional, server generates if not provided
  */
 export const responseCaptureSchema = z.object({
   session_id: z.string().min(1, "session_id is required"),
@@ -67,8 +84,18 @@ export const responseCaptureSchema = z.object({
   tools_used: z.array(toolUsedSchema).default([]),
   model: z.string().min(1, "model is required"),
   usage: usageSchema,
-  stop_reason: z.string().min(1, "stop_reason is required"),
-  timestamp: z.string().datetime("Timestamp must be valid ISO 8601 format"),
+  // stop_reason can be null in Claude transcripts (especially for tool_use)
+  // Default to "tool_use" since that's the most common case when null
+  stop_reason: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || "tool_use"),
+  // timestamp is optional - server will use current time if not provided
+  timestamp: z
+    .string()
+    .datetime("Timestamp must be valid ISO 8601 format")
+    .optional(),
 });
 
 /**

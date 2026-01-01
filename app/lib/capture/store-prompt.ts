@@ -10,36 +10,30 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateWordCount } from "./word-count";
-import { classifyPrompt, PromptType } from "./classify-prompt";
+import { classifyPrompt, PromptType, type ClassifyOptions } from "./classify-prompt";
 import { createScopedLogger } from "@/lib/utils/logger";
 import { MAX_ANALYZED_TEXT_LENGTH } from "./constants";
 import { analyzeComplexity, classifyWorkStyle, analyzeSentiment, toSentimentScoresJson } from "@/lib/analysis";
 import { generatePromptFingerprint } from "@/lib/import/fingerprint";
+import { getCaptureConfigForPipeline } from "@/lib/services/capture-config-pipeline";
 
 // Create a scoped logger for storage operations
 const logger = createScopedLogger("STORE");
 
 /**
- * Patterns that indicate system/garbage data that should NOT be stored.
- * These are Claude Code internal messages, not user prompts.
- *
- * Two pattern sets:
- * 1. START_ONLY_PATTERNS: Must appear at the start (common case)
- * 2. ANYWHERE_PATTERNS: Can appear anywhere in the text (rarer, more specific)
- *
- * The anywhere patterns are intentionally specific to avoid false positives.
- * For example, "<function_results>" is unlikely to appear in user prompts.
+ * Default patterns for fallback when config unavailable.
+ * These patterns filter Claude Code internal messages, not user prompts.
  */
-const START_ONLY_PATTERNS = [
-  /^<bash-notification>/,           // Shell notification messages
-  /^<system-reminder>/,             // System reminders
-  /^<output-file>/,                 // File output tags
-  /^<shell-id>/,                    // Shell ID tags
-  /^</,                       // Anthropic internal tags
-] as const;
+const DEFAULT_GARBAGE_PATTERNS = [
+  "^<bash-notification>",
+  "^<system-reminder>",
+  "^<output-file>",
+  "^<shell-id>",
+  "^<",
+];
 
 /**
- * Patterns that indicate system data when found anywhere in the text.
+ * Additional patterns that must be checked anywhere in text (not just start).
  * These are very specific to avoid filtering legitimate user prompts.
  */
 const ANYWHERE_PATTERNS = [
@@ -48,17 +42,97 @@ const ANYWHERE_PATTERNS = [
 ] as const;
 
 /**
+ * Cache for compiled regex patterns from config.
+ * Avoids recompiling patterns on every prompt.
+ */
+let compiledPatternCache: {
+  patterns: RegExp[];
+  configTimestamp: number;
+} | null = null;
+
+/**
+ * Compiles string patterns from config into RegExp objects.
+ * Filters out invalid regex patterns with warning log.
+ */
+function compilePatterns(patternStrings: string[]): RegExp[] {
+  const compiled: RegExp[] = [];
+  for (const pattern of patternStrings) {
+    try {
+      compiled.push(new RegExp(pattern));
+    } catch {
+      logger.warn("Invalid regex pattern in config, skipping", { pattern });
+    }
+  }
+  return compiled;
+}
+
+/**
+ * Gets compiled garbage patterns from config with caching.
+ * Falls back to defaults if config fetch fails.
+ */
+async function getCompiledGarbagePatterns(): Promise<RegExp[]> {
+  try {
+    const config = await getCaptureConfigForPipeline();
+
+    // Check if we need to recompile (config may have been updated)
+    // The config has its own cache, so we compare timestamps
+    const configTimestamp = new Date(config.updated_at).getTime();
+
+    if (compiledPatternCache && compiledPatternCache.configTimestamp === configTimestamp) {
+      return compiledPatternCache.patterns;
+    }
+
+    // Compile patterns from config
+    const patterns = compilePatterns(config.garbage_patterns);
+    compiledPatternCache = { patterns, configTimestamp };
+
+    return patterns;
+  } catch (error) {
+    logger.warn("Failed to load capture config, using defaults", { error });
+    // Use cached patterns if available, otherwise compile defaults
+    if (compiledPatternCache) {
+      return compiledPatternCache.patterns;
+    }
+    return compilePatterns(DEFAULT_GARBAGE_PATTERNS);
+  }
+}
+
+/**
  * Checks if a prompt is garbage/system data that should be filtered.
+ * Uses dynamic patterns from admin-configured capture_config table.
  *
- * Uses two-tier pattern matching:
- * 1. Start-only patterns: Match at the beginning of trimmed text (most system messages)
- * 2. Anywhere patterns: Match anywhere in the text (for embedded system data)
+ * Two-tier pattern matching:
+ * 1. Start-only patterns: From config (matched at beginning of trimmed text)
+ * 2. Anywhere patterns: Hardcoded specific patterns (matched anywhere)
+ */
+export async function isGarbagePromptAsync(text: string): Promise<boolean> {
+  const trimmed = text.trim();
+
+  // Get dynamic patterns from config
+  const configPatterns = await getCompiledGarbagePatterns();
+
+  // Check config patterns (start-only, most common case)
+  if (configPatterns.some(pattern => pattern.test(trimmed))) {
+    return true;
+  }
+
+  // Check anywhere patterns (more specific, for embedded system data)
+  return ANYWHERE_PATTERNS.some(pattern => pattern.test(trimmed));
+}
+
+/**
+ * Synchronous garbage check using cached or default patterns.
+ * Used when async is not possible (e.g., in validation schemas).
+ * @deprecated Use isGarbagePromptAsync for accurate dynamic filtering
  */
 export function isGarbagePrompt(text: string): boolean {
   const trimmed = text.trim();
 
+  // Use cached patterns if available, otherwise use defaults
+  const patterns = compiledPatternCache?.patterns ?? compilePatterns(DEFAULT_GARBAGE_PATTERNS);
+
   // Check start-only patterns (most common case)
-  if (START_ONLY_PATTERNS.some(pattern => pattern.test(trimmed))) {
+  if (patterns.some(pattern => pattern.test(trimmed))) {
     return true;
   }
 
@@ -149,15 +223,31 @@ export class StorageError extends Error {
 export async function storePrompt(
   input: StorePromptInput
 ): Promise<StorePromptResult> {
-  // Filter out garbage/system prompts BEFORE any processing
-  if (isGarbagePrompt(input.text)) {
+  // Load dynamic config for filtering (cached)
+  const config = await getCaptureConfigForPipeline();
+
+  // Filter out garbage/system prompts BEFORE any processing (uses dynamic patterns)
+  if (await isGarbagePromptAsync(input.text)) {
     throw new FilteredError("System message filtered - not a user prompt");
+  }
+
+  // Validate prompt length against dynamic config
+  const textLength = input.text.length;
+  if (textLength < config.min_prompt_length) {
+    throw new FilteredError(`Prompt too short (${textLength} < ${config.min_prompt_length})`);
+  }
+  if (textLength > config.max_prompt_length) {
+    throw new FilteredError(`Prompt too long (${textLength} > ${config.max_prompt_length})`);
   }
 
   const supabase = createAdminClient();
 
-  // Classify the prompt
-  const classification = classifyPrompt(input.text);
+  // Classify the prompt with dynamic config options
+  const classifyOptions: ClassifyOptions = {
+    skipCommandOnly: config.skip_command_only,
+    minCommandArgsLength: config.min_command_args_length,
+  };
+  const classification = classifyPrompt(input.text, classifyOptions);
 
   // Calculate counts (use promptPart for command_with_prompt, otherwise full text)
   const textForCounts = classification.promptPart ?? input.text;

@@ -17,7 +17,7 @@
       <action>Use {{story_path}} directly</action>
       <action>Read COMPLETE story file</action>
       <action>Extract story_key from filename or metadata</action>
-      <goto> anchor with id task_check</goto>
+      <goto anchor="task_check" />
     </check>
 
     <!-- Sprint-based story discovery -->
@@ -136,10 +136,8 @@
 
   <step n="2" goal="Load project context and story information">
     <critical>Load all available context to inform implementation</critical>
-    <critical>All file paths in story tasks are RELATIVE to {code_root} - prepend {code_root}/ when creating or editing files</critical>
 
     <action>Load {project_context} for coding standards and project-wide patterns (if exists)</action>
-    <action>Store {code_root} as the base path for all source code operations</action>
     <action>Parse sections: Story, Acceptance Criteria, Tasks/Subtasks, Dev Notes, Dev Agent Record, File List, Change Log, Status</action>
     <action>Load comprehensive context from story file's Dev Notes section</action>
     <action>Extract developer guidance from Dev Notes: architecture requirements, previous learnings, technical specifications</action>

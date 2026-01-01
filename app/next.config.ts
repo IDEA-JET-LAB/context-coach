@@ -14,6 +14,48 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // cacheComponents disabled - requires all async data to be inside Suspense boundaries
   // cacheComponents: true,
+
+  // Redirects from old admin routes to new consolidated settings page
+  async redirects() {
+    return [
+      {
+        source: "/admin",
+        destination: "/admin/settings?tab=overview",
+        permanent: true,
+      },
+      {
+        source: "/admin/users",
+        destination: "/admin/settings?tab=users",
+        permanent: true,
+      },
+      {
+        source: "/admin/teams",
+        destination: "/admin/settings?tab=teams",
+        permanent: true,
+      },
+      {
+        source: "/admin/config",
+        destination: "/admin/settings?tab=analysis",
+        permanent: true,
+      },
+      {
+        source: "/admin/system",
+        destination: "/admin/settings?tab=system",
+        permanent: true,
+      },
+      {
+        source: "/admin/audit",
+        destination: "/admin/settings?tab=audit",
+        permanent: true,
+      },
+      {
+        source: "/admin/experiments",
+        destination: "/admin/settings?tab=experiments",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

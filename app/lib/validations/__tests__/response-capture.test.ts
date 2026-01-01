@@ -241,16 +241,34 @@ describe("responseCaptureSchema", () => {
   });
 
   describe("stop_reason validation", () => {
-    it("should reject empty stop_reason", () => {
+    it("should transform empty stop_reason to 'tool_use'", () => {
+      // Empty stop_reason is common in Claude transcripts (especially for tool_use)
       const request = { ...validRequest, stop_reason: "" };
       const result = responseCaptureSchema.safeParse(request);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.stop_reason).toBe("tool_use");
+      }
     });
 
-    it("should reject missing stop_reason", () => {
+    it("should transform null stop_reason to 'tool_use'", () => {
+      // null stop_reason occurs in Claude transcripts when a tool is being called
+      const request = { ...validRequest, stop_reason: null };
+      const result = responseCaptureSchema.safeParse(request);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.stop_reason).toBe("tool_use");
+      }
+    });
+
+    it("should accept missing stop_reason (defaults to 'tool_use')", () => {
+      // Missing stop_reason should also default to "tool_use"
       const { stop_reason: _, ...request } = validRequest;
       const result = responseCaptureSchema.safeParse(request);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.stop_reason).toBe("tool_use");
+      }
     });
 
     it("should accept various stop_reason values", () => {
@@ -259,21 +277,28 @@ describe("responseCaptureSchema", () => {
         const request = { ...validRequest, stop_reason };
         const result = responseCaptureSchema.safeParse(request);
         expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.stop_reason).toBe(stop_reason);
+        }
       }
     });
   });
 
   describe("timestamp validation", () => {
-    it("should reject invalid timestamp format", () => {
+    it("should reject invalid timestamp format when provided", () => {
       const request = { ...validRequest, timestamp: "not-a-date" };
       const result = responseCaptureSchema.safeParse(request);
       expect(result.success).toBe(false);
     });
 
-    it("should reject missing timestamp", () => {
+    it("should accept missing timestamp (server will generate)", () => {
+      // Timestamp is optional - server generates if not provided
       const { timestamp: _, ...request } = validRequest;
       const result = responseCaptureSchema.safeParse(request);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.timestamp).toBeUndefined();
+      }
     });
 
     it("should accept valid ISO 8601 timestamps", () => {
@@ -286,6 +311,9 @@ describe("responseCaptureSchema", () => {
         const request = { ...validRequest, timestamp };
         const result = responseCaptureSchema.safeParse(request);
         expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.timestamp).toBe(timestamp);
+        }
       }
     });
   });

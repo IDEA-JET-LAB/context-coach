@@ -234,8 +234,8 @@ development_status:
   # Local redaction, privacy controls, encryption, data minimization.
   # Story files at: _bmad-output/stories/14.5-*.md
   # =============================================================================
-  epic-14.5: backlog
-  14.5-1-local-redaction-engine: ready-for-dev
+  epic-14.5: in-progress
+  14.5-1-local-redaction-engine: in-progress
   14.5-2-privacy-consent-dialog: ready-for-dev
   14.5-3-user-privacy-controls: ready-for-dev
   14.5-4-column-level-encryption: ready-for-dev

@@ -92,15 +92,17 @@ export async function updateSession(request: NextRequest) {
   // Refresh session - CRITICAL for security
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error) {
-    console.error("[AUTH] session-refresh-error:", error.message);
-  }
-
   // Protected routes that require authentication
   const protectedRoutes = ["/prompts", "/analytics", "/team", "/projects", "/settings", "/admin"];
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );
+
+  // Only log session errors for protected routes where we expect a session
+  // API routes and public pages don't need sessions, so silence that noise
+  if (error && isProtectedRoute) {
+    console.log("[AUTH] session-refresh-error:", error.message);
+  }
 
   if (isProtectedRoute && !user) {
     console.log("[AUTH] session-expired: redirect=/login");

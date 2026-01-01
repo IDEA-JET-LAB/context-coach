@@ -9,10 +9,7 @@ import {
   Users,
   FolderOpen,
   Settings,
-  LayoutDashboard,
-  Building2,
   Settings2,
-  Activity,
   UserCog,
   BookOpen,
 } from 'lucide-react';
@@ -34,14 +31,6 @@ const navItems = [
   { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
-const adminNavItems = [
-  { icon: LayoutDashboard, label: 'Admin Overview', href: '/admin' },
-  { icon: Users, label: 'Users', href: '/admin/users' },
-  { icon: Building2, label: 'Teams', href: '/admin/teams' },
-  { icon: Settings2, label: 'Analysis Config', href: '/admin/config' },
-  { icon: Activity, label: 'System Health', href: '/admin/system' },
-];
-
 interface SidebarProps {
   isAdmin?: boolean;
 }
@@ -53,11 +42,15 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
   // Check if we're on team settings page
   const isTeamSettingsActive = pathname.includes('/teams/') && pathname.includes('/settings');
 
+  // Check if we're on admin settings page
+  const isAdminSettingsActive = pathname.startsWith('/admin/settings') || pathname === '/admin';
+
   return (
     <aside
-      className="flex w-16 flex-col items-center border-r border-border bg-background py-4"
+      className="flex h-full w-16 flex-col items-center border-r border-border bg-background py-4"
       data-testid="dashboard-sidebar"
     >
+      {/* Main navigation */}
       <nav role="navigation" aria-label="Main navigation" className="flex flex-col gap-2">
         {navItems.map((item) => {
           // For root path '/', only match exactly; for other paths, also match subpaths
@@ -119,44 +112,35 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
         )}
       </nav>
 
-      {/* Admin navigation - only shown for super admins */}
-      {isAdmin && (
-        <>
-          <div className="my-4 w-8 border-t border-border" />
-          <nav role="navigation" aria-label="Admin navigation" className="flex flex-col gap-2">
-            {adminNavItems.map((item) => {
-              const isActive =
-                item.href === '/admin'
-                  ? pathname === '/admin'
-                  : pathname.startsWith(item.href);
+      {/* Spacer to push admin settings to bottom */}
+      <div className="flex-1" />
 
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={item.href}
-                      aria-label={item.label}
-                      aria-current={isActive ? 'page' : undefined}
-                      data-testid={`admin-nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                      className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                        isActive
-                          ? 'bg-amber-500/20 text-amber-500'
-                          : 'text-muted-foreground hover:bg-surface hover:text-foreground'
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </nav>
-        </>
+      {/* Admin Settings - single icon at bottom, only for super admins */}
+      {isAdmin && (
+        <nav role="navigation" aria-label="Admin navigation" className="mt-4">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/admin/settings"
+                aria-label="Admin Settings"
+                aria-current={isAdminSettingsActive ? 'page' : undefined}
+                data-testid="nav-admin-settings"
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500',
+                  isAdminSettingsActive
+                    ? 'bg-amber-500/20 text-amber-500'
+                    : 'text-amber-500/70 hover:bg-amber-500/10 hover:text-amber-500'
+                )}
+              >
+                <Settings2 className="h-5 w-5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              Admin Settings
+            </TooltipContent>
+          </Tooltip>
+        </nav>
       )}
     </aside>
   );
