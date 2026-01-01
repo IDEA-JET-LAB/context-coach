@@ -598,6 +598,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         await vscode.commands.executeCommand("contextor.signOut");
         break;
 
+      case "open-web":
+        this.log("Open web requested from webview");
+        vscode.env.openExternal(vscode.Uri.parse(this.settingsService.apiEndpoint.replace('/api', '')));
+        break;
+
       case "signup":
         this.log("Signup requested from webview");
         await this.handleSignup(message.email, message.password);
@@ -1461,6 +1466,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
     this.log(`Workspace status: Contextor=${contextorInstalled}, BMAD=${bmadInstalled}`);
 
+    // Reset the view title to default
+    if (this._view) {
+      this._view.title = "Contextor";
+    }
+
     this.postMessage({
       type: "workspace-status",
       status: {
@@ -1468,6 +1478,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         bmadInstalled,
         projectId: contextorConfig?.project_id ?? null,
         projectName: contextorConfig?.project_name ?? null,
+        teamId: contextorConfig?.team_id ?? null,
       },
     } as ExtensionToWebviewMessage);
   }

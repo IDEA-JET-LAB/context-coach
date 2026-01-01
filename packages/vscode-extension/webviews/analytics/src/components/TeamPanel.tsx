@@ -52,20 +52,9 @@ const ScoreChange: React.FC<{ change: number | null }> = ({ change }) => {
   );
 };
 
-// Rank badge component
-const RankBadge: React.FC<{ rank: number; isCurrentUser: boolean }> = ({ rank, isCurrentUser }) => {
-  const getRankClass = () => {
-    if (rank === 1) return "gold";
-    if (rank === 2) return "silver";
-    if (rank === 3) return "bronze";
-    return "";
-  };
-
-  return (
-    <span className={`rank-badge ${getRankClass()} ${isCurrentUser ? "current-user" : ""}`}>
-      #{rank}
-    </span>
-  );
+// Simple rank display (plain text, no colors)
+const RankDisplay: React.FC<{ rank: number }> = ({ rank }) => {
+  return <span className="rank-number">{rank}</span>;
 };
 
 // Avatar component with fallback
@@ -94,7 +83,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
   onTimeRangeChange,
   onRefresh,
 }) => {
-  const [activeRange, setActiveRange] = useState<TeamTimeRange>("week");
+  const [activeRange, setActiveRange] = useState<TeamTimeRange>("today");
 
   const handleRangeChange = (range: TeamTimeRange) => {
     setActiveRange(range);
@@ -155,6 +144,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
       <div className="team-panel">
         <div className="team-header">
           <div className="team-selector">
+            <label className="team-selector-label">Team</label>
             <select
               value={selectedTeamId || ""}
               onChange={handleTeamSelect}
@@ -162,7 +152,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
             >
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>
-                  {team.name} ({team.memberCount} members)
+                  {team.name} · {team.memberCount}
                 </option>
               ))}
             </select>
@@ -187,6 +177,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
       <div className="team-panel">
         <div className="team-header">
           <div className="team-selector">
+            <label className="team-selector-label">Team</label>
             <select
               value={selectedTeamId || ""}
               onChange={handleTeamSelect}
@@ -194,7 +185,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
             >
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>
-                  {team.name} ({team.memberCount} members)
+                  {team.name} · {team.memberCount}
                 </option>
               ))}
             </select>
@@ -227,6 +218,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
     <div className="team-panel">
       <div className="team-header">
         <div className="team-selector">
+          <label className="team-selector-label">Team</label>
           <select
             value={selectedTeamId || ""}
             onChange={handleTeamSelect}
@@ -234,7 +226,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
           >
             {teams.map((team) => (
               <option key={team.id} value={team.id}>
-                {team.name} ({team.memberCount} members)
+                {team.name} · {team.memberCount}
               </option>
             ))}
           </select>
@@ -269,26 +261,15 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
         </button>
       </div>
 
-      {/* Current user highlight */}
-      {currentUserStats && (
-        <div className="your-ranking">
-          <div className="your-rank-label">Your Ranking</div>
-          <div className="your-rank-value">
-            <RankBadge rank={currentUserStats.rank} isCurrentUser={true} />
-            <span className="your-rank-of">of {data.members.length}</span>
-          </div>
-        </div>
-      )}
-
       {/* Team member list */}
       <div className="team-members-list">
         <div className="team-list-header">
-          <span className="col-rank">Rank</span>
-          <span className="col-member">Member</span>
-          <span className="col-prompts">Prompts</span>
-          <span className="col-score">Avg Score</span>
-          <span className="col-change">Change</span>
-          <span className="col-length">Avg Length</span>
+          <span className="col-rank" title="Rank">#</span>
+          <span className="col-member" title="Member">Member</span>
+          <span className="col-prompts" title="Prompts"><span className="header-full">Prompts</span><span className="header-abbr">Cnt</span></span>
+          <span className="col-score" title="Average Score"><span className="header-full">Score</span><span className="header-abbr">Scr</span></span>
+          <span className="col-change" title="Change from previous period"><span className="header-full">Change</span><span className="header-abbr">+/-</span></span>
+          <span className="col-length" title="Average Prompt Length"><span className="header-full">Length</span><span className="header-abbr">Len</span></span>
         </div>
 
         {data.members.map((member) => {
@@ -299,19 +280,18 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
               className={`team-member-row ${isCurrentUser ? "current-user" : ""}`}
             >
               <span className="col-rank">
-                <RankBadge rank={member.rank} isCurrentUser={isCurrentUser} />
+                <RankDisplay rank={member.rank} />
               </span>
               <span className="col-member">
                 <Avatar url={member.avatarUrl} name={member.name} />
-                <span className="member-name" title={member.name}>
+                <span className={`member-name ${isCurrentUser ? "current-user-name" : ""}`} title={member.name}>
                   {member.name}
-                  {isCurrentUser && <span className="you-badge">You</span>}
                 </span>
               </span>
               <span className="col-prompts">{member.promptCount}</span>
               <span className="col-score">
-                <span className={`score-value ${member.avgScore >= 7 ? "good" : member.avgScore >= 5 ? "medium" : "low"}`}>
-                  {member.avgScore.toFixed(1)}
+                <span className={`team-score ${member.avgScore >= 70 ? "good" : member.avgScore >= 50 ? "medium" : "low"}`}>
+                  {member.avgScore.toFixed(0)}
                 </span>
               </span>
               <span className="col-change">
@@ -325,21 +305,6 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
         })}
       </div>
 
-      {/* Legend */}
-      <div className="team-legend">
-        <span className="legend-item">
-          <span className="legend-color good"></span>
-          Score 7+
-        </span>
-        <span className="legend-item">
-          <span className="legend-color medium"></span>
-          Score 5-7
-        </span>
-        <span className="legend-item">
-          <span className="legend-color low"></span>
-          Score &lt;5
-        </span>
-      </div>
     </div>
   );
 };

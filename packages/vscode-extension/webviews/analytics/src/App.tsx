@@ -95,6 +95,7 @@ export interface WorkspaceStatus {
   bmadInstalled: boolean;
   projectId: string | null;
   projectName: string | null;
+  teamId: string | null;
 }
 
 type ExtensionMessage =
@@ -184,7 +185,9 @@ type WebviewMessage =
   | { type: "upgrade-bmad" }
   // Team stats actions
   | { type: "fetch-teams" }
-  | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange };
+  | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange }
+  // Global actions
+  | { type: "open-web" };
 
 // ============================================
 // App State
@@ -321,10 +324,15 @@ const App: React.FC = () => {
     try {
       vscodeRef.current = acquireVsCodeApi();
 
-      // Restore persisted state
+      // Restore persisted state (but clear teamStats to force fresh fetch)
       const persistedState = vscodeRef.current.getState() as AppState | undefined;
       if (persistedState) {
-        setState((prev) => ({ ...prev, ...persistedState }));
+        setState((prev) => ({
+          ...prev,
+          ...persistedState,
+          teamStats: null,
+          teamStatsLoading: false
+        }));
       }
 
       // Notify extension that webview is ready
@@ -620,10 +628,21 @@ const App: React.FC = () => {
 
         // Workspace status
         case "workspace-status":
-          setState((prev) => ({
-            ...prev,
-            workspaceStatus: message.status,
-          }));
+          setState((prev) => {
+            // If workspace has a team and it exists in our teams list, select it
+            const workspaceTeamId = message.status.teamId;
+            let selectedTeamId = prev.selectedTeamId;
+
+            if (workspaceTeamId && prev.teams.some(t => t.id === workspaceTeamId)) {
+              selectedTeamId = workspaceTeamId;
+            }
+
+            return {
+              ...prev,
+              workspaceStatus: message.status,
+              selectedTeamId,
+            };
+          });
           break;
 
         // Documents
@@ -661,13 +680,27 @@ const App: React.FC = () => {
         // Teams list messages
         case "teams":
           setState((prev) => {
-            // Auto-select first team if none selected
-            const selectedTeamId = prev.selectedTeamId || (message.teams.length > 0 ? message.teams[0].id : null);
+            // Always prefer workspace's team if available in the list
+            const workspaceTeamId = prev.workspaceStatus?.teamId;
+            let selectedTeamId: string | null = null;
+
+            // Priority: workspace team > previously selected > first team
+            if (workspaceTeamId && message.teams.some(t => t.id === workspaceTeamId)) {
+              selectedTeamId = workspaceTeamId;
+            } else if (prev.selectedTeamId && message.teams.some(t => t.id === prev.selectedTeamId)) {
+              selectedTeamId = prev.selectedTeamId;
+            } else if (message.teams.length > 0) {
+              selectedTeamId = message.teams[0].id;
+            }
+
+            // Always clear teamStats to force refetch with fresh data
             return {
               ...prev,
               teams: message.teams,
               teamsLoading: false,
               selectedTeamId,
+              teamStats: null,
+              teamStatsLoading: false,
             };
           });
           break;
@@ -729,15 +762,17 @@ const App: React.FC = () => {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  // Auto-fetch team stats when selectedTeamId changes
+  // Auto-fetch team stats when selectedTeamId changes or teams are loaded
   useEffect(() => {
-    if (state.selectedTeamId && state.teams.length > 0 && !state.teamStats) {
+    if (state.selectedTeamId && state.teams.length > 0 && !state.teamStats && !state.teamStatsLoading) {
       vscodeRef.current?.postMessage({
         type: "fetch-team-stats",
         teamId: state.selectedTeamId,
+        timeRange: "today",
       } satisfies WebviewMessage);
+      setState((prev) => ({ ...prev, teamStatsLoading: true }));
     }
-  }, [state.selectedTeamId, state.teams.length, state.teamStats]);
+  }, [state.selectedTeamId, state.teams.length, state.teamStats, state.teamStatsLoading]);
 
   // Tab change handler - tracks last tab per section for memory
   const handleTabChange = useCallback((tab: TabId) => {
@@ -1024,14 +1059,26 @@ const App: React.FC = () => {
     vscodeRef.current?.postMessage({ type: "fetch-team-stats", teamId, timeRange } satisfies WebviewMessage);
   }, []);
 
+  // Refresh current team stats (doesn't reset team selection)
+  const handleRefreshTeamStats = useCallback(() => {
+    if (state.selectedTeamId) {
+      setState((prev) => ({ ...prev, teamStats: null, teamStatsLoading: true }));
+      vscodeRef.current?.postMessage({ type: "fetch-team-stats", teamId: state.selectedTeamId } satisfies WebviewMessage);
+    }
+  }, [state.selectedTeamId]);
+
   const handleTeamChange = useCallback((teamId: string) => {
-    setState((prev) => ({ ...prev, selectedTeamId: teamId, teamStatsLoading: true }));
+    setState((prev) => ({ ...prev, selectedTeamId: teamId, teamStats: null, teamStatsLoading: true }));
     vscodeRef.current?.postMessage({ type: "fetch-team-stats", teamId } satisfies WebviewMessage);
   }, []);
 
   const handleTeamTimeRangeChange = useCallback((teamId: string, timeRange: TeamTimeRange) => {
     handleFetchTeamStats(teamId, timeRange);
   }, [handleFetchTeamStats]);
+
+  const handleOpenWeb = useCallback(() => {
+    vscodeRef.current?.postMessage({ type: "open-web" } satisfies WebviewMessage);
+  }, []);
 
   // Render based on state
   if (state.isLoading) {
@@ -1253,7 +1300,7 @@ const App: React.FC = () => {
             isLoading={state.teamStatsLoading}
             onTeamChange={handleTeamChange}
             onTimeRangeChange={handleTeamTimeRangeChange}
-            onRefresh={handleFetchTeams}
+            onRefresh={handleRefreshTeamStats}
           />
         )}
 
@@ -1335,6 +1382,14 @@ const App: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Project footer */}
+      {state.workspaceStatus?.projectName && (
+        <div className="app-footer">
+          <span className="footer-label">Project:</span>
+          <span className="footer-project-name">{state.workspaceStatus.projectName}</span>
+        </div>
+      )}
     </div>
   );
 };

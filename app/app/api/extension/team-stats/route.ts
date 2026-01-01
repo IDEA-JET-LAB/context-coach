@@ -176,9 +176,16 @@ export async function GET(request: Request) {
       .from('team_members')
       .select(`
         user_id,
-        users!inner(id, email, full_name, avatar_url)
+        users!inner(id, email, name, avatar_url)
       `)
       .eq('team_id', teamId);
+
+    logger.log('Team members query result', {
+      teamId,
+      memberCount: teamMembers?.length ?? 0,
+      error: membersError?.message,
+      rawData: JSON.stringify(teamMembers),
+    });
 
     if (membersError || !teamMembers) {
       logger.error('Failed to fetch team members', membersError);
@@ -191,7 +198,7 @@ export async function GET(request: Request) {
     // Get prompts for all team members in the current period
     const { data: prompts, error: promptsError } = await supabase
       .from('prompts')
-      .select('user_id, overall_score, char_count, created_at')
+      .select('user_id, complexity_score, char_count, created_at')
       .eq('team_id', teamId)
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString());
@@ -207,7 +214,7 @@ export async function GET(request: Request) {
     // Get prompts for previous period (for score change calculation)
     const { data: prevPrompts } = await supabase
       .from('prompts')
-      .select('user_id, overall_score')
+      .select('user_id, complexity_score')
       .eq('team_id', teamId)
       .gte('created_at', prevStartDate.toISOString())
       .lte('created_at', prevEndDate.toISOString());
@@ -237,7 +244,7 @@ export async function GET(request: Request) {
       const stats = memberStats.get(prompt.user_id);
       if (stats) {
         stats.promptCount++;
-        stats.totalScore += prompt.overall_score || 0;
+        stats.totalScore += prompt.complexity_score || 0;
         stats.totalCharCount += prompt.char_count || 0;
       }
     }
@@ -247,7 +254,7 @@ export async function GET(request: Request) {
       const stats = memberStats.get(prompt.user_id);
       if (stats) {
         stats.prevPromptCount++;
-        stats.prevTotalScore += prompt.overall_score || 0;
+        stats.prevTotalScore += prompt.complexity_score || 0;
       }
     }
 
@@ -255,7 +262,7 @@ export async function GET(request: Request) {
     const members: TeamMemberStats[] = teamMembers.map((member) => {
       const stats = memberStats.get(member.user_id)!;
       // Supabase returns the joined user as a single object for many-to-one relationships
-      const userData = member.users as unknown as { id: string; email: string; full_name: string | null; avatar_url: string | null };
+      const userData = member.users as unknown as { id: string; email: string; name: string | null; avatar_url: string | null };
 
       const avgScore = stats.promptCount > 0
         ? Math.round((stats.totalScore / stats.promptCount) * 10) / 10
@@ -275,7 +282,7 @@ export async function GET(request: Request) {
 
       return {
         userId: member.user_id,
-        name: userData.full_name || userData.email.split('@')[0] || 'Unknown',
+        name: userData.name || userData.email.split('@')[0] || 'Unknown',
         avatarUrl: userData.avatar_url,
         promptCount: stats.promptCount,
         avgScore,

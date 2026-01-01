@@ -856,6 +856,26 @@ body {
   height: 100%;
 }
 
+/* App Footer - Project Name */
+.app-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: var(--ctx-surface);
+  border-top: 1px solid var(--ctx-border-subtle);
+  font-size: 11px;
+}
+
+.footer-label {
+  color: var(--ctx-foreground-muted);
+}
+
+.footer-project-name {
+  color: var(--ctx-primary);
+  font-weight: 500;
+}
+
 .tab-navigation {
   display: flex;
   gap: 4px;
@@ -3292,9 +3312,17 @@ body {
 
 .team-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Align to bottom so refresh button matches dropdown */
   justify-content: space-between;
   margin-bottom: 16px;
+  gap: 8px;
+}
+
+/* Refresh button in team header - match dropdown height */
+.team-header .icon-button {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
 }
 
 .team-header h3 {
@@ -3306,7 +3334,17 @@ body {
 
 .team-selector {
   flex: 1;
-  margin-right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.team-selector-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ctx-foreground-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .team-dropdown {
@@ -3396,6 +3434,11 @@ body {
   gap: 8px;
 }
 
+.your-rank-number {
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .your-rank-of {
   font-size: 12px;
   opacity: 0.8;
@@ -3409,21 +3452,107 @@ body {
 
 .team-list-header {
   display: grid;
-  grid-template-columns: 50px 1fr 60px 70px 60px 70px;
-  gap: 8px;
-  padding: 10px 12px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
+  grid-template-columns: 32px 1fr 48px 48px 48px 56px;
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--ctx-foreground-muted);
   border-bottom: 1px solid var(--ctx-border-subtle);
+  align-items: center;
+}
+
+/* Responsive header abbreviations */
+.team-list-header .header-abbr {
+  display: none;
+}
+
+.team-list-header .header-full {
+  display: inline;
+}
+
+/* Responsive: prioritize member column, squeeze data columns */
+@media (max-width: 400px) {
+  .team-list-header .header-abbr {
+    display: inline;
+  }
+  .team-list-header .header-full {
+    display: none;
+  }
+  .team-list-header {
+    grid-template-columns: 24px minmax(80px, 1fr) 32px 32px 32px 36px;
+    gap: 2px;
+    padding: 6px 8px;
+    font-size: 9px;
+  }
+  .team-member-row {
+    grid-template-columns: 24px minmax(80px, 1fr) 32px 32px 32px 36px;
+    gap: 2px;
+    padding: 6px 8px;
+  }
+  .member-avatar {
+    width: 22px;
+    height: 22px;
+  }
+  .member-name {
+    font-size: 11px;
+  }
+  .col-prompts,
+  .col-score,
+  .col-change,
+  .col-length {
+    font-size: 9px;
+  }
+  .rank-number,
+  .team-score {
+    font-size: 9px;
+  }
+}
+
+/* Extra narrow: hide some columns entirely */
+@media (max-width: 300px) {
+  .team-list-header {
+    grid-template-columns: 20px minmax(70px, 1fr) 28px 28px;
+  }
+  .team-member-row {
+    grid-template-columns: 20px minmax(70px, 1fr) 28px 28px;
+  }
+  .col-change,
+  .col-length {
+    display: none;
+  }
+}
+
+/* Extra narrow - keep avatar visible, hide more columns */
+@media (max-width: 220px) {
+  .team-list-header {
+    grid-template-columns: 18px minmax(50px, 1fr) 26px;
+  }
+  .team-member-row {
+    grid-template-columns: 18px minmax(50px, 1fr) 26px;
+  }
+  .col-prompts {
+    display: none;
+  }
+  .member-avatar {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0 !important;
+  }
+  .member-avatar.placeholder {
+    font-size: 8px;
+  }
+  .col-member {
+    gap: 4px;
+    min-width: 30px;
+  }
 }
 
 .team-member-row {
   display: grid;
-  grid-template-columns: 50px 1fr 60px 70px 60px 70px;
-  gap: 8px;
-  padding: 12px;
+  grid-template-columns: 32px 1fr 48px 48px 48px 56px;
+  gap: 4px;
+  padding: 10px;
   align-items: center;
   border-bottom: 1px solid var(--ctx-border-subtle);
   transition: background-color 150ms ease;
@@ -3444,54 +3573,51 @@ body {
 .col-rank {
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .col-member {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
+  gap: 6px;
+  min-width: 40px; /* Ensure avatar always visible */
+  overflow: hidden;
 }
 
 .col-prompts,
 .col-score,
 .col-change,
 .col-length {
-  text-align: center;
-  font-size: 12px;
-  color: var(--ctx-foreground);
-}
-
-.rank-badge {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
   justify-content: center;
-  min-width: 28px;
-  padding: 2px 6px;
+  align-items: center;
   font-size: 11px;
-  font-weight: 600;
-  border-radius: 4px;
-  background-color: var(--ctx-surface-hover);
   color: var(--ctx-foreground);
 }
 
-.rank-badge.gold {
-  background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
-  color: #1a1a1a;
+/* Plain rank number - no badge styling */
+.rank-number {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ctx-foreground);
 }
 
-.rank-badge.silver {
-  background: linear-gradient(135deg, #c0c0c0 0%, #a8a8a8 100%);
-  color: #1a1a1a;
+/* Team score display - avoid conflict with dashboard .score-value */
+.team-score {
+  font-size: 11px;
+  font-weight: 500;
 }
 
-.rank-badge.bronze {
-  background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%);
-  color: white;
+.team-score.good {
+  color: var(--ctx-success);
 }
 
-.rank-badge.current-user {
-  box-shadow: 0 0 0 2px var(--ctx-primary);
+.team-score.medium {
+  color: var(--ctx-warning);
+}
+
+.team-score.low {
+  color: var(--ctx-error);
 }
 
 .member-avatar {
@@ -3519,9 +3645,11 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+}
+
+.member-name.current-user-name {
+  color: var(--ctx-primary);
+  font-weight: 600;
 }
 
 .you-badge {
