@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { StageBadge } from "./StageBadge";
+import { SourceBadge } from "./SourceBadge";
 import { LoopIndicator } from "./LoopIndicator";
 import { ScoreBadge } from "@/components/feed/score-badge";
 import {
@@ -43,6 +44,7 @@ export function ConversationCard({
     hasDebuggingLoop,
     conversationScore,
     gitBranch,
+    isImported,
   } = conversation;
 
   // Calculate duration in minutes
@@ -114,6 +116,7 @@ export function ConversationCard({
 
         {/* Badges Row */}
         <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <SourceBadge source={isImported ? "imported" : "live"} size="sm" />
           {primaryStage && <StageBadge stage={primaryStage} size="sm" />}
           {hasDebuggingLoop && <LoopIndicator variant="badge" />}
           {conversationScore !== null && (

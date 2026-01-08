@@ -44,6 +44,8 @@ export interface ConversationSummary {
   gitBranch: string | null;
   cwd: string | null;
   claudeCodeVersion: string | null;
+  /** Whether this conversation was imported (vs live captured) */
+  isImported: boolean;
 }
 
 export interface ConversationMessage {
@@ -77,8 +79,10 @@ export interface ResponseData {
   responseText?: string;
   thinkingSummary?: string;
   thinkingWordCount?: number;
+  thinkingText?: string; // Full thinking content (decrypted)
   toolCount: number;
   toolsUsed: string[];
+  toolExecutions?: ToolExecution[]; // Detailed tool execution data
   model?: string;
   tokensIn?: number;
   tokensOut?: number;

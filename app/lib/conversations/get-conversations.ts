@@ -114,7 +114,8 @@ export async function getConversations(
       stage_breakdown,
       git_branch,
       cwd,
-      claude_code_version
+      claude_code_version,
+      is_imported
     `,
       { count: 'exact' }
     )
@@ -188,6 +189,7 @@ export async function getConversations(
     gitBranch: row.git_branch,
     cwd: row.cwd,
     claudeCodeVersion: row.claude_code_version,
+    isImported: row.is_imported ?? false,
   }));
 
   logger.debug('Fetched conversations', {

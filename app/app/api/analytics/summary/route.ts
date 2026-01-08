@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * Query Parameters:
  * - range: '1d' | '7d' | '30d' (default: '7d')
+ * - project_id: UUID (optional) - Filter to specific project
  */
 export async function GET(request: NextRequest) {
   // Get authorization header
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
 
     const userId = tokenData.user_id;
     const range = request.nextUrl.searchParams.get("range") || "7d";
+    const projectId = request.nextUrl.searchParams.get("project_id");
 
     // Calculate date range
     const now = new Date();
@@ -65,11 +67,17 @@ export async function GET(request: NextRequest) {
     }
 
     // First, get the actual count of prompts (no Supabase 1000 row limit)
-    const { count: totalPromptCount, error: countError } = await adminClient
+    let countQuery = adminClient
       .from("prompts")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .gte("created_at", startDate.toISOString());
+
+    if (projectId) {
+      countQuery = countQuery.eq("project_id", projectId);
+    }
+
+    const { count: totalPromptCount, error: countError } = await countQuery;
 
     if (countError) {
       console.error("[Analytics] Error counting prompts:", countError);
@@ -77,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch prompts with analyses for score calculation
     // Limit to 5000 for performance (enough for accurate averages)
-    const { data: promptsWithAnalyses, error: fetchError } = await adminClient
+    let promptsQuery = adminClient
       .from("prompts")
       .select(`
         id,
@@ -88,7 +96,13 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq("user_id", userId)
-      .gte("created_at", startDate.toISOString())
+      .gte("created_at", startDate.toISOString());
+
+    if (projectId) {
+      promptsQuery = promptsQuery.eq("project_id", projectId);
+    }
+
+    const { data: promptsWithAnalyses, error: fetchError } = await promptsQuery
       .order("created_at", { ascending: false })
       .limit(5000);
 

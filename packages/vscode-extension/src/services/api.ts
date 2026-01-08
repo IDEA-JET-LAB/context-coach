@@ -56,16 +56,19 @@ export class ContextorAPI {
   /**
    * Fetches analytics data for a time range.
    * @param timeRange - The time range to fetch analytics for
+   * @param projectId - Optional project UUID to filter analytics to specific project
    * @returns Analytics data or error
    */
-  async getAnalytics(timeRange: TimeRange = '7d'): Promise<ApiResponse<AnalyticsData>> {
+  async getAnalytics(timeRange: TimeRange = '7d', projectId?: string | null): Promise<ApiResponse<AnalyticsData>> {
     try {
       // Add cache-buster to ensure fresh data
       const cacheBuster = Date.now();
-      const response = await this.authenticatedFetch(
-        `/analytics/summary?range=${timeRange}&_=${cacheBuster}`
-      );
-      this.log(`Fetching analytics for range=${timeRange}`);
+      let url = `/analytics/summary?range=${timeRange}&_=${cacheBuster}`;
+      if (projectId) {
+        url += `&project_id=${encodeURIComponent(projectId)}`;
+      }
+      const response = await this.authenticatedFetch(url);
+      this.log(`Fetching analytics for range=${timeRange}, projectId=${projectId || 'all'}`);
 
       if (!response.ok) {
         return this.handleErrorResponse(response);
@@ -95,13 +98,16 @@ export class ContextorAPI {
   /**
    * Fetches recent prompts for display.
    * @param limit - Maximum number of prompts to fetch (default: 5)
+   * @param projectId - Optional project UUID to filter prompts to specific project
    * @returns Array of recent prompts or error
    */
-  async getRecentPrompts(limit: number = 5): Promise<ApiResponse<RecentPrompt[]>> {
+  async getRecentPrompts(limit: number = 5, projectId?: string | null): Promise<ApiResponse<RecentPrompt[]>> {
     try {
-      const response = await this.authenticatedFetch(
-        `/prompts/recent?limit=${limit}`
-      );
+      let url = `/prompts/recent?limit=${limit}`;
+      if (projectId) {
+        url += `&project_id=${encodeURIComponent(projectId)}`;
+      }
+      const response = await this.authenticatedFetch(url);
 
       if (!response.ok) {
         return this.handleErrorResponse(response);

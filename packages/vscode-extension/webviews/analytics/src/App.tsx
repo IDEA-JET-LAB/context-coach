@@ -106,6 +106,8 @@ type ExtensionMessage =
   | { type: "refreshing"; isRefreshing: boolean }
   // Server status
   | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number }
+  // Extension version
+  | { type: "extension-version"; version: string }
   // Signup messages
   | { type: "signup-result"; success: boolean; message: string; requiresEmailConfirmation?: boolean }
   | { type: "signup-loading"; isLoading: boolean }
@@ -158,6 +160,8 @@ type WebviewMessage =
   // Import messages
   | { type: "start-import" }
   | { type: "cancel-import" }
+  | { type: "confirm-import-projects"; selectedPaths: string[]; teamId?: string }
+  | { type: "fetch-import-teams" }
   // Last prompt messages
   | { type: "fetch-last-prompt" }
   // Status messages
@@ -211,6 +215,8 @@ interface AppState {
   // Import
   importStatus: ImportStatus | null;
   lastImport: ImportHistory | null;
+  importTeams: Array<{ id: string; name: string }>;
+  importTeamsLoading: boolean;
   // Last Prompt
   lastPrompt: LastPromptData | null;
   lastPromptLoading: boolean;
@@ -242,6 +248,8 @@ interface AppState {
   // Server status
   isServerOnline: boolean;
   retryCountdown: number;
+  // Extension version
+  extensionVersion: string;
   // Signup state
   isSignupMode: boolean;
   signupLoading: boolean;
@@ -266,6 +274,8 @@ const initialState: AppState = {
   sessionsLoading: false,
   importStatus: null,
   lastImport: null,
+  importTeams: [],
+  importTeamsLoading: false,
   lastPrompt: null,
   lastPromptLoading: false,
   // Project Status
@@ -301,6 +311,8 @@ const initialState: AppState = {
   // Server status
   isServerOnline: true,
   retryCountdown: 0,
+  // Extension version
+  extensionVersion: "",
   // Signup state
   isSignupMode: false,
   signupLoading: false,
@@ -325,11 +337,15 @@ const App: React.FC = () => {
       vscodeRef.current = acquireVsCodeApi();
 
       // Restore persisted state (but clear teamStats to force fresh fetch)
+      // CRITICAL: Always reset isLoading to true to show loading spinner
+      // until extension confirms auth state. This prevents showing stale
+      // sign-in screen when user is actually authenticated via SecretStorage.
       const persistedState = vscodeRef.current.getState() as AppState | undefined;
       if (persistedState) {
         setState((prev) => ({
           ...prev,
           ...persistedState,
+          isLoading: true, // Always show loading until auth is confirmed
           teamStats: null,
           teamStatsLoading: false
         }));
@@ -554,6 +570,20 @@ const App: React.FC = () => {
           }));
           break;
 
+        case "import-teams":
+          setState((prev) => ({
+            ...prev,
+            importTeams: message.teams || [],
+          }));
+          break;
+
+        case "import-teams-loading":
+          setState((prev) => ({
+            ...prev,
+            importTeamsLoading: message.isLoading,
+          }));
+          break;
+
         // Last prompt messages
         case "last-prompt":
           setState((prev) => ({
@@ -734,6 +764,14 @@ const App: React.FC = () => {
             ...prev,
             isServerOnline: message.isServerOnline,
             retryCountdown: message.retryCountdown ?? 0,
+          }));
+          break;
+
+        // Extension version message
+        case "extension-version":
+          setState((prev) => ({
+            ...prev,
+            extensionVersion: message.version,
           }));
           break;
 
@@ -918,6 +956,23 @@ const App: React.FC = () => {
 
   const handleCancelImport = useCallback(() => {
     vscodeRef.current?.postMessage({ type: "cancel-import" } satisfies WebviewMessage);
+  }, []);
+
+  const handleConfirmProjects = useCallback((selectedPaths: string[], teamId?: string) => {
+    vscodeRef.current?.postMessage({ type: "confirm-import-projects", selectedPaths, teamId } satisfies WebviewMessage);
+  }, []);
+
+  const handleFetchImportTeams = useCallback(() => {
+    vscodeRef.current?.postMessage({ type: "fetch-import-teams" } satisfies WebviewMessage);
+  }, []);
+
+  const handleResetImport = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      importStatus: null,
+      importTeams: undefined,
+      importTeamsLoading: false,
+    }));
   }, []);
 
   // Last prompt handlers
@@ -1319,8 +1374,13 @@ const App: React.FC = () => {
             isLoading={false}
             importStatus={state.importStatus}
             lastImport={state.lastImport}
+            teams={state.importTeams}
+            teamsLoading={state.importTeamsLoading}
             onStartImport={handleStartImport}
             onCancelImport={handleCancelImport}
+            onConfirmProjects={handleConfirmProjects}
+            onFetchTeams={handleFetchImportTeams}
+            onResetImport={handleResetImport}
           />
         )}
 
@@ -1383,13 +1443,18 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Project footer */}
-      {state.workspaceStatus?.projectName && (
-        <div className="app-footer">
-          <span className="footer-label">Project:</span>
-          <span className="footer-project-name">{state.workspaceStatus.projectName}</span>
-        </div>
-      )}
+      {/* Footer with project and version */}
+      <div className="app-footer">
+        {state.workspaceStatus?.projectName && (
+          <>
+            <span className="footer-label">Project:</span>
+            <span className="footer-project-name">{state.workspaceStatus.projectName}</span>
+          </>
+        )}
+        {state.extensionVersion && (
+          <span className="footer-version">v{state.extensionVersion}</span>
+        )}
+      </div>
     </div>
   );
 };

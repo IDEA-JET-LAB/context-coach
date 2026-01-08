@@ -25,6 +25,7 @@ export interface SessionContext {
   git_branch?: string;
   cwd?: string;
   claude_code_version?: string;
+  is_imported?: boolean;
 }
 
 /**
@@ -256,11 +257,33 @@ export async function findOrCreateSession(
   // First, try to find existing session (most common case after first prompt)
   const { data: existingSession, error: findError } = await supabase
     .from("sessions")
-    .select("id")
+    .select("id, project_id")
     .eq("session_id", sessionId)
     .single();
 
   if (existingSession && !findError) {
+    // Check if project_id needs updating (happens during import to different project)
+    if (context.project_id && existingSession.project_id !== context.project_id) {
+      logger.log("Updating session project_id", {
+        sessionId,
+        dbId: existingSession.id,
+        oldProjectId: existingSession.project_id,
+        newProjectId: context.project_id,
+      });
+
+      const { error: updateError } = await supabase
+        .from("sessions")
+        .update({ project_id: context.project_id })
+        .eq("id", existingSession.id);
+
+      if (updateError) {
+        logger.warn("Failed to update session project_id", {
+          sessionId,
+          error: updateError.message,
+        });
+      }
+    }
+
     logger.debug("Found existing session", {
       sessionId,
       dbId: existingSession.id,
@@ -270,7 +293,7 @@ export async function findOrCreateSession(
 
   // Session doesn't exist, try to create it
   // Use upsert with ON CONFLICT to handle race conditions
-  const insertData: CreateSessionInput = {
+  const insertData: CreateSessionInput & { is_imported?: boolean } = {
     session_id: sessionId,
     user_id: context.user_id,
     team_id: context.team_id,
@@ -279,6 +302,7 @@ export async function findOrCreateSession(
     git_branch: context.git_branch,
     claude_code_version: context.claude_code_version,
     cwd: context.cwd,
+    is_imported: context.is_imported,
   };
 
   // Remove undefined values to avoid PostgreSQL issues

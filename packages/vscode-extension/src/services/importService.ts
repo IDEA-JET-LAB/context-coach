@@ -254,20 +254,18 @@ export class ImportService {
     }
   }
 
-  /** Inactivity timeout in milliseconds (2 minutes without progress triggers timeout) */
-  private static readonly INACTIVITY_TIMEOUT = 2 * 60 * 1000;
-
   /**
-   * Start import for selected projects.
-   * Uses inactivity-based timeout - only times out if no progress for 2 minutes.
+   * Start cloud-based import for selected projects.
+   * Uploads JSONL files directly to the server for fast processing.
+   * @param projects - Projects to import
+   * @param selectedTeamId - Optional team ID to import to (uses first team if not specified)
    */
-  async startImport(projects: DiscoveredProject[]): Promise<ImportProgress> {
+  async startImport(projects: DiscoveredProject[], selectedTeamId?: string): Promise<ImportProgress> {
     this.isCancelled = false;
-    let lastActivityTime = Date.now();
 
     const progress: ImportProgress = {
       state: "importing",
-      statusMessage: "Preparing import...",
+      statusMessage: "Preparing upload...",
       projectIndex: 0,
       totalProjects: projects.length,
       importedCount: 0,
@@ -279,25 +277,13 @@ export class ImportService {
     this.updateProgress(progress);
 
     try {
-      // Get auth info with retry
+      // Get auth info
       progress.statusMessage = "Verifying authentication...";
       this.updateProgress(progress);
 
       const isAuth = await this.authService.isAuthenticated();
       if (!isAuth) {
         throw new Error("Not authenticated. Please sign in first.");
-      }
-
-      // Get user with retry (profile may not be immediately available)
-      let user = await this.authService.getUser();
-      if (!user) {
-        this.log("User profile not immediately available, retrying...");
-        // Wait a bit and retry
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        user = await this.authService.getUser();
-      }
-      if (!user) {
-        throw new Error("Could not get user info. Please try signing out and back in.");
       }
 
       const accessToken = await this.authService.getAccessToken();
@@ -307,29 +293,28 @@ export class ImportService {
 
       const apiEndpoint = this.settingsService.apiEndpoint;
 
-      // Fetch user's team
-      progress.statusMessage = "Fetching team information...";
-      this.updateProgress(progress);
-
-      const teamId = await this.fetchUserTeamId(accessToken, apiEndpoint);
+      // Use provided teamId or fetch from API
+      let teamId = selectedTeamId;
       if (!teamId) {
-        throw new Error("Could not find your team. Please ensure you're a member of a team in Contextor.");
+        progress.statusMessage = "Fetching team information...";
+        this.updateProgress(progress);
+
+        teamId = await this.fetchUserTeamId(accessToken, apiEndpoint);
+        if (!teamId) {
+          throw new Error("Could not find your team. Please ensure you're a member of a team in Contextor.");
+        }
       }
       this.log(`Using team ID: ${teamId}`);
-      const totalEstimatedPrompts = projects.reduce((sum, p) => sum + p.estimatedPrompts, 0);
 
-      // Process each project
-      for (let i = 0; i < projects.length; i++) {
-        // Check inactivity timeout (only timeout if no progress for 2 minutes)
-        if (Date.now() - lastActivityTime > ImportService.INACTIVITY_TIMEOUT) {
-          progress.state = "error";
-          progress.statusMessage = "Import timed out due to inactivity";
-          progress.errorMessage = "No progress for 2 minutes. Check your network connection and try again.";
-          this.updateProgress(progress);
-          this.log("Import timed out due to inactivity");
-          return progress;
-        }
+      // Collect all JSONL files from selected projects
+      progress.statusMessage = "Collecting files...";
+      progress.progress = 10;
+      this.updateProgress(progress);
 
+      const claudeDir = path.join(os.homedir(), ".claude", "projects");
+      const allFiles: { projectPath: string; filePath: string; fileName: string }[] = [];
+
+      for (const project of projects) {
         if (this.isCancelled) {
           progress.state = "cancelled";
           progress.statusMessage = "Import cancelled";
@@ -337,51 +322,124 @@ export class ImportService {
           return progress;
         }
 
-        const project = projects[i];
-        const shortName = project.path.split("/").pop() || project.path;
+        const projectDir = path.join(claudeDir, project.normalizedPath);
+        const jsonlFiles = this.findJsonlFiles(projectDir);
 
-        progress.currentProject = shortName;
-        progress.projectIndex = i;
-        progress.statusMessage = `Importing ${shortName} (${i + 1}/${projects.length})...`;
-        progress.progress = Math.floor((i / projects.length) * 100);
-        this.updateProgress(progress);
-
-        try {
-          const result = await this.importProject(
-            project,
-            user.id,
-            teamId,
-            accessToken,
-            apiEndpoint,
-            (fileProgress) => {
-              // Update progress during file processing
-              progress.statusMessage = `Importing ${shortName}: ${fileProgress}`;
-              this.updateProgress(progress);
-            }
-          );
-          progress.importedCount += result.imported;
-          progress.skippedCount += result.skipped;
-
-          // Update activity time - progress is being made
-          lastActivityTime = Date.now();
-
-          progress.statusMessage = `Completed ${shortName}: ${result.imported} imported, ${result.skipped} skipped`;
-          this.updateProgress(progress);
-        } catch (error) {
-          progress.failedCount += project.estimatedPrompts;
-          progress.statusMessage = `Failed: ${shortName}`;
-          this.logError(`Failed to import project: ${project.path}`, error);
+        for (const filePath of jsonlFiles) {
+          allFiles.push({
+            projectPath: project.path,
+            filePath,
+            fileName: path.basename(filePath),
+          });
         }
       }
 
-      progress.state = "complete";
-      progress.projectIndex = projects.length;
-      progress.progress = 100;
-      progress.statusMessage = `Done! ${progress.importedCount} imported, ${progress.skippedCount} duplicates skipped`;
+      this.log(`Collected ${allFiles.length} files from ${projects.length} projects`);
+
+      // Debug log: list all collected files
+      for (const file of allFiles) {
+        this.log(`  File: ${file.fileName} from ${file.projectPath}`);
+      }
+
+      if (allFiles.length === 0) {
+        progress.state = "complete";
+        progress.statusMessage = "No files to import";
+        progress.progress = 100;
+        this.updateProgress(progress);
+        return progress;
+      }
+
+      // Build JSON payload with all files
+      progress.statusMessage = `Preparing ${allFiles.length} files...`;
+      progress.progress = 20;
       this.updateProgress(progress);
 
+      const filesPayload: Array<{ projectPath: string; fileName: string; content: string }> = [];
+
+      let fileIndex = 0;
+      for (const file of allFiles) {
+        if (this.isCancelled) {
+          progress.state = "cancelled";
+          progress.statusMessage = "Import cancelled";
+          this.updateProgress(progress);
+          return progress;
+        }
+
+        const content = fs.readFileSync(file.filePath, "utf-8");
+        filesPayload.push({
+          projectPath: file.projectPath,
+          fileName: file.fileName,
+          content,
+        });
+        fileIndex++;
+
+        // Update progress
+        if (fileIndex % 10 === 0) {
+          progress.statusMessage = `Reading files (${fileIndex}/${allFiles.length})...`;
+          progress.progress = 20 + Math.floor((fileIndex / allFiles.length) * 30);
+          this.updateProgress(progress);
+        }
+      }
+
+      // Upload to cloud endpoint as JSON
+      progress.statusMessage = "Uploading to server...";
+      progress.progress = 50;
+      this.updateProgress(progress);
+
+      this.log(`Uploading ${allFiles.length} files to ${apiEndpoint}/import/upload`);
+
+      // Debug: log file sizes
+      for (const fp of filesPayload) {
+        this.log(`  Sending: ${fp.fileName} (${fp.content.length} bytes) from ${fp.projectPath}`);
+      }
+
+      const response = await fetch(`${apiEndpoint}/import/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          teamId,
+          files: filesPayload,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = (await response.json()) as {
+        success: boolean;
+        imported?: number;
+        skipped?: number;
+        updated?: number;
+        error?: string;
+        duration?: number;
+        filesProcessed?: number;
+      };
+
+      // Debug: log full response
+      this.log(`Server response: ${JSON.stringify(result)}`);
+
+      if (!result.success) {
+        throw new Error(result.error || "Import failed on server");
+      }
+
+      progress.state = "complete";
+      progress.importedCount = result.imported || 0;
+      progress.skippedCount = result.skipped || 0;
+      progress.progress = 100;
+      progress.statusMessage = `Done! ${result.imported} imported, ${result.skipped} skipped`;
+
+      if (result.duration) {
+        progress.statusMessage += ` (${(result.duration / 1000).toFixed(1)}s)`;
+      }
+
+      this.updateProgress(progress);
       this.log(
-        `Import complete: ${progress.importedCount} imported, ${progress.skippedCount} skipped, ${progress.failedCount} failed`
+        `Cloud import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.filesProcessed} files processed in ${result.duration}ms`
       );
 
       return progress;
@@ -391,7 +449,7 @@ export class ImportService {
       progress.errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       this.updateProgress(progress);
-      this.logError("Import failed", error);
+      this.logError("Cloud import failed", error);
       return progress;
     }
   }
@@ -770,22 +828,61 @@ export class ImportService {
 
   /**
    * Convert normalized path back to human-readable format.
+   * Claude Code normalizes paths by replacing / with - and prefixing with -.
+   * This is NOT reversible when folder names contain dashes, so we try to
+   * find the actual path on the filesystem.
    */
   private denormalizePath(normalizedPath: string): string {
     if (!normalizedPath.startsWith("-")) {
       return normalizedPath;
     }
 
-    // Convert -Users-edgars-My-projects to /Users/edgars/My-projects
-    const parts = normalizedPath.slice(1).split("-");
+    // Remove leading dash
+    const pathWithoutPrefix = normalizedPath.slice(1);
 
-    // Try to intelligently reconstruct the path
+    // Try to find the actual path by checking filesystem
+    // Start with root and try to match each segment
+    const segments = pathWithoutPrefix.split("-");
+
     // Check if it starts with Users (macOS) or home (Linux)
-    if (parts[0] === "Users" || parts[0] === "home") {
-      return "/" + parts.join("/");
+    if (segments[0] !== "Users" && segments[0] !== "home") {
+      // Unknown format, return as-is with slashes
+      return "/" + segments.join("/");
     }
 
-    return parts.join("/");
+    // Try to reconstruct the path by checking what exists on filesystem
+    let currentPath = "/" + segments[0]; // /Users or /home
+    let segmentIndex = 1;
+
+    while (segmentIndex < segments.length) {
+      // Try to find a matching directory by combining segments
+      let found = false;
+
+      // Try combining progressively more segments with dashes
+      for (let endIndex = segmentIndex; endIndex < segments.length; endIndex++) {
+        const candidateSegment = segments.slice(segmentIndex, endIndex + 1).join("-");
+        const candidatePath = currentPath + "/" + candidateSegment;
+
+        try {
+          if (fs.existsSync(candidatePath)) {
+            currentPath = candidatePath;
+            segmentIndex = endIndex + 1;
+            found = true;
+            break;
+          }
+        } catch {
+          // Ignore access errors
+        }
+      }
+
+      if (!found) {
+        // No match found, use single segment
+        currentPath = currentPath + "/" + segments[segmentIndex];
+        segmentIndex++;
+      }
+    }
+
+    return currentPath;
   }
 
   /**
@@ -804,7 +901,40 @@ export class ImportService {
     accessToken: string,
     apiEndpoint: string
   ): Promise<string | null> {
+    const teams = await this.fetchUserTeams(accessToken, apiEndpoint);
+    if (!teams || teams.length === 0) {
+      return null;
+    }
+    return teams[0].id;
+  }
+
+  /**
+   * Fetch all teams the user belongs to.
+   * Returns array of teams with id and name.
+   */
+  async fetchUserTeams(
+    accessToken?: string,
+    apiEndpoint?: string
+  ): Promise<Array<{ id: string; name: string }> | null> {
     try {
+      // Get auth info if not provided
+      if (!accessToken) {
+        const isAuth = await this.authService.isAuthenticated();
+        if (!isAuth) {
+          this.log("Not authenticated - cannot fetch teams");
+          return null;
+        }
+        accessToken = (await this.authService.getAccessToken()) || undefined;
+        if (!accessToken) {
+          this.log("Could not get access token");
+          return null;
+        }
+      }
+
+      if (!apiEndpoint) {
+        apiEndpoint = this.settingsService.apiEndpoint;
+      }
+
       const response = await fetch(`${apiEndpoint}/teams`, {
         method: "GET",
         headers: {
@@ -831,9 +961,8 @@ export class ImportService {
         return null;
       }
 
-      // Return the first team's ID
-      this.log(`Found ${teams.length} team(s), using: ${teams[0].name}`);
-      return teams[0].id;
+      this.log(`Found ${teams.length} team(s)`);
+      return teams;
     } catch (error) {
       this.logError("Failed to fetch user teams", error);
       return null;

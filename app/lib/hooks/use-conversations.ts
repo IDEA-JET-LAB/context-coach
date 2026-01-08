@@ -58,6 +58,8 @@ export interface ConversationSummary {
   gitBranch: string | null;
   cwd: string | null;
   claudeCodeVersion: string | null;
+  /** Whether this conversation was imported (vs live captured) */
+  isImported: boolean;
 }
 
 /**
@@ -115,6 +117,7 @@ export interface ThreadedMessage {
   };
   thinkingSummary?: string;
   thinkingWordCount?: number;
+  thinkingText?: string;
   toolCount?: number;
   toolsUsed?: string[];
   toolExecutions?: Array<{

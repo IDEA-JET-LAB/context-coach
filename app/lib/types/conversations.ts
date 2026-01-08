@@ -82,6 +82,8 @@ export interface ConversationSummary {
   cwd: string | null;
   /** Claude Code CLI version */
   claudeCodeVersion: string | null;
+  /** Whether this conversation was imported (vs live captured) */
+  isImported: boolean;
 }
 
 /**

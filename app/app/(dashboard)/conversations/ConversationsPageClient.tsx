@@ -144,6 +144,7 @@ export function ConversationsPageClient({
       gitBranch: c.gitBranch,
       cwd: c.cwd,
       claudeCodeVersion: c.claudeCodeVersion,
+      isImported: c.isImported ?? false,
     }));
   }, [conversations]);
 

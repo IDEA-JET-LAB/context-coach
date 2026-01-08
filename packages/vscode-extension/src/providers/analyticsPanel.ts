@@ -107,6 +107,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   private _importService?: ImportService;
 
   /**
+   * Discovered projects cache for import selection.
+   */
+  private _discoveredProjects?: DiscoveredProject[];
+
+  /**
    * Workspace config service for reading project ID.
    */
   private readonly workspaceConfigService: WorkspaceConfigService;
@@ -515,6 +520,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     switch (message.type) {
       case "ready":
         this.log("Webview ready (v5 - with init flag and longer delays)");
+
+        // Send extension version immediately
+        {
+          const extensionVersion = vscode.extensions.getExtension("ideajetlab.contextor-vscode")?.packageJSON?.version || "unknown";
+          this.postMessage({
+            type: "extension-version",
+            version: extensionVersion,
+          } as ExtensionToWebviewMessage);
+        }
+
         // Reset import state on init (fix stuck spinner after reload)
         this.postMessage({
           type: "import-status",
@@ -649,6 +664,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       case "cancel-import":
         this.log("Import cancellation requested");
         this.handleCancelImport();
+        break;
+
+      case "confirm-import-projects":
+        this.log(`Confirm import for ${message.selectedPaths.length} projects${message.teamId ? ` to team ${message.teamId}` : ""}`);
+        await this.handleConfirmImportProjects(message.selectedPaths, message.teamId);
+        break;
+
+      case "fetch-import-teams":
+        this.log("Fetch import teams requested");
+        await this.handleFetchImportTeams();
         break;
 
       // Last prompt message handler
@@ -890,58 +915,159 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
             totalSessions: 0,
             importedCount: 0,
             skippedCount: 0,
+            statusMessage: "No Claude Code projects found",
           },
         } as ExtensionToWebviewMessage);
         return;
       }
 
-      // Step 3: Show what will be imported
+      // Step 3: Cache projects and send to webview for selection
       this.log(`Found ${projects.length} projects with conversations`);
-      const totalPrompts = projects.reduce((sum, p) => sum + p.estimatedPrompts, 0);
+      this._discoveredProjects = projects;
 
-      // Update UI to show we found projects and are awaiting confirmation
+      // Convert to webview-friendly format with display names
+      const discoveredProjectsInfo = projects.map(p => ({
+        path: p.path,
+        normalizedPath: p.normalizedPath,
+        sessionCount: p.sessionCount,
+        estimatedPrompts: p.estimatedPrompts,
+        oldestSession: p.oldestSession.toISOString(),
+        newestSession: p.newestSession.toISOString(),
+        displayName: this.extractProjectDisplayName(p.path),
+      }));
+
+      // Send projects to webview for user selection
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "selecting",
+          totalSessions: projects.length,
+          importedCount: 0,
+          skippedCount: 0,
+          discoveredProjects: discoveredProjectsInfo,
+        },
+      } as ExtensionToWebviewMessage);
+    } catch (error) {
+      this.logError("Failed to scan projects", error);
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "error",
+          totalSessions: 0,
+          importedCount: 0,
+          skippedCount: 0,
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+        },
+      } as ExtensionToWebviewMessage);
+      vscode.window.showErrorMessage(
+        `Contextor: Failed to scan projects - ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
+   * Extract a display-friendly project name from a full path.
+   */
+  private extractProjectDisplayName(projectPath: string): string {
+    const parts = projectPath.split("/").filter(Boolean);
+    // Return the last meaningful part (project folder name)
+    return parts[parts.length - 1] || projectPath;
+  }
+
+  /**
+   * Handles fetching teams for import team selection.
+   */
+  private async handleFetchImportTeams(): Promise<void> {
+    const importService = this.getImportService();
+
+    this.postMessage({
+      type: "import-teams-loading",
+      isLoading: true,
+    } as ExtensionToWebviewMessage);
+
+    try {
+      const teams = await importService.fetchUserTeams();
+
+      if (!teams || teams.length === 0) {
+        this.log("No teams found for import");
+        this.postMessage({
+          type: "import-teams",
+          teams: [],
+        } as ExtensionToWebviewMessage);
+      } else {
+        this.log(`Found ${teams.length} teams for import`);
+        this.postMessage({
+          type: "import-teams",
+          teams: teams.map(t => ({ id: t.id, name: t.name })),
+        } as ExtensionToWebviewMessage);
+      }
+    } catch (error) {
+      this.logError("Failed to fetch teams for import", error);
+      this.postMessage({
+        type: "import-teams",
+        teams: [],
+      } as ExtensionToWebviewMessage);
+    } finally {
+      this.postMessage({
+        type: "import-teams-loading",
+        isLoading: false,
+      } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles confirmed project import from webview.
+   * @param selectedPaths - Paths of selected projects
+   * @param teamId - Optional team ID to import to
+   */
+  private async handleConfirmImportProjects(selectedPaths: string[], teamId?: string): Promise<void> {
+    const importService = this.getImportService();
+
+    if (!this._discoveredProjects) {
+      this.logError("No discovered projects to import", null);
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "error",
+          totalSessions: 0,
+          importedCount: 0,
+          skippedCount: 0,
+          errorMessage: "No projects discovered. Please scan again.",
+        },
+      } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    // Filter to only selected projects
+    const projectsToImport = this._discoveredProjects.filter(p =>
+      selectedPaths.includes(p.path)
+    );
+
+    if (projectsToImport.length === 0) {
+      this.log("No projects selected for import");
       this.postMessage({
         type: "import-status",
         status: {
           state: "idle",
-          totalSessions: projects.length,
+          totalSessions: 0,
           importedCount: 0,
           skippedCount: 0,
         },
       } as ExtensionToWebviewMessage);
+      return;
+    }
 
-      const proceed = await vscode.window.showInformationMessage(
-        `Found ${projects.length} projects with ~${totalPrompts} prompts. This will upload your Claude Code prompts to Contextor for analysis.`,
-        { modal: true },
-        "Import Now",
-        "Cancel"
-      );
+    try {
+      this.log(`Starting import of ${projectsToImport.length} projects${teamId ? ` to team ${teamId}` : ""}...`);
+      const result = await importService.startImport(projectsToImport, teamId);
 
-      if (proceed !== "Import Now") {
-        this.log("Import cancelled by user");
-        this.postMessage({
-          type: "import-status",
-          status: {
-            state: "idle",
-            totalSessions: 0,
-            importedCount: 0,
-            skippedCount: 0,
-          },
-        } as ExtensionToWebviewMessage);
-        return;
-      }
-
-      // Step 4: Start the import
-      this.log("Starting import...");
-      const result = await importService.startImport(projects);
-
-      // Step 5: Show completion message and save history
+      // Show completion message and save history
       if (result.state === "complete") {
         // Save import history for display in UI
         await this.saveImportHistory(
           result.importedCount,
           result.skippedCount,
-          projects.length
+          projectsToImport.length
         );
         vscode.window.showInformationMessage(
           `Contextor: Import complete! ${result.importedCount} prompts imported, ${result.skippedCount} duplicates skipped.`
@@ -953,8 +1079,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
           `Contextor: Import failed - ${result.errorMessage}`
         );
       }
+
+      // Clear cached projects
+      this._discoveredProjects = undefined;
     } catch (error) {
-      this.logError("Failed to start import", error);
+      this.logError("Failed to import projects", error);
       this.postMessage({
         type: "import-status",
         status: {
@@ -979,6 +1108,18 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this._importService.cancel();
       this.log("Import cancelled by user");
     }
+
+    // Clear cached projects and reset state
+    this._discoveredProjects = undefined;
+    this.postMessage({
+      type: "import-status",
+      status: {
+        state: "idle",
+        totalSessions: 0,
+        importedCount: 0,
+        skippedCount: 0,
+      },
+    } as ExtensionToWebviewMessage);
   }
 
   /**
@@ -2169,10 +2310,18 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     }
 
     try {
+      // Get project ID from workspace config to filter analytics by current project
+      const projectId = await this.workspaceConfigService.getProjectId();
+      if (projectId) {
+        this.log(`Fetching analytics for project: ${projectId}`);
+      } else {
+        this.log("No project ID found - fetching all analytics");
+      }
+
       // Fetch analytics and recent prompts in parallel
       const [analyticsResult, promptsResult] = await Promise.all([
-        api.getAnalytics(this._state.timeRange),
-        api.getRecentPrompts(5),
+        api.getAnalytics(this._state.timeRange, projectId),
+        api.getRecentPrompts(5, projectId),
       ]);
 
       if (!analyticsResult.success) {
@@ -3142,7 +3291,7 @@ exit 0
       }
 
       const apiUrl = this.settingsService.apiEndpoint;
-      const range = timeRange || "week";
+      const range = timeRange || "today";
 
       const params = new URLSearchParams({ timeRange: range });
       if (teamId) {

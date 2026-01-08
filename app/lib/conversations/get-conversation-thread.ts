@@ -119,6 +119,7 @@ export interface ThreadedMessage {
   // Assistant message fields (role === 'assistant')
   thinkingSummary?: string;
   thinkingWordCount?: number;
+  thinkingText?: string; // Full thinking content (encrypted in DB)
   toolCount?: number;
   toolsUsed?: string[];
   toolExecutions?: ToolExecution[];
@@ -386,12 +387,16 @@ export async function getConversationThread(
   const prompts = (promptsData || []) as unknown as PromptQueryResult[];
 
   // ========================================================================
-  // Step 3b: Query responses separately by session_uuid (not via FK join)
-  // This handles both linked (prompt_id set) and unlinked responses
+  // Step 3b: Query responses by prompt_id OR session_uuid
+  // Live capture: responses have session_uuid but NULL prompt_id
+  // Import: responses have prompt_id linked
+  // We need to fetch both and merge them
   // ========================================================================
   let sessionResponses: ResponseQueryResult[] = [];
 
-  if (includeResponses) {
+  if (includeResponses && prompts.length > 0) {
+    const promptIds = prompts.map((p) => p.id);
+
     const responseSelectParts = [
       `id`,
       `prompt_id`,
@@ -420,21 +425,51 @@ export async function getConversationThread(
       `);
     }
 
-    const { data: responsesData, error: responsesError } = await supabase
+    // Query 1: Responses linked by prompt_id (from imports)
+    const { data: linkedData, error: linkedError } = await supabase
+      .from("prompt_responses")
+      .select(responseSelectParts.join(","))
+      .in("prompt_id", promptIds)
+      .order("created_at", { ascending: true });
+
+    if (linkedError) {
+      logger.warn("Failed to fetch linked responses", {
+        sessionId: session.id,
+        error: linkedError.message,
+      });
+    }
+
+    // Query 2: Responses by session_uuid with NULL prompt_id (from live capture)
+    const { data: sessionData, error: sessionError } = await supabase
       .from("prompt_responses")
       .select(responseSelectParts.join(","))
       .eq("session_uuid", session.id)
+      .is("prompt_id", null)
       .order("created_at", { ascending: true });
 
-    if (responsesError) {
-      logger.warn("Failed to fetch responses", {
+    if (sessionError) {
+      logger.warn("Failed to fetch session responses", {
         sessionId: session.id,
-        error: responsesError.message,
+        error: sessionError.message,
       });
-      // Continue without responses - better than failing
-    } else {
-      sessionResponses = (responsesData || []) as unknown as (ResponseQueryResult & { prompt_id: string | null })[];
     }
+
+    // Merge both result sets (dedupe by ID)
+    const responseMap = new Map<string, ResponseQueryResult>();
+    const linkedResponses_ = (linkedData || []) as unknown as (ResponseQueryResult & { prompt_id: string | null })[];
+    const sessionResponses_ = (sessionData || []) as unknown as (ResponseQueryResult & { prompt_id: string | null })[];
+
+    for (const r of linkedResponses_) {
+      responseMap.set(r.id, r);
+    }
+    for (const r of sessionResponses_) {
+      if (!responseMap.has(r.id)) {
+        responseMap.set(r.id, r);
+      }
+    }
+    sessionResponses = Array.from(responseMap.values()).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
   }
 
   // Create a map of prompt_id -> response for quick lookup
@@ -581,7 +616,14 @@ export async function getConversationThread(
           Array.isArray(decryptedResponse) &&
           decryptedResponse[0]
         ) {
-          msg.content = (decryptedResponse[0] as { response_text?: string }).response_text || "";
+          const decrypted = decryptedResponse[0] as {
+            response_text?: string;
+            thinking_text?: string;
+          };
+          msg.content = decrypted.response_text || "";
+          if (decrypted.thinking_text) {
+            msg.thinkingText = decrypted.thinking_text;
+          }
         }
       } catch (decryptError) {
         logger.warn("Failed to decrypt response", {

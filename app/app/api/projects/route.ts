@@ -172,7 +172,7 @@ export async function GET() {
     // Fetch projects for the team (non-archived)
     const { data: projects, error } = await supabase
       .from('projects')
-      .select('id, team_id, name, description, api_key_prefix, created_at, created_by, is_archived')
+      .select('id, team_id, name, description, api_key_prefix, created_at, created_by, is_archived, metadata')
       .eq('team_id', teamId)
       .eq('is_archived', false)
       .order('created_at', { ascending: false });
@@ -184,7 +184,16 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ data: { projects } });
+    // Transform to include isImported flag based on metadata.import_source_path
+    const projectsWithImportStatus = (projects || []).map((project) => {
+      const metadata = project.metadata as Record<string, unknown> | null;
+      const isImported = Boolean(metadata?.import_source_path);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { metadata: _, ...projectWithoutMetadata } = project;
+      return { ...projectWithoutMetadata, isImported };
+    });
+
+    return NextResponse.json({ data: { projects: projectsWithImportStatus } });
   } catch (error) {
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },

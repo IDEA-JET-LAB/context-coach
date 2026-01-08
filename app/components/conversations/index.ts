@@ -15,6 +15,7 @@ export { MessageBubble } from "./MessageBubble";
 
 // Badge Components
 export { StageBadge } from "./StageBadge";
+export { SourceBadge } from "./SourceBadge";
 export { LoopIndicator } from "./LoopIndicator";
 export { PromptTypeBadge } from "./PromptTypeBadge";
 

@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SourceBadge } from '@/components/conversations/SourceBadge';
 import { FolderKanban, Clock } from 'lucide-react';
 import Link from 'next/link';
 import type { Project } from '@/types/project';
@@ -27,9 +28,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
               <FolderKanban className="h-5 w-5 text-muted-foreground" />
               <CardTitle className="text-lg">{project.name}</CardTitle>
             </div>
-            {project.is_archived && (
-              <Badge variant="secondary">Archived</Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <SourceBadge source={project.isImported ? "imported" : "live"} size="sm" />
+              {project.is_archived && (
+                <Badge variant="secondary">Archived</Badge>
+              )}
+            </div>
           </div>
           {project.description && (
             <CardDescription className="line-clamp-2">

@@ -94,6 +94,8 @@ export type ExtensionToWebviewMessage =
   // Import messages
   | { type: "import-status"; status: ImportStatus }
   | { type: "import-history"; history: ImportHistoryData | null }
+  | { type: "import-teams"; teams: ImportTeamInfo[] }
+  | { type: "import-teams-loading"; isLoading: boolean }
 
   // Last prompt messages
   | { type: "last-prompt"; prompt: LastPromptData | null }
@@ -128,6 +130,9 @@ export type ExtensionToWebviewMessage =
 
   // Server status messages
   | { type: "server-status"; isServerOnline: boolean; retryCountdown?: number }
+
+  // Extension version
+  | { type: "extension-version"; version: string }
 
   // Signup result messages
   | { type: "signup-result"; success: boolean; message: string; requiresEmailConfirmation?: boolean }
@@ -194,7 +199,7 @@ export interface LastPromptData {
  * Import status for webview display
  */
 export interface ImportStatus {
-  state: "idle" | "scanning" | "importing" | "complete" | "error" | "cancelled";
+  state: "idle" | "scanning" | "selecting" | "importing" | "complete" | "error" | "cancelled";
   totalSessions: number;
   importedCount: number;
   skippedCount: number;
@@ -205,6 +210,28 @@ export interface ImportStatus {
   currentProject?: string;
   /** Progress percentage (0-100) */
   progress?: number;
+  /** Discovered projects for selection (when state is 'selecting') */
+  discoveredProjects?: DiscoveredProjectInfo[];
+}
+
+/**
+ * Discovered Claude Code project info for webview display
+ */
+export interface DiscoveredProjectInfo {
+  /** Human-readable path (e.g., /Users/edgars/my-project) */
+  path: string;
+  /** Normalized path used in storage (e.g., -Users-edgars-my-project) */
+  normalizedPath: string;
+  /** Number of session files (JSONL) */
+  sessionCount: number;
+  /** Estimated number of prompts based on file size */
+  estimatedPrompts: number;
+  /** Oldest session file timestamp */
+  oldestSession: string;
+  /** Newest session file timestamp */
+  newestSession: string;
+  /** Display-friendly project name extracted from path */
+  displayName: string;
 }
 
 /**
@@ -215,6 +242,14 @@ export interface ImportHistoryData {
   importedCount: number;
   skippedCount: number;
   totalSessions: number;
+}
+
+/**
+ * Team info for import team selection
+ */
+export interface ImportTeamInfo {
+  id: string;
+  name: string;
 }
 
 /**
@@ -296,6 +331,8 @@ export type WebviewToExtensionMessage =
   // Import actions
   | { type: "start-import" }
   | { type: "cancel-import" }
+  | { type: "confirm-import-projects"; selectedPaths: string[]; teamId?: string }
+  | { type: "fetch-import-teams" }
 
   // Last prompt actions
   | { type: "fetch-last-prompt" }

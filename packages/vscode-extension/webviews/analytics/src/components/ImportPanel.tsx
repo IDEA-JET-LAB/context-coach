@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 export interface ImportHistory {
   timestamp: string;
@@ -7,26 +7,50 @@ export interface ImportHistory {
   totalSessions: number;
 }
 
-interface ImportPanelProps {
-  isLoading: boolean;
-  importStatus: ImportStatus | null;
-  lastImport?: ImportHistory | null;
-  onStartImport: () => void;
-  onCancelImport: () => void;
+/**
+ * Discovered Claude Code project info for display
+ */
+export interface DiscoveredProjectInfo {
+  path: string;
+  normalizedPath: string;
+  sessionCount: number;
+  estimatedPrompts: number;
+  oldestSession: string;
+  newestSession: string;
+  displayName: string;
 }
 
 export interface ImportStatus {
-  state: "idle" | "scanning" | "importing" | "complete" | "error" | "cancelled";
+  state: "idle" | "scanning" | "selecting" | "importing" | "complete" | "error" | "cancelled";
   totalSessions: number;
   importedCount: number;
   skippedCount: number;
   errorMessage?: string;
-  /** Detailed status message for user feedback */
   statusMessage?: string;
-  /** Current project being processed */
   currentProject?: string;
-  /** Progress percentage (0-100) */
   progress?: number;
+  discoveredProjects?: DiscoveredProjectInfo[];
+}
+
+/**
+ * Team info for import team selection
+ */
+export interface ImportTeamInfo {
+  id: string;
+  name: string;
+}
+
+interface ImportPanelProps {
+  isLoading: boolean;
+  importStatus: ImportStatus | null;
+  lastImport?: ImportHistory | null;
+  teams?: ImportTeamInfo[];
+  teamsLoading?: boolean;
+  onStartImport: () => void;
+  onCancelImport: () => void;
+  onConfirmProjects: (selectedPaths: string[], teamId?: string) => void;
+  onFetchTeams?: () => void;
+  onResetImport?: () => void;
 }
 
 // Helper to format relative time
@@ -46,14 +70,190 @@ const formatRelativeTime = (dateStr: string): string => {
   return date.toLocaleDateString();
 };
 
+// Helper to format date range
+const formatDateRange = (oldest: string, newest: string): string => {
+  const oldestDate = new Date(oldest);
+  const newestDate = new Date(newest);
+  const now = new Date();
+
+  const daysDiff = Math.floor((now.getTime() - oldestDate.getTime()) / 86400000);
+
+  if (daysDiff === 0) return "Today";
+  if (daysDiff === 1) return "Yesterday - Today";
+  if (daysDiff < 7) return `${daysDiff} days`;
+  if (daysDiff < 30) return `${Math.floor(daysDiff / 7)} weeks`;
+  if (daysDiff < 365) return `${Math.floor(daysDiff / 30)} months`;
+  return `${Math.floor(daysDiff / 365)}+ years`;
+};
+
+/**
+ * Project selection item component
+ */
+const ProjectItem: React.FC<{
+  project: DiscoveredProjectInfo;
+  isSelected: boolean;
+  onToggle: () => void;
+}> = ({ project, isSelected, onToggle }) => {
+  return (
+    <div
+      className={`project-item ${isSelected ? "selected" : ""}`}
+      onClick={onToggle}
+    >
+      <div className="project-checkbox">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggle}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+      <div className="project-info">
+        <div className="project-name">{project.displayName}</div>
+        <div className="project-path">{project.path}</div>
+        <div className="project-stats">
+          <span className="stat">
+            <span className="stat-value">{project.sessionCount}</span>
+            <span className="stat-label">sessions</span>
+          </span>
+          <span className="stat">
+            <span className="stat-value">~{project.estimatedPrompts}</span>
+            <span className="stat-label">prompts</span>
+          </span>
+          <span className="stat">
+            <span className="stat-value">{formatDateRange(project.oldestSession, project.newestSession)}</span>
+            <span className="stat-label">span</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Project selection list component
+ */
+const ProjectSelectionList: React.FC<{
+  projects: DiscoveredProjectInfo[];
+  selectedPaths: Set<string>;
+  onToggle: (path: string) => void;
+  onSelectAll: () => void;
+  onSelectNone: () => void;
+}> = ({ projects, selectedPaths, onToggle, onSelectAll, onSelectNone }) => {
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort((a, b) => {
+      // Sort by newest session first
+      return new Date(b.newestSession).getTime() - new Date(a.newestSession).getTime();
+    });
+  }, [projects]);
+
+  const totalEstimatedPrompts = useMemo(() => {
+    return projects
+      .filter(p => selectedPaths.has(p.path))
+      .reduce((sum, p) => sum + p.estimatedPrompts, 0);
+  }, [projects, selectedPaths]);
+
+  return (
+    <div className="project-selection">
+      <div className="selection-header">
+        <div className="selection-info">
+          <span className="selection-count">
+            {selectedPaths.size} of {projects.length} projects
+          </span>
+          <span className="selection-estimate">
+            (~{totalEstimatedPrompts} prompts)
+          </span>
+        </div>
+        <div className="selection-actions">
+          <button
+            className="link-button"
+            onClick={onSelectAll}
+            disabled={selectedPaths.size === projects.length}
+          >
+            Select All
+          </button>
+          <button
+            className="link-button"
+            onClick={onSelectNone}
+            disabled={selectedPaths.size === 0}
+          >
+            Select None
+          </button>
+        </div>
+      </div>
+      <div className="project-list">
+        {sortedProjects.map(project => (
+          <ProjectItem
+            key={project.path}
+            project={project}
+            isSelected={selectedPaths.has(project.path)}
+            onToggle={() => onToggle(project.path)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const ImportPanel: React.FC<ImportPanelProps> = ({
   isLoading,
   importStatus,
   lastImport,
+  teams,
+  teamsLoading,
   onStartImport,
   onCancelImport,
+  onConfirmProjects,
+  onFetchTeams,
+  onResetImport,
 }) => {
   const [confirmed, setConfirmed] = useState(false);
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>();
+
+  // Initialize selected paths when projects are discovered
+  useEffect(() => {
+    if (importStatus?.state === "selecting" && importStatus.discoveredProjects) {
+      // Default: select all projects
+      setSelectedPaths(new Set(importStatus.discoveredProjects.map(p => p.path)));
+      // Fetch teams when entering selection mode
+      if (onFetchTeams) {
+        onFetchTeams();
+      }
+    }
+  }, [importStatus?.state, importStatus?.discoveredProjects, onFetchTeams]);
+
+  // Set default team when teams are loaded
+  useEffect(() => {
+    if (teams && teams.length > 0 && !selectedTeamId) {
+      setSelectedTeamId(teams[0].id);
+    }
+  }, [teams, selectedTeamId]);
+
+  const handleToggleProject = (path: string) => {
+    setSelectedPaths(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(path)) {
+        newSet.delete(path);
+      } else {
+        newSet.add(path);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (importStatus?.discoveredProjects) {
+      setSelectedPaths(new Set(importStatus.discoveredProjects.map(p => p.path)));
+    }
+  };
+
+  const handleSelectNone = () => {
+    setSelectedPaths(new Set());
+  };
+
+  const handleConfirmImport = () => {
+    onConfirmProjects(Array.from(selectedPaths), selectedTeamId);
+  };
 
   const renderContent = () => {
     if (isLoading || importStatus?.state === "scanning") {
@@ -73,6 +273,72 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
           {importStatus?.currentProject && (
             <p className="current-project">Current: {importStatus.currentProject}</p>
           )}
+        </div>
+      );
+    }
+
+    // Project selection state
+    if (importStatus?.state === "selecting" && importStatus.discoveredProjects) {
+      const projects = importStatus.discoveredProjects;
+      const showTeamSelector = teams && teams.length > 1;
+
+      return (
+        <div className="import-selecting">
+          <div className="selecting-header">
+            <h3 className="selecting-title">Select Projects to Import</h3>
+            <p className="selecting-description">
+              Choose which Claude Code projects you want to synchronize with Contextor.
+            </p>
+          </div>
+
+          {/* Team selector - only shown when user has multiple teams */}
+          {showTeamSelector && (
+            <div className="team-selector">
+              <label htmlFor="import-team-select" className="team-selector-label">
+                Import to team:
+              </label>
+              {teamsLoading ? (
+                <span className="teams-loading">Loading teams...</span>
+              ) : (
+                <select
+                  id="import-team-select"
+                  className="team-select"
+                  value={selectedTeamId || ""}
+                  onChange={(e) => setSelectedTeamId(e.target.value)}
+                >
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          <ProjectSelectionList
+            projects={projects}
+            selectedPaths={selectedPaths}
+            onToggle={handleToggleProject}
+            onSelectAll={handleSelectAll}
+            onSelectNone={handleSelectNone}
+          />
+
+          <div className="selecting-footer">
+            <button
+              className="secondary-button"
+              onClick={onCancelImport}
+            >
+              Cancel
+            </button>
+            <button
+              className="primary-button"
+              onClick={handleConfirmImport}
+              disabled={selectedPaths.size === 0}
+            >
+              Import {selectedPaths.size} Project{selectedPaths.size !== 1 ? "s" : ""}
+            </button>
+          </div>
         </div>
       );
     }
@@ -130,7 +396,12 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
               <span className="summary-label">Skipped</span>
             </div>
           </div>
-          <button className="primary-button" onClick={() => setConfirmed(false)}>
+          <button className="primary-button" onClick={() => {
+            setConfirmed(false);
+            setSelectedPaths(new Set());
+            setSelectedTeamId(undefined);
+            onResetImport?.();
+          }}>
             Import More
           </button>
         </div>
@@ -237,7 +508,7 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
           onClick={onStartImport}
           disabled={!confirmed}
         >
-          Start Import
+          Scan for Projects
         </button>
       </div>
     );

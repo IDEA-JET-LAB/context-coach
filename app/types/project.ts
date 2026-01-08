@@ -13,6 +13,8 @@ export interface Project {
   created_at: string;
   created_by: string | null;
   is_archived: boolean;
+  /** Whether this project was created via historical import */
+  isImported?: boolean;
 }
 
 export interface CreateProjectInput {

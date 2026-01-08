@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StageBadge } from "./StageBadge";
+import { SourceBadge } from "./SourceBadge";
 import { LoopIndicator } from "./LoopIndicator";
 import { ScoreBadge } from "@/components/feed/score-badge";
 import { ConversationSummary, formatDuration } from "./types";
@@ -48,6 +49,7 @@ export function ConversationHeader({
     gitBranch,
     cwd,
     claudeCodeVersion,
+    isImported,
   } = conversation;
 
   // Calculate duration
@@ -149,6 +151,7 @@ export function ConversationHeader({
 
           {/* Badges Row */}
           <div className="flex items-center gap-2 mt-4">
+            <SourceBadge source={isImported ? "imported" : "live"} />
             {primaryStage && <StageBadge stage={primaryStage} />}
             {hasDebuggingLoop && <LoopIndicator variant="badge" />}
             {conversationScore !== null && (
