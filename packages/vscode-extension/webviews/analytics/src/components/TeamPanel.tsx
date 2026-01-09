@@ -142,9 +142,9 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
   if (isLoading) {
     return (
       <div className="team-panel">
-        <div className="team-header">
-          <div className="team-selector">
-            <label className="team-selector-label">Team</label>
+        <div className="team-selector">
+          <label className="team-selector-label">Team</label>
+          <div className="team-selector-row">
             <select
               value={selectedTeamId || ""}
               onChange={handleTeamSelect}
@@ -156,13 +156,13 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
                 </option>
               ))}
             </select>
+            <button className="icon-button" onClick={onRefresh} title="Refresh">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </button>
           </div>
-          <button className="icon-button" onClick={onRefresh} title="Refresh">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-          </button>
         </div>
         <div className="loading-container">
           <div className="loading-spinner" />
@@ -175,9 +175,9 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
   if (!data || data.members.length === 0) {
     return (
       <div className="team-panel">
-        <div className="team-header">
-          <div className="team-selector">
-            <label className="team-selector-label">Team</label>
+        <div className="team-selector">
+          <label className="team-selector-label">Team</label>
+          <div className="team-selector-row">
             <select
               value={selectedTeamId || ""}
               onChange={handleTeamSelect}
@@ -189,13 +189,13 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
                 </option>
               ))}
             </select>
+            <button className="icon-button" onClick={onRefresh} title="Refresh">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </button>
           </div>
-          <button className="icon-button" onClick={onRefresh} title="Refresh">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-          </button>
         </div>
         <div className="team-empty">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -216,9 +216,9 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
 
   return (
     <div className="team-panel">
-      <div className="team-header">
-        <div className="team-selector">
-          <label className="team-selector-label">Team</label>
+      <div className="team-selector">
+        <label className="team-selector-label">Team</label>
+        <div className="team-selector-row">
           <select
             value={selectedTeamId || ""}
             onChange={handleTeamSelect}
@@ -230,13 +230,13 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
               </option>
             ))}
           </select>
+          <button className="icon-button" onClick={onRefresh} title="Refresh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          </button>
         </div>
-        <button className="icon-button" onClick={onRefresh} title="Refresh">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="23 4 23 10 17 10" />
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-          </svg>
-        </button>
       </div>
 
       {/* Time range filter */}
@@ -251,13 +251,13 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({
           className={`filter-btn ${activeRange === "week" ? "active" : ""}`}
           onClick={() => handleRangeChange("week")}
         >
-          This Week
+          Week
         </button>
         <button
           className={`filter-btn ${activeRange === "month" ? "active" : ""}`}
           onClick={() => handleRangeChange("month")}
         >
-          This Month
+          Month
         </button>
       </div>
 

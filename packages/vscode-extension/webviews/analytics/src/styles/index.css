@@ -3549,38 +3549,32 @@ body {
    ============================================ */
 
 .team-panel {
-  padding: 16px;
+  padding: 0;
+  padding-top: 16px;
   height: 100%;
   overflow-y: auto;
 }
 
-.team-header {
+.team-selector {
   display: flex;
-  align-items: flex-end; /* Align to bottom so refresh button matches dropdown */
-  justify-content: space-between;
-  margin-bottom: 16px;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
-/* Refresh button in team header - match dropdown height */
-.team-header .icon-button {
+.team-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Refresh button in team selector - match dropdown height */
+.team-selector-row .icon-button {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-}
-
-.team-header h3 {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--ctx-foreground);
-}
-
-.team-selector {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .team-selector-label {
@@ -3592,7 +3586,8 @@ body {
 }
 
 .team-dropdown {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
@@ -3628,7 +3623,7 @@ body {
 .team-time-filter {
   display: flex;
   gap: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   background-color: var(--ctx-surface);
   border-radius: 6px;
   padding: 4px;
