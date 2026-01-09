@@ -234,29 +234,44 @@ export class AuthService {
    */
   async isAuthenticated(): Promise<boolean> {
     const accessToken = await this.secrets.get(KEYS.ACCESS_TOKEN);
+    this.log(`[AUTH DEBUG] Access token exists: ${!!accessToken}`);
+
     if (!accessToken) {
+      this.log("[AUTH DEBUG] No access token found - returning false");
       return false;
     }
 
     // Check if token is expired
     const expiryStr = await this.secrets.get(KEYS.TOKEN_EXPIRY);
+    this.log(`[AUTH DEBUG] Token expiry string: ${expiryStr}`);
+
     if (expiryStr) {
       const expiry = parseInt(expiryStr, 10);
       const now = Date.now();
+      const timeUntilExpiry = expiry - now;
+      const bufferMs = TOKEN_REFRESH_BUFFER_SECONDS * 1000;
+
+      this.log(`[AUTH DEBUG] Token expires in: ${Math.round(timeUntilExpiry / 1000)}s, buffer: ${TOKEN_REFRESH_BUFFER_SECONDS}s`);
 
       // If token is expired, check if we can refresh
-      if (now >= expiry - TOKEN_REFRESH_BUFFER_SECONDS * 1000) {
+      if (now >= expiry - bufferMs) {
+        this.log("[AUTH DEBUG] Token expired or within buffer window");
         const refreshToken = await this.secrets.get(KEYS.REFRESH_TOKEN);
+        this.log(`[AUTH DEBUG] Refresh token exists: ${!!refreshToken}`);
+
         if (refreshToken) {
           // We have a refresh token, so we're still "authenticated"
           // The actual refresh will happen when getAccessToken is called
+          this.log("[AUTH DEBUG] Has refresh token - returning true");
           return true;
         }
         // No refresh token and access token is expired
+        this.log("[AUTH DEBUG] No refresh token and token expired - returning false");
         return false;
       }
     }
 
+    this.log("[AUTH DEBUG] Token valid - returning true");
     return true;
   }
 
@@ -290,6 +305,13 @@ export class AuthService {
     }
 
     return accessToken;
+  }
+
+  /**
+   * Gets the current refresh token, if available.
+   */
+  async getRefreshToken(): Promise<string | undefined> {
+    return this.secrets.get(KEYS.REFRESH_TOKEN);
   }
 
   /**

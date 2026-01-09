@@ -9,11 +9,13 @@ import { z } from "zod";
 
 /**
  * Schema for tool used in a response.
- * Captures both the tool name and its unique ID.
+ * Captures tool name, ID, and optionally input details.
  */
 export const toolUsedSchema = z.object({
   name: z.string().min(1, "Tool name is required"),
   id: z.string().min(1, "Tool ID is required"),
+  input_summary: z.string().optional(),
+  input_full: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
@@ -81,6 +83,7 @@ export const responseCaptureSchema = z.object({
     .int()
     .min(0, "Thinking word count must be non-negative")
     .optional(),
+  thinking_text: z.string().optional(),
   tools_used: z.array(toolUsedSchema).default([]),
   model: z.string().min(1, "model is required"),
   usage: usageSchema,

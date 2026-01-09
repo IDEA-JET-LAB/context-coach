@@ -55,6 +55,8 @@ export interface RecoverySessionData {
   messageCount: number;
   /** Last tool used */
   lastTool: string | null;
+  /** Whether session is currently active (modified within last 60 seconds) */
+  isActive: boolean;
 }
 
 /**
@@ -239,29 +241,41 @@ export class RecoveryPanelProvider implements vscode.WebviewViewProvider {
    * Formats a session for display in the webview.
    */
   private formatSessionForWebview(session: InterruptedSession): RecoverySessionData {
+    // Consider session "active" if modified within last 60 seconds
+    const ACTIVE_THRESHOLD_MS = 60 * 1000;
+    const isActive = Date.now() - session.lastActivity.getTime() < ACTIVE_THRESHOLD_MS;
+
     return {
       sessionId: session.sessionId,
-      projectName: this.extractProjectName(session.sessionPath),
+      projectName: this.extractProjectName(session.cwd, session.sessionPath),
       timeAgo: this.formatTimeAgo(session.lastActivity),
       lastPromptPreview: this.truncatePrompt(session.lastPrompt, 50),
       sessionPath: session.sessionPath,
       messageCount: session.messageCount,
       lastTool: session.lastToolUsed,
+      isActive,
     };
   }
 
   /**
-   * Extracts project name from session path.
+   * Extracts project name from cwd or session path.
+   * Prefers cwd (actual working directory) over sessionPath (normalized path).
    */
-  private extractProjectName(sessionPath: string): string {
+  private extractProjectName(cwd: string | undefined, sessionPath: string): string {
+    // Prefer cwd - it's the actual path like "/Users/edgars/My-projects/context-coach"
+    if (cwd) {
+      const parts = cwd.split("/").filter(Boolean);
+      return parts[parts.length - 1] || "Unknown";
+    }
+
+    // Fallback: parse normalized sessionPath
     const parts = sessionPath.split("/");
     const projectDir = parts[parts.length - 2];
 
     if (projectDir && projectDir.startsWith("-")) {
       // Convert normalized path back to readable name
-      // e.g., "-Users-username-project-name" -> "project-name"
+      // e.g., "-Users-username-project-name" -> last folder segment
       const pathParts = projectDir.slice(1).split("-");
-      // Get the last meaningful part
       return pathParts[pathParts.length - 1] || projectDir;
     }
 
@@ -448,6 +462,24 @@ export class RecoveryPanelProvider implements vscode.WebviewViewProvider {
       margin-bottom: 8px;
     }
 
+    .status-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .status-active {
+      background-color: var(--vscode-charts-green, #89d185);
+      color: var(--vscode-editor-background);
+    }
+
+    .status-interrupted {
+      background-color: var(--vscode-charts-yellow, #cca700);
+      color: var(--vscode-editor-background);
+    }
+
     .session-actions {
       display: flex;
       gap: 8px;
@@ -558,7 +590,7 @@ export class RecoveryPanelProvider implements vscode.WebviewViewProvider {
           root.innerHTML = \`
             <div class="empty-state">
               <div class="empty-state-icon">&#x2714;</div>
-              <div class="empty-state-text">No interrupted sessions</div>
+              <div class="empty-state-text">No recent sessions</div>
             </div>
           \`;
           return;
@@ -568,15 +600,18 @@ export class RecoveryPanelProvider implements vscode.WebviewViewProvider {
           <div class="session-card" data-session-id="\${session.sessionId}">
             <div class="session-header">
               <span class="project-name">\${escapeHtml(session.projectName)}</span>
-              <span class="time-ago">\${escapeHtml(session.timeAgo)}</span>
+              <span class="status-badge \${session.isActive ? 'status-active' : 'status-interrupted'}">
+                \${session.isActive ? 'Active' : 'Interrupted'}
+              </span>
             </div>
-            <div class="last-prompt">\${escapeHtml(session.lastPromptPreview)}</div>
             <div class="session-meta">
+              <span>\${escapeHtml(session.timeAgo)}</span>
               <span>\${session.messageCount} messages</span>
               \${session.lastTool ? \`<span>Last: \${escapeHtml(session.lastTool)}</span>\` : ''}
             </div>
+            <div class="last-prompt">\${escapeHtml(session.lastPromptPreview)}</div>
             <div class="session-actions">
-              <button class="btn-primary recover-btn">Recover</button>
+              <button class="btn-primary recover-btn">\${session.isActive ? 'View' : 'Recover'}</button>
               <button class="btn-secondary dismiss-btn">Dismiss</button>
             </div>
           </div>
@@ -584,7 +619,7 @@ export class RecoveryPanelProvider implements vscode.WebviewViewProvider {
 
         root.innerHTML = \`
           <div class="header">
-            <h2>Interrupted Sessions (\${sessions.length})</h2>
+            <h2>Recent Sessions (\${sessions.length})</h2>
             <button class="dismiss-all" id="dismiss-all">Dismiss All</button>
           </div>
           <div class="sessions-list">

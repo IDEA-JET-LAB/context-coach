@@ -79,9 +79,17 @@ export function ConversationCard({
           >
             {slug || "Unnamed Session"}
           </h3>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {formatRelativeTime(startedAt)}
-          </span>
+          <div className="flex flex-col items-end gap-0.5 text-xs text-muted-foreground whitespace-nowrap">
+            <span title={`Last message: ${new Date(endedAt || startedAt).toLocaleString()}`}>
+              {formatRelativeTime(endedAt || startedAt)}
+            </span>
+            <span
+              className="text-[10px] opacity-70"
+              title={`Started: ${new Date(startedAt).toLocaleString()}`}
+            >
+              started {formatRelativeTime(startedAt)}
+            </span>
+          </div>
         </div>
 
         {/* Project and Branch */}

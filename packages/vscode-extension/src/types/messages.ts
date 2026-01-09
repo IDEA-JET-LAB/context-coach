@@ -122,6 +122,10 @@ export type ExtensionToWebviewMessage =
   | { type: "bmad-version-info"; versionInfo: BmadVersionInfo }
   | { type: "bmad-version-loading"; isLoading: boolean }
 
+  // CLI version messages
+  | { type: "cli-version-info"; versionInfo: CliVersionInfo }
+  | { type: "cli-version-loading"; isLoading: boolean }
+
   // Team stats messages
   | { type: "teams"; teams: TeamInfo[] }
   | { type: "teams-loading"; isLoading: boolean }
@@ -368,6 +372,10 @@ export type WebviewToExtensionMessage =
   | { type: "fetch-bmad-version" }
   | { type: "upgrade-bmad" }
 
+  // CLI version actions
+  | { type: "fetch-cli-version" }
+  | { type: "upgrade-cli" }
+
   // Team stats actions
   | { type: "fetch-teams" }
   | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange };
@@ -391,6 +399,18 @@ export interface BmadVersionInfo {
   latestVersion: string | null;
   updateAvailable: boolean;
   lastChecked: string | null;
+}
+
+/**
+ * CLI version information for update notifications
+ */
+export interface CliVersionInfo {
+  installedVersion: string | null;
+  latestVersion: string | null;
+  updateAvailable: boolean;
+  lastChecked: string | null;
+  /** Whether CLI is installed globally */
+  isInstalled: boolean;
 }
 
 /**

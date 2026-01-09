@@ -74,6 +74,46 @@ context-coach/
 
 The nested `app/app/` is standard Next.js 13+ structure (outer `app` is project root, inner `app` is App Router).
 
+## CRITICAL: Hook Script Sync Requirements
+
+**The CLI and VS Code extension BOTH generate capture hook scripts. They MUST stay in sync.**
+
+### Files That Must Be Synchronized
+
+| CLI Source | Extension Source | Purpose |
+|------------|------------------|---------|
+| `packages/cli/src/lib/hooks.ts` → `getCaptureScriptContent()` | `packages/vscode-extension/src/providers/analyticsPanel.ts` → `getCaptureScriptContent()` | Prompt capture (UserPromptSubmit hook) |
+| `packages/cli/src/lib/hooks.ts` → `getResponseScriptContent()` | `packages/vscode-extension/src/providers/analyticsPanel.ts` → `getResponseScriptContent()` | Response capture (Stop hook) |
+| `packages/cli/src/lib/hooks.ts` → `configureContextorHook()` | `packages/vscode-extension/src/providers/analyticsPanel.ts` → `installCaptureHook()` | settings.json hook configuration |
+
+### When Modifying Hooks
+
+**Any change to hook scripts MUST be applied to BOTH locations:**
+
+1. Update the CLI version in `packages/cli/src/lib/hooks.ts`
+2. Update the extension version in `packages/vscode-extension/src/providers/analyticsPanel.ts`
+3. Bump versions in both `package.json` files
+4. Test both installation methods:
+   - CLI: `npx @contextor/cli init <token>`
+   - Extension: "Register Project" button in VS Code
+
+### What Happens If Out of Sync
+
+- **CLI newer than extension:** Users registering via extension get outdated hooks, missing features like response capture
+- **Extension newer than CLI:** Users installing via CLI get outdated hooks
+- **Both cases:** Silent failures, missing data, debugging nightmares
+
+### Hooks Overview
+
+| Hook Type | Script File | Trigger | Captures |
+|-----------|-------------|---------|----------|
+| `UserPromptSubmit` | `contextor-capture.sh` | User submits prompt | prompt, session_id, cwd |
+| `Stop` | `contextor-response.sh` | Claude Code finishes responding | response text, thinking, tools, model, usage |
+
+### Future Improvement (TODO)
+
+Consider extracting hook generation to a shared npm package (`@contextor/hooks`) that both CLI and extension import. This would eliminate duplication and guarantee sync.
+
 ## CRITICAL: Supabase API Key is Case-Sensitive
 
 **This bug has broken production authentication MULTIPLE times. NEVER type the API key manually.**
@@ -605,6 +645,56 @@ npm publish --access public
 ```
 
 Requires `NPM_TOKEN` in `~/.npmrc` or environment. Token stored in project `.env`.
+
+## Response Capture Learnings (January 2026)
+
+### Claude Code JSONL Transcript Structure
+
+**Critical insight:** Claude Code sends thinking, text, and tool_use as SEPARATE JSONL entries with different UUIDs within a single turn.
+
+```
+User message (line N)
+Assistant message (line N+1): {"type": "assistant", content: [{"type": "thinking", ...}]}
+Assistant message (line N+2): {"type": "assistant", content: [{"type": "text", ...}]}
+Assistant message (line N+3): {"type": "assistant", content: [{"type": "tool_use", ...}]}
+```
+
+Each assistant message has a different `uuid` field.
+
+### Stop Hook Must Aggregate All Messages in Turn
+
+The response capture hook must:
+1. Find the last user message (marks start of current turn)
+2. Get ALL assistant messages after that
+3. Aggregate text, thinking, and tools from ALL those messages
+
+```bash
+# Find last user message line number
+LAST_USER_LINE=$(grep -n '"type":"user"' "$TRANSCRIPT_PATH" | tail -1 | cut -d: -f1)
+
+# Get all assistant messages in current turn
+CURRENT_TURN_MESSAGES=$(tail -n +"$LAST_USER_LINE" "$TRANSCRIPT_PATH" | grep '"type":"assistant"')
+
+# Loop through and aggregate text, thinking, tools...
+```
+
+### Hook Debug Logging
+
+Set `DEBUG_CONTEXTOR=1` environment variable to enable debug logging to `.contextor/.debug.log`:
+
+```bash
+DEBUG_CONTEXTOR=1 echo '{"transcript_path": "/path/to/transcript.jsonl"}' | \
+  bash .claude/hooks/contextor-response.sh
+```
+
+### Files Involved in Response Capture
+
+| File | Purpose |
+|------|---------|
+| `.claude/hooks/contextor-response.sh` | Deployed hook script (project-specific) |
+| `packages/cli/src/lib/hooks.ts` | Template for new installations |
+| `app/api/responses/capture/route.ts` | API endpoint receiving captured data |
+| `supabase/migrations/20260109*` | Database functions for storage |
 
 ## Security Improvements (December 2025)
 

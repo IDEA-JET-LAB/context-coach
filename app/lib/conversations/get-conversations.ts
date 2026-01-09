@@ -105,7 +105,6 @@ export async function getConversations(
       user_id,
       users(name),
       started_at,
-      ended_at,
       total_prompts,
       user_message_count,
       primary_stage,
@@ -169,6 +168,41 @@ export async function getConversations(
     throw new Error(`Failed to fetch conversations: ${error.message}`);
   }
 
+  // Get last activity timestamps for all sessions using the RPC function
+  const sessionIds = (data || []).map((row) => row.id);
+  const lastActivityMap = new Map<string, string>();
+
+  if (sessionIds.length > 0) {
+    // Query last prompt timestamp for each session
+    const { data: promptActivity } = await supabase
+      .from('prompts')
+      .select('session_uuid, created_at')
+      .in('session_uuid', sessionIds)
+      .order('created_at', { ascending: false });
+
+    // Query last response timestamp for each session
+    const { data: responseActivity } = await supabase
+      .from('prompt_responses')
+      .select('session_uuid, created_at')
+      .in('session_uuid', sessionIds)
+      .order('created_at', { ascending: false });
+
+    // Build map of session -> last activity timestamp
+    for (const row of promptActivity || []) {
+      if (row.session_uuid && !lastActivityMap.has(row.session_uuid)) {
+        lastActivityMap.set(row.session_uuid, row.created_at);
+      }
+    }
+    for (const row of responseActivity || []) {
+      if (row.session_uuid) {
+        const existing = lastActivityMap.get(row.session_uuid);
+        if (!existing || new Date(row.created_at) > new Date(existing)) {
+          lastActivityMap.set(row.session_uuid, row.created_at);
+        }
+      }
+    }
+  }
+
   // Transform database rows to API response format
   const conversations: ConversationSummary[] = (data || []).map((row) => ({
     id: row.id,
@@ -179,7 +213,7 @@ export async function getConversations(
     userId: row.user_id,
     userName: extractUserName(row.users),
     startedAt: row.started_at,
-    endedAt: row.ended_at,
+    endedAt: lastActivityMap.get(row.id) || row.started_at,
     userMessageCount: row.user_message_count ?? 0,
     totalMessages: row.total_prompts ?? 0,
     primaryStage: row.primary_stage as ProjectStage | null,

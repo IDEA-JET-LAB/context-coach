@@ -72,6 +72,24 @@ export function ConversationHeader({
     minute: "2-digit",
   });
 
+  const formattedEndTime = endedAt
+    ? new Date(endedAt).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
+
+  const endedOnDifferentDay = endedAt
+    ? new Date(endedAt).toDateString() !== new Date(startedAt).toDateString()
+    : false;
+
+  const formattedEndDate = endedAt && endedOnDifferentDay
+    ? new Date(endedAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    : null;
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Breadcrumb */}
@@ -124,6 +142,11 @@ export function ConversationHeader({
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
               {formattedDate} at {formattedTime}
+              {formattedEndTime && (
+                <span className="text-muted-foreground/70">
+                  → {formattedEndDate && `${formattedEndDate} `}{formattedEndTime}
+                </span>
+              )}
             </span>
             {duration !== null && (
               <span className="flex items-center gap-1.5">

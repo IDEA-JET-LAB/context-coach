@@ -129,17 +129,65 @@ export function ConversationThreadClient({
     [messages]
   );
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+  const [hasInitiallyScrolled, setHasInitiallyScrolled] = useState(false);
+  const previousMessageCountRef = useRef(0);
 
-  // Scroll to first message on initial load
+  // Scroll to LAST message on initial load
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0 || hasInitiallyScrolled) return;
 
-    const firstMessage = userMessages[0];
-    if (firstMessage) {
-      const firstRef = messageRefs.current.get(firstMessage.id);
-      firstRef?.scrollIntoView({ behavior: "auto", block: "start" });
+    // Scroll to last message (most recent)
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage) {
+      // Use requestAnimationFrame to ensure DOM is rendered before scrolling
+      requestAnimationFrame(() => {
+        if (threadRef.current) {
+          threadRef.current.scrollTop = threadRef.current.scrollHeight;
+        }
+      });
+      // Set navigation to last user message
+      const lastUserIdx = userMessages.length - 1;
+      if (lastUserIdx >= 0) {
+        setCurrentPromptIndex(lastUserIdx);
+      }
+      setHasInitiallyScrolled(true);
     }
-  }, [messages.length, userMessages]);
+  }, [messages.length, messages, userMessages, hasInitiallyScrolled]);
+
+  // Auto-scroll to bottom when new messages arrive (real-time updates)
+  useEffect(() => {
+    if (!hasInitiallyScrolled || messages.length === 0) return;
+
+    const previousCount = previousMessageCountRef.current;
+    const currentCount = messages.length;
+
+    // If we have new messages
+    if (currentCount > previousCount && previousCount > 0) {
+      // Check if user is near the bottom (within 200px)
+      if (threadRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = threadRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
+
+        // Only auto-scroll if user is near bottom (not reading old messages)
+        if (isNearBottom) {
+          requestAnimationFrame(() => {
+            threadRef.current?.scrollTo({
+              top: threadRef.current.scrollHeight,
+              behavior: "smooth",
+            });
+          });
+        }
+      }
+
+      // Update navigation index to latest user message
+      const lastUserIdx = userMessages.length - 1;
+      if (lastUserIdx >= 0) {
+        setCurrentPromptIndex(lastUserIdx);
+      }
+    }
+
+    previousMessageCountRef.current = currentCount;
+  }, [messages.length, messages, userMessages, hasInitiallyScrolled]);
 
   const navigateToPrompt = useCallback(
     (index: number) => {
@@ -394,8 +442,8 @@ export function ConversationThreadClient({
       {/* Two-column scrollable area */}
       <div className="flex-1 flex gap-6 min-h-0">
         {/* Left/Center Column - Message Thread */}
-        <div className="flex-1 min-w-0 overflow-y-auto pr-2">
-          <div ref={threadRef} className="space-y-4 pb-4">
+        <div ref={threadRef} className="flex-1 min-w-0 overflow-y-auto pr-2">
+          <div className="space-y-4 pb-4">
             {groupedMessages.map((item, idx) => {
               if (item.type === "divider") {
                 return (

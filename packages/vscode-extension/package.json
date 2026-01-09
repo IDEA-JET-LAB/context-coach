@@ -2,7 +2,7 @@
   "name": "contextor-vscode",
   "displayName": "Contextor - Prompt Analytics",
   "description": "Track, analyze, and improve your AI prompting skills. Real-time analytics dashboard with 5-dimension scoring, personalized coaching tips, and team insights - all directly in VS Code.",
-  "version": "0.1.13",
+  "version": "0.1.17",
   "publisher": "ideajetlab",
   "license": "MIT",
   "repository": {

@@ -801,8 +801,9 @@ const App: React.FC = () => {
   }, []);
 
   // Auto-fetch team stats when selectedTeamId changes or teams are loaded
+  // Only fetch if authenticated to prevent infinite loop when not signed in
   useEffect(() => {
-    if (state.selectedTeamId && state.teams.length > 0 && !state.teamStats && !state.teamStatsLoading) {
+    if (state.isAuthenticated && state.selectedTeamId && state.teams.length > 0 && !state.teamStats && !state.teamStatsLoading) {
       vscodeRef.current?.postMessage({
         type: "fetch-team-stats",
         teamId: state.selectedTeamId,
@@ -810,7 +811,7 @@ const App: React.FC = () => {
       } satisfies WebviewMessage);
       setState((prev) => ({ ...prev, teamStatsLoading: true }));
     }
-  }, [state.selectedTeamId, state.teams.length, state.teamStats, state.teamStatsLoading]);
+  }, [state.isAuthenticated, state.selectedTeamId, state.teams.length, state.teamStats, state.teamStatsLoading]);
 
   // Tab change handler - tracks last tab per section for memory
   const handleTabChange = useCallback((tab: TabId) => {

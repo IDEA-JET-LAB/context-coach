@@ -104,6 +104,7 @@ export class RealtimeService {
     if (isAuth) {
       const user = await this.authService.getUser();
       const accessToken = await this.authService.getAccessToken();
+      const refreshToken = await this.authService.getRefreshToken();
       this.log(`User: ${user?.id || 'null'}, email: ${user?.email || 'null'}`);
       this.log(`Access token: ${accessToken ? accessToken.substring(0, 20) + '...' : 'NOT SET'}`);
 
@@ -112,12 +113,12 @@ export class RealtimeService {
         this.log(`User ID changed, setting up Realtime for: ${user.id}`);
 
         // Set the user's access token on the Supabase client for RLS
-        if (this.supabase && accessToken) {
+        if (this.supabase && accessToken && refreshToken) {
           this.log("Setting Supabase auth session...");
           try {
             const { data, error } = await this.supabase.auth.setSession({
               access_token: accessToken,
-              refresh_token: '', // We manage refresh separately
+              refresh_token: refreshToken,
             });
             if (error) {
               this.logError("Failed to set Supabase session", error);
@@ -128,7 +129,7 @@ export class RealtimeService {
             this.logError("Exception setting Supabase session", err);
           }
         } else {
-          this.log(`Cannot set session: supabase=${!!this.supabase}, accessToken=${!!accessToken}`);
+          this.log(`Cannot set session: supabase=${!!this.supabase}, accessToken=${!!accessToken}, refreshToken=${!!refreshToken}`);
         }
 
         await this.connect();

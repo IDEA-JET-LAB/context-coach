@@ -13,6 +13,16 @@ import type { ResponseCaptureRequest } from "@/lib/validations/response-capture"
 const logger = createScopedLogger("RESPONSE-STORE");
 
 /**
+ * Tool execution details for storage
+ */
+export interface ToolExecution {
+  name: string;
+  id: string;
+  input_summary?: string;
+  input_full?: Record<string, unknown>;
+}
+
+/**
  * Parameters for storing a response.
  */
 export interface StoreResponseParams {
@@ -26,8 +36,10 @@ export interface StoreResponseParams {
   thinkingSummary?: string;
   /** Original word count of thinking before compression */
   thinkingWordCount?: number;
-  /** Tools used in this response */
-  toolsUsed: Array<{ name: string; id: string }>;
+  /** Full thinking text (will be encrypted) */
+  thinkingText?: string;
+  /** Tools used in this response with optional input details */
+  toolsUsed: Array<ToolExecution>;
   /** Model that generated the response */
   model: string;
   /** Token usage metrics */
@@ -85,7 +97,7 @@ export async function storeResponse(
   const toolNames = params.toolsUsed.map((t) => t.name);
 
   // Use the RPC function that handles encryption server-side
-  // Updated signature includes session_uuid and message_uuid
+  // Updated signature includes session_uuid, message_uuid, and thinking_text
   const { data, error } = await supabase.rpc("insert_encrypted_response", {
     p_prompt_id: null, // Will be linked later when prompt arrives
     p_response_text: params.responseText || null,
@@ -94,9 +106,10 @@ export async function storeResponse(
     p_model: params.model,
     p_tokens_in: params.usage.input_tokens,
     p_tokens_out: params.usage.output_tokens,
-    p_has_thinking: !!params.thinkingSummary,
+    p_has_thinking: !!params.thinkingSummary || !!params.thinkingText,
     p_thinking_summary: params.thinkingSummary || null,
     p_thinking_word_count: params.thinkingWordCount || null,
+    p_thinking_text: params.thinkingText || null,
     p_stop_reason: params.stopReason,
     p_cache_stats: cacheStats,
     p_session_uuid: params.sessionUuid,
@@ -114,6 +127,33 @@ export async function storeResponse(
 
   const responseId = data as string;
 
+  // Insert tool executions if there are tools with input details
+  const toolsWithInput = params.toolsUsed.filter(t => t.input_summary || t.input_full);
+  if (toolsWithInput.length > 0 || params.toolsUsed.length > 0) {
+    const toolExecutions = params.toolsUsed.map((tool, idx) => ({
+      response_id: responseId,
+      tool_name: tool.name,
+      tool_id: tool.id,
+      input_summary: tool.input_summary || tool.name,
+      input_full: tool.input_full || null,
+      output_summary: null, // Not available from Stop hook
+      success: null, // Not available from Stop hook
+      execution_order: idx + 1,
+    }));
+
+    const { error: toolError } = await supabase
+      .from("tool_executions")
+      .insert(toolExecutions);
+
+    if (toolError) {
+      logger.warn("Failed to store tool executions", {
+        responseId,
+        error: toolError.message,
+      });
+      // Don't fail the whole operation if tool insertion fails
+    }
+  }
+
   logger.log("Response stored successfully", {
     responseId,
     sessionUuid: params.sessionUuid,
@@ -121,7 +161,7 @@ export async function storeResponse(
     toolCount: params.toolsUsed.length,
     tokensIn: params.usage.input_tokens,
     tokensOut: params.usage.output_tokens,
-    hasThinking: !!params.thinkingSummary,
+    hasThinking: !!params.thinkingSummary || !!params.thinkingText,
     stopReason: params.stopReason,
   });
 
@@ -145,7 +185,13 @@ export function requestToStoreParams(
     responseText: request.response_text,
     thinkingSummary: request.thinking_summary,
     thinkingWordCount: request.thinking_word_count,
-    toolsUsed: request.tools_used,
+    thinkingText: request.thinking_text,
+    toolsUsed: request.tools_used.map((t) => ({
+      name: t.name,
+      id: t.id,
+      input_summary: t.input_summary,
+      input_full: t.input_full as Record<string, unknown> | undefined,
+    })),
     model: request.model,
     usage: request.usage,
     stopReason: request.stop_reason,
