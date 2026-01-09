@@ -39,6 +39,7 @@ import {
   AnalyticsPanelState,
   DocumentItem,
   BmadVersionInfo,
+  CliVersionInfo,
   TeamTimeRange,
   TeamStatsData,
   TeamInfo,
@@ -182,6 +183,11 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   private _healthCheckTimer?: ReturnType<typeof setInterval>;
   private _retryCountdown = 0;
   private _countdownTimer?: ReturnType<typeof setInterval>;
+
+  /**
+   * CLI version polling timer.
+   */
+  private _cliVersionTimer?: ReturnType<typeof setInterval>;
 
   /**
    * Health check interval in milliseconds (15 seconds).
@@ -346,6 +352,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
     const disposeDisposable = webviewView.onDidDispose(() => {
       this.stopAutoRefresh();
       this.stopHealthCheck();
+      this.stopCliVersionPolling();
       this._disposables.forEach((d) => d.dispose());
       this._disposables = [];
       this._view = undefined;
@@ -572,6 +579,10 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
         // Coaching refresh is optional and silent - won't break UI if it fails
         await this.refreshCoaching();
+
+        // Start CLI version polling (checks on startup + every 30 minutes)
+        // This detects when new CLI versions are published on npm
+        this.startCliVersionPolling();
         break;
 
       case "refresh":
@@ -773,6 +784,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       case "upgrade-bmad":
         this.log("BMAD upgrade requested");
         this.handleUpgradeBmad();
+        break;
+
+      case "fetch-cli-version":
+        this.log("CLI version check requested");
+        await this.handleFetchCliVersion();
+        break;
+
+      case "upgrade-cli":
+        this.log("CLI upgrade requested");
+        this.handleUpgradeCli();
         break;
 
       case "fetch-teams":
@@ -3523,6 +3544,211 @@ exit 0
 
     this.log("BMAD upgrade started: npx bmad-method@alpha install");
   }
+
+  // ============================================
+  // CLI Version Methods
+  // ============================================
+
+  /**
+   * Fetches CLI version information.
+   * Checks installed version via shell command and latest from npm registry.
+   * Called on extension startup and periodically to detect updates.
+   */
+  private async handleFetchCliVersion(): Promise<void> {
+    this.postMessage({ type: "cli-version-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      // Check for installed CLI version
+      const installedVersion = await this.getInstalledCliVersion();
+      const isInstalled = installedVersion !== null;
+
+      // Check for latest version from npm
+      const latestVersion = await this.getLatestCliVersion();
+
+      // Compare versions
+      const updateAvailable = installedVersion !== null && latestVersion !== null
+        ? this.isNewerVersion(latestVersion, installedVersion)
+        : false;
+
+      const versionInfo = {
+        installedVersion,
+        latestVersion,
+        updateAvailable,
+        lastChecked: new Date().toISOString(),
+        isInstalled,
+      };
+
+      this.log(`CLI version info: installed=${installedVersion}, latest=${latestVersion}, update=${updateAvailable}`);
+      this.postMessage({ type: "cli-version-info", versionInfo } as ExtensionToWebviewMessage);
+
+      // Show notification if update available
+      if (updateAvailable && installedVersion && latestVersion) {
+        const action = await vscode.window.showInformationMessage(
+          `Contextor CLI update available: v${installedVersion} → v${latestVersion}`,
+          "Update Now",
+          "Later"
+        );
+        if (action === "Update Now") {
+          this.handleUpgradeCli();
+        }
+      }
+    } catch (error) {
+      this.logError("Failed to fetch CLI version", error);
+      this.postMessage({
+        type: "cli-version-info",
+        versionInfo: {
+          installedVersion: null,
+          latestVersion: null,
+          updateAvailable: false,
+          lastChecked: new Date().toISOString(),
+          isInstalled: false,
+        },
+      } as ExtensionToWebviewMessage);
+    }
+
+    this.postMessage({ type: "cli-version-loading", isLoading: false } as ExtensionToWebviewMessage);
+  }
+
+  /**
+   * Gets the installed CLI version by running `contextor --version`.
+   * Returns null if CLI is not installed or command fails.
+   */
+  private async getInstalledCliVersion(): Promise<string | null> {
+    try {
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+
+      // Try to get version from contextor CLI
+      const { stdout } = await execAsync("npx @contextor/cli --version 2>/dev/null || contextor --version 2>/dev/null", {
+        timeout: 10000,
+      });
+
+      // Parse version from output (e.g., "contextor/1.0.6 darwin-arm64 node-v20.11.1" or just "1.0.6")
+      const versionMatch = stdout.trim().match(/(\d+\.\d+\.\d+)/);
+      if (versionMatch) {
+        return versionMatch[1];
+      }
+
+      return null;
+    } catch {
+      // CLI not installed or command failed
+      this.log("CLI not found or version check failed");
+      return null;
+    }
+  }
+
+  /**
+   * Gets the latest CLI version from npm registry.
+   */
+  private async getLatestCliVersion(): Promise<string | null> {
+    try {
+      const https = await import("https");
+
+      return new Promise((resolve) => {
+        const req = https.get("https://registry.npmjs.org/@contextor/cli", {
+          headers: { "Accept": "application/json" },
+          timeout: 5000,
+        }, (res) => {
+          let data = "";
+
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+
+          res.on("end", () => {
+            try {
+              const pkg = JSON.parse(data);
+              const latestVersion = pkg["dist-tags"]?.latest;
+              if (latestVersion) {
+                resolve(latestVersion);
+              } else {
+                this.log("No latest dist-tag found for CLI in npm registry");
+                resolve(null);
+              }
+            } catch {
+              this.log("Failed to parse CLI npm registry response");
+              resolve(null);
+            }
+          });
+        });
+
+        req.on("error", (error) => {
+          this.logError("Failed to fetch latest CLI version from npm", error);
+          resolve(null);
+        });
+
+        req.on("timeout", () => {
+          req.destroy();
+          this.log("CLI npm registry request timed out");
+          resolve(null);
+        });
+      });
+    } catch (error) {
+      this.logError("Error fetching latest CLI version", error);
+      return null;
+    }
+  }
+
+  /**
+   * Opens a terminal with the CLI upgrade command.
+   */
+  private handleUpgradeCli(): void {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    const terminal = vscode.window.createTerminal({
+      name: "Contextor CLI Upgrade",
+      cwd: workspacePath || undefined,
+    });
+
+    terminal.show();
+
+    // Run CLI upgrade command
+    terminal.sendText("npm install -g @contextor/cli@latest");
+
+    vscode.window.showInformationMessage(
+      "Upgrading Contextor CLI to latest version..."
+    );
+
+    this.log("CLI upgrade started: npm install -g @contextor/cli@latest");
+  }
+
+  /**
+   * Starts periodic CLI version checking.
+   * Checks on startup and every 30 minutes thereafter.
+   */
+  private startCliVersionPolling(): void {
+    // Clear any existing timer
+    if (this._cliVersionTimer) {
+      clearInterval(this._cliVersionTimer);
+    }
+
+    // Check immediately on startup (with delay to not block init)
+    setTimeout(() => {
+      this.handleFetchCliVersion();
+    }, 5000);
+
+    // Check every 30 minutes
+    this._cliVersionTimer = setInterval(() => {
+      this.handleFetchCliVersion();
+    }, 30 * 60 * 1000);
+
+    this.log("CLI version polling started (30 minute interval)");
+  }
+
+  /**
+   * Stops CLI version polling.
+   */
+  private stopCliVersionPolling(): void {
+    if (this._cliVersionTimer) {
+      clearInterval(this._cliVersionTimer);
+      this._cliVersionTimer = undefined;
+    }
+  }
+
+  // ============================================
+  // Team Methods
+  // ============================================
 
   /**
    * Fetches the list of teams the user belongs to.
