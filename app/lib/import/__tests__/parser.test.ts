@@ -7,6 +7,7 @@ import {
   parseJsonlFile,
   extractUserContent,
   extractAssistantContent,
+  extractThinkingContent,
   extractTokens,
   pairMessages,
 } from '../parser';
@@ -133,6 +134,105 @@ describe('JSONL Parser - Story 17-3', () => {
         },
       };
       expect(extractTokens(msg)).toEqual({ input: 100, output: 0 });
+    });
+  });
+
+  describe('extractThinkingContent', () => {
+    it('should extract thinking content from a message with one thinking block', () => {
+      const msg = {
+        message: {
+          content: [
+            { type: 'thinking', thinking: 'Let me analyze this problem step by step.' },
+            { type: 'text', text: 'Here is my response.' },
+          ],
+        },
+      };
+      const result = extractThinkingContent(msg);
+      expect(result).toBeDefined();
+      expect(result!.text).toBe('Let me analyze this problem step by step.');
+      expect(result!.wordCount).toBe(8);
+      expect(result!.summary).toBe('Let me analyze this problem step by step.');
+    });
+
+    it('should concatenate multiple thinking blocks with newlines', () => {
+      const msg = {
+        message: {
+          content: [
+            { type: 'thinking', thinking: 'First thought.' },
+            { type: 'text', text: 'Some text.' },
+            { type: 'thinking', thinking: 'Second thought.' },
+          ],
+        },
+      };
+      const result = extractThinkingContent(msg);
+      expect(result).toBeDefined();
+      expect(result!.text).toBe('First thought.\nSecond thought.');
+      expect(result!.wordCount).toBe(4);
+    });
+
+    it('should return undefined when no thinking blocks present', () => {
+      const msg = {
+        message: {
+          content: [
+            { type: 'text', text: 'Just regular text.' },
+            { type: 'tool_use', name: 'Read', input: {} },
+          ],
+        },
+      };
+      expect(extractThinkingContent(msg)).toBeUndefined();
+    });
+
+    it('should return undefined for empty content array', () => {
+      const msg = {
+        message: {
+          content: [],
+        },
+      };
+      expect(extractThinkingContent(msg)).toBeUndefined();
+    });
+
+    it('should return undefined for missing message', () => {
+      expect(extractThinkingContent({})).toBeUndefined();
+    });
+
+    it('should skip empty thinking blocks', () => {
+      const msg = {
+        message: {
+          content: [
+            { type: 'thinking', thinking: '' },
+            { type: 'thinking', thinking: '   ' },
+            { type: 'thinking', thinking: 'Valid thought.' },
+          ],
+        },
+      };
+      const result = extractThinkingContent(msg);
+      expect(result).toBeDefined();
+      expect(result!.text).toBe('Valid thought.');
+    });
+
+    it('should truncate summary for long thinking content', () => {
+      const longThinking = 'A'.repeat(300);
+      const msg = {
+        message: {
+          content: [{ type: 'thinking', thinking: longThinking }],
+        },
+      };
+      const result = extractThinkingContent(msg);
+      expect(result).toBeDefined();
+      expect(result!.text.length).toBe(300);
+      expect(result!.summary.length).toBe(203); // 200 + '...'
+      expect(result!.summary.endsWith('...')).toBe(true);
+    });
+
+    it('should handle thinking with special characters', () => {
+      const msg = {
+        message: {
+          content: [{ type: 'thinking', thinking: 'Analysis: "foo" & <bar>' }],
+        },
+      };
+      const result = extractThinkingContent(msg);
+      expect(result).toBeDefined();
+      expect(result!.text).toBe('Analysis: "foo" & <bar>');
     });
   });
 
@@ -380,6 +480,69 @@ describe('JSONL Parser - Story 17-3', () => {
         await cleanupTempFile(filePath);
       }
     });
+
+    it('should extract thinking content from assistant messages', async () => {
+      const lines = [
+        {
+          type: 'user',
+          uuid: 'user-1',
+          timestamp: '2025-01-15T10:30:00Z',
+          message: {
+            content: [{ type: 'text', text: 'Explain recursion' }],
+          },
+        },
+        {
+          type: 'assistant',
+          uuid: 'asst-1',
+          timestamp: '2025-01-15T10:30:05Z',
+          message: {
+            model: 'claude-3-opus',
+            content: [
+              { type: 'thinking', thinking: 'Let me think about how to explain recursion clearly.' },
+              { type: 'text', text: 'Recursion is when a function calls itself.' },
+            ],
+            usage: { input_tokens: 50, output_tokens: 100 },
+          },
+        },
+      ];
+
+      const filePath = await createTempJsonlFile(lines);
+
+      try {
+        const messages = await parseJsonlFile(filePath);
+
+        expect(messages).toHaveLength(2);
+        expect(messages[1]!.thinking).toBeDefined();
+        expect(messages[1]!.thinking!.text).toBe('Let me think about how to explain recursion clearly.');
+        expect(messages[1]!.thinking!.wordCount).toBe(9);
+      } finally {
+        await cleanupTempFile(filePath);
+      }
+    });
+
+    it('should handle assistant messages without thinking', async () => {
+      const lines = [
+        {
+          type: 'assistant',
+          timestamp: '2025-01-15T10:30:05Z',
+          message: {
+            model: 'claude-3-haiku',
+            content: [{ type: 'text', text: 'Simple response without thinking.' }],
+          },
+        },
+      ];
+
+      const filePath = await createTempJsonlFile(lines);
+
+      try {
+        const messages = await parseJsonlFile(filePath);
+
+        expect(messages).toHaveLength(1);
+        expect(messages[0]!.thinking).toBeUndefined();
+      } finally {
+        await cleanupTempFile(filePath);
+      }
+    });
   });
 
   describe('extractPairsFromSession', () => {
@@ -482,6 +645,76 @@ describe('JSONL Parser - Story 17-3', () => {
 
         expect(pairs[0]!.prompt.timestamp).toBe('2025-01-15T10:30:45.123Z');
         expect(pairs[0]!.response!.timestamp).toBe('2025-01-15T10:30:50.456Z');
+      } finally {
+        await cleanupTempFile(filePath);
+      }
+    });
+
+    it('should include thinking content in paired responses', async () => {
+      const lines = [
+        {
+          type: 'user',
+          uuid: 'user-think',
+          timestamp: '2025-01-15T10:30:00Z',
+          message: {
+            content: [{ type: 'text', text: 'Explain how to sort an array' }],
+          },
+        },
+        {
+          type: 'assistant',
+          timestamp: '2025-01-15T10:30:30Z',
+          message: {
+            model: 'claude-3-opus',
+            content: [
+              { type: 'thinking', thinking: 'I should explain different sorting algorithms.' },
+              { type: 'thinking', thinking: 'Quicksort would be a good example.' },
+              { type: 'text', text: 'You can sort an array using quicksort.' },
+            ],
+            usage: { input_tokens: 50, output_tokens: 200 },
+          },
+        },
+      ];
+
+      const filePath = await createTempJsonlFile(lines);
+
+      try {
+        const pairs = await extractPairsFromSession(filePath);
+
+        expect(pairs).toHaveLength(1);
+        expect(pairs[0]!.response).toBeDefined();
+        expect(pairs[0]!.response!.thinking).toBeDefined();
+        expect(pairs[0]!.response!.thinking!.text).toBe(
+          'I should explain different sorting algorithms.\nQuicksort would be a good example.'
+        );
+        expect(pairs[0]!.response!.thinking!.wordCount).toBe(12);
+      } finally {
+        await cleanupTempFile(filePath);
+      }
+    });
+
+    it('should handle response without thinking in paired output', async () => {
+      const lines = [
+        {
+          type: 'user',
+          timestamp: '2025-01-15T10:30:00Z',
+          message: { content: 'Simple question' },
+        },
+        {
+          type: 'assistant',
+          timestamp: '2025-01-15T10:30:05Z',
+          message: {
+            content: [{ type: 'text', text: 'Simple answer' }],
+          },
+        },
+      ];
+
+      const filePath = await createTempJsonlFile(lines);
+
+      try {
+        const pairs = await extractPairsFromSession(filePath);
+
+        expect(pairs).toHaveLength(1);
+        expect(pairs[0]!.response!.thinking).toBeUndefined();
       } finally {
         await cleanupTempFile(filePath);
       }

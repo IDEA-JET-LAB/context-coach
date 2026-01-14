@@ -22,6 +22,7 @@ import { ClipboardService } from "./services/clipboardService";
 import { RecoveryState } from "./services/recoveryState";
 import { AnalyticsService } from "./services/analyticsService";
 import { RealtimeService } from "./services/realtimeService";
+import { UpdateService } from "./services/updateService";
 import type { InterruptedSession } from "./types/interruptedSession";
 
 /**
@@ -100,6 +101,11 @@ let analyticsService: AnalyticsService;
 let realtimeService: RealtimeService;
 
 /**
+ * Update service instance for checking extension updates
+ */
+let updateService: UpdateService;
+
+/**
  * Called when the extension is activated.
  * Activation happens on VS Code startup (onStartupFinished).
  */
@@ -168,6 +174,11 @@ export function activate(context: vscode.ExtensionContext): void {
   realtimeService = new RealtimeService(authService, outputChannel);
   void realtimeService.initialize();
   context.subscriptions.push(realtimeService);
+
+  // Initialize update service for automatic updates
+  const extensionVersion = context.extension.packageJSON.version || "0.0.0";
+  updateService = new UpdateService(outputChannel, authService, extensionVersion);
+  void updateService.startUpdateChecker();
 
   // Clean expired snapshots on startup (Story 18-2)
   cleanExpiredSnapshotsOnStartup();
@@ -280,13 +291,23 @@ export function activate(context: vscode.ExtensionContext): void {
       (sessionId?: string) => recoverSessionCommand(sessionId)
     ),
 
+    // Check for updates command
+    vscode.commands.registerCommand("contextor.checkForUpdates", () =>
+      updateService.checkForUpdatesManual()
+    ),
+
     // Open web dashboard command
     vscode.commands.registerCommand("contextor.openWebApp", () => {
-      const config = vscode.workspace.getConfiguration("contextor");
-      const apiEndpoint = config.get<string>("apiEndpoint", "http://127.0.0.1:3050/api");
+      // Check globalState first (set by environment toggle), then fall back to VS Code config
+      let apiEndpoint = context.globalState.get<string>("contextor.apiEndpoint");
+      if (!apiEndpoint) {
+        const config = vscode.workspace.getConfiguration("contextor");
+        apiEndpoint = config.get<string>("apiEndpoint", "https://contextor.co/api");
+      }
       // Extract base URL from API endpoint (remove /api suffix)
       const baseUrl = apiEndpoint.replace(/\/api\/?$/, "");
       const analyticsUrl = `${baseUrl}/analytics`;
+      outputChannel.appendLine(`Opening web dashboard: ${analyticsUrl}`);
       vscode.env.openExternal(vscode.Uri.parse(analyticsUrl));
     })
   );
@@ -396,6 +417,11 @@ async function checkAuthStatus(): Promise<void> {
  * Called when the extension is deactivated.
  */
 export function deactivate(): void {
+  // Stop update checker
+  if (updateService) {
+    updateService.stopUpdateChecker();
+  }
+
   if (outputChannel) {
     outputChannel.appendLine("Contextor extension deactivated");
     outputChannel.dispose();

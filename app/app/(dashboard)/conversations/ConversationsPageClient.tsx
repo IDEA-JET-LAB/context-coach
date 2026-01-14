@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,9 @@ import {
   ConversationCard,
   ConversationSummary,
   STAGE_CONFIG,
+  StageAnalysisButton,
 } from "@/components/conversations";
+import { useStageAnalysisStatus } from "@/lib/hooks/use-stage-analysis-status";
 import {
   Search,
   Filter,
@@ -34,6 +36,8 @@ import {
 } from "lucide-react";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useRealtimeConversations } from "@/lib/hooks/use-realtime-conversations";
+import { ExtensionDownloadButton } from "@/components/extension-download-button";
+import { useSelectedProject } from "@/lib/hooks/use-selected-project";
 
 interface ConversationsPageClientProps {
   teamId: string;
@@ -66,11 +70,12 @@ export function ConversationsPageClient({
 }: ConversationsPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Filter state
-  const [projectFilter, setProjectFilter] = useState<string>(
-    initialFilters.projectId || "all"
-  );
+  // Global project selection from header
+  const { projectId: globalProjectId } = useSelectedProject();
+
+  // Local filter state (stage, loop, sort)
   const [stageFilter, setStageFilter] = useState<string>(
     initialFilters.stage || "all"
   );
@@ -86,9 +91,9 @@ export function ConversationsPageClient({
   );
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch conversations with current filters
+  // Fetch conversations with current filters (using global project from header)
   const { data, isPending, error, refetch } = useConversations({
-    projectId: projectFilter !== "all" ? projectFilter : undefined,
+    projectId: globalProjectId || undefined,
     stage: stageFilter !== "all" ? stageFilter : undefined,
     hasLoop:
       loopFilter === "with-loops"
@@ -103,19 +108,43 @@ export function ConversationsPageClient({
   // Real-time updates
   useRealtimeConversations(teamId);
 
-  // Update URL when filters change
+  // Stage analysis status (for current project)
+  const {
+    data: stageStatus,
+    refetch: refetchStageStatus,
+  } = useStageAnalysisStatus(globalProjectId);
+
+  // Callback when stage analysis completes
+  const handleAnalysisComplete = () => {
+    refetch();
+    refetchStageStatus();
+  };
+
+  // Update URL when local filters change (preserve project param from header)
   useEffect(() => {
     const params = new URLSearchParams();
-    if (projectFilter !== "all") params.set("project_id", projectFilter);
-    if (stageFilter !== "all") params.set("stage", stageFilter);
-    if (loopFilter !== "all")
+
+    // Preserve the project param from the global selection
+    if (globalProjectId) {
+      params.set("project", globalProjectId);
+    }
+
+    if (stageFilter !== "all") {
+      params.set("stage", stageFilter);
+    }
+    if (loopFilter !== "all") {
       params.set("has_loop", loopFilter === "with-loops" ? "true" : "false");
-    if (sortBy !== "date") params.set("sort_by", sortBy);
+    }
+    if (sortBy !== "date") {
+      params.set("sort_by", sortBy);
+    }
 
     const queryString = params.toString();
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
     router.replace(newUrl, { scroll: false });
-  }, [projectFilter, stageFilter, loopFilter, sortBy, pathname, router]);
+    // Note: searchParams is intentionally excluded from deps to prevent infinite loops
+    // The effect should only run when local filter state changes
+  }, [stageFilter, loopFilter, sortBy, pathname, router, globalProjectId]);
 
   // Extract conversations from response
   const conversations = useMemo(() => {
@@ -181,14 +210,12 @@ export function ConversationsPageClient({
   };
 
   const clearFilters = () => {
-    setProjectFilter("all");
     setStageFilter("all");
     setLoopFilter("all");
     setSearchQuery("");
   };
 
   const hasActiveFilters =
-    projectFilter !== "all" ||
     stageFilter !== "all" ||
     loopFilter !== "all" ||
     searchQuery !== "";
@@ -228,16 +255,27 @@ export function ConversationsPageClient({
             Browse and analyze your Claude Code sessions
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isPending}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Stage Analysis Button - shown when project is selected in header */}
+          {globalProjectId && (
+            <StageAnalysisButton
+              projectId={globalProjectId}
+              lastAnalyzedAt={stageStatus?.lastAnalyzedAt ?? null}
+              onAnalysisComplete={handleAnalysisComplete}
+            />
+          )}
+          <ExtensionDownloadButton />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isPending}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -254,22 +292,6 @@ export function ConversationsPageClient({
                 className="pl-9"
               />
             </div>
-
-            {/* Project Filter */}
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Projects" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                <SelectItem value="unlinked">Unlinked</SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
             {/* Stage Filter */}
             <Select value={stageFilter} onValueChange={setStageFilter}>

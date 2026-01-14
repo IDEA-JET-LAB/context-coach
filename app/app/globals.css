@@ -83,6 +83,10 @@
 }
 
 @layer base {
+  /* Base font-size reduction: 85% = ~15% smaller across all text */
+  html {
+    font-size: 85%;
+  }
   * {
     @apply border-border;
   }

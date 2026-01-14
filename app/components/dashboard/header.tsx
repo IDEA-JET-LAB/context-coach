@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TeamSwitcher } from '@/components/layout/team-switcher';
+import { ProjectSwitcher } from '@/components/layout/project-switcher';
 import { useUser } from '@/lib/hooks/use-user';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogOut } from 'lucide-react';
@@ -39,6 +40,8 @@ export function Header() {
     >
       <div className="flex items-center gap-4">
         <TeamSwitcher />
+        <div className="h-6 w-px bg-border" aria-hidden="true" />
+        <ProjectSwitcher />
       </div>
 
       <div className="flex items-center gap-4">

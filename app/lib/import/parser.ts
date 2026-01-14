@@ -12,7 +12,7 @@
 
 import * as readline from 'readline';
 import * as fs from 'fs';
-import type { ParsedMessage, PromptResponsePair, ExtractedToolUse } from './types';
+import type { ParsedMessage, PromptResponsePair, ExtractedToolUse, ExtractedThinking } from './types';
 
 /**
  * Extract text content from a user message.
@@ -75,6 +75,53 @@ export function extractAssistantContent(msg: Record<string, unknown>): string {
   }
 
   return '';
+}
+
+/**
+ * Extract thinking content from an assistant message.
+ *
+ * Thinking blocks are in the message.content array with:
+ * - type: 'thinking'
+ * - thinking: string (the thinking text)
+ *
+ * Multiple thinking blocks are concatenated with newlines.
+ *
+ * @param msg - The parsed JSONL message object
+ * @returns ExtractedThinking object or undefined if no thinking content
+ */
+export function extractThinkingContent(msg: Record<string, unknown>): ExtractedThinking | undefined {
+  const message = msg.message as Record<string, unknown> | undefined;
+  if (!message) return undefined;
+
+  const content = message.content;
+  if (!Array.isArray(content)) return undefined;
+
+  const thinkingBlocks: string[] = [];
+
+  for (const block of content) {
+    if (
+      typeof block === 'object' &&
+      block !== null &&
+      (block as Record<string, unknown>).type === 'thinking'
+    ) {
+      const thinking = (block as Record<string, unknown>).thinking;
+      if (typeof thinking === 'string' && thinking.trim()) {
+        thinkingBlocks.push(thinking);
+      }
+    }
+  }
+
+  if (thinkingBlocks.length === 0) return undefined;
+
+  const fullText = thinkingBlocks.join('\n');
+  const wordCount = fullText.split(/\s+/).filter(Boolean).length;
+  const summary = fullText.substring(0, 200) + (fullText.length > 200 ? '...' : '');
+
+  return {
+    text: fullText,
+    summary,
+    wordCount,
+  };
 }
 
 /**
@@ -230,6 +277,7 @@ export async function parseJsonlFile(filePath: string): Promise<ParsedMessage[]>
             model: message?.model as string | undefined,
             tokens: extractTokens(msg),
             tools: extractToolUsage(msg),
+            thinking: extractThinkingContent(msg),
           });
         }
         // Ignore other message types (system, tool_result, etc.)
@@ -292,6 +340,7 @@ export function pairMessages(messages: ParsedMessage[]): PromptResponsePair[] {
               model: response.model,
               tokens: response.tokens,
               tools: response.tools,
+              thinking: response.thinking,
             }
           : undefined,
       });

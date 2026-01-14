@@ -140,7 +140,14 @@ export type ExtensionToWebviewMessage =
 
   // Signup result messages
   | { type: "signup-result"; success: boolean; message: string; requiresEmailConfirmation?: boolean }
-  | { type: "signup-loading"; isLoading: boolean };
+  | { type: "signup-loading"; isLoading: boolean }
+
+  // Feedback messages
+  | { type: "feedback-submitted"; success: boolean; message?: string }
+  | { type: "feedback-loading"; isLoading: boolean }
+
+  // Environment info
+  | { type: "environment-info"; apiEndpoint: string };
 
 /**
  * Conversation summary for webview display (Phase 3)
@@ -378,7 +385,21 @@ export type WebviewToExtensionMessage =
 
   // Team stats actions
   | { type: "fetch-teams" }
-  | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange };
+  | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange }
+
+  // Feedback actions
+  | { type: "submit-feedback"; category: string; message: string }
+
+  // Environment toggle
+  | { type: "set-environment"; isDevelopment: boolean }
+
+  // Global actions
+  | { type: "open-web" };
+
+/**
+ * Feedback category type
+ */
+export type FeedbackCategory = "suggestion" | "question" | "bug" | "feature-request" | "other";
 
 /**
  * Project document info for creation workflow

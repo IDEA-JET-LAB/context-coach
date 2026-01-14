@@ -259,8 +259,17 @@ export class ImportService {
    * Uploads JSONL files directly to the server for fast processing.
    * @param projects - Projects to import
    * @param selectedTeamId - Optional team ID to import to (uses first team if not specified)
+   * @param projectMappings - Optional mapping of local paths to existing project IDs (null = create new)
+   * @param projectCustomNames - Optional custom names for new projects (path -> name)
+   * @param projectTeamIds - Optional team IDs for new projects (path -> teamId)
    */
-  async startImport(projects: DiscoveredProject[], selectedTeamId?: string): Promise<ImportProgress> {
+  async startImport(
+    projects: DiscoveredProject[],
+    selectedTeamId?: string,
+    projectMappings?: Record<string, string | null>,
+    projectCustomNames?: Record<string, string>,
+    projectTeamIds?: Record<string, string>
+  ): Promise<ImportProgress> {
     this.isCancelled = false;
 
     const progress: ImportProgress = {
@@ -357,6 +366,7 @@ export class ImportService {
       const filesPayload: Array<{ projectPath: string; fileName: string; content: string }> = [];
 
       let fileIndex = 0;
+      let totalContentSize = 0;
       for (const file of allFiles) {
         if (this.isCancelled) {
           progress.state = "cancelled";
@@ -365,12 +375,40 @@ export class ImportService {
           return progress;
         }
 
-        const content = fs.readFileSync(file.filePath, "utf-8");
-        filesPayload.push({
-          projectPath: file.projectPath,
-          fileName: file.fileName,
-          content,
-        });
+        try {
+          let content = fs.readFileSync(file.filePath, "utf-8");
+
+          // Sanitize content: remove control characters that break JSON
+          // Keep only printable ASCII, newlines, tabs, and valid UTF-8
+          content = content
+            // Remove NULL bytes and other control chars except \n, \r, \t
+            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+            // Remove lone surrogates (invalid UTF-16)
+            .replace(/[\uD800-\uDFFF]/g, "");
+
+          // Validate content is not empty and is valid for JSON serialization
+          if (content && content.length > 0) {
+            // Test that the content can be serialized to JSON
+            try {
+              JSON.stringify(content);
+            } catch (jsonError) {
+              this.logError(`File ${file.fileName} contains invalid characters for JSON`, jsonError);
+              // Skip this file
+              continue;
+            }
+            filesPayload.push({
+              projectPath: file.projectPath,
+              fileName: file.fileName,
+              content,
+            });
+            totalContentSize += content.length;
+          } else {
+            this.log(`Skipping empty file: ${file.fileName}`);
+          }
+        } catch (readError) {
+          this.logError(`Failed to read file ${file.fileName}`, readError);
+          // Skip this file but continue with others
+        }
         fileIndex++;
 
         // Update progress
@@ -381,65 +419,214 @@ export class ImportService {
         }
       }
 
-      // Upload to cloud endpoint as JSON
-      progress.statusMessage = "Uploading to server...";
-      progress.progress = 50;
-      this.updateProgress(progress);
+      this.log(`Total content size: ${(totalContentSize / 1024 / 1024).toFixed(2)} MB from ${filesPayload.length} files`);
 
-      this.log(`Uploading ${allFiles.length} files to ${apiEndpoint}/import/upload`);
-
-      // Debug: log file sizes
-      for (const fp of filesPayload) {
-        this.log(`  Sending: ${fp.fileName} (${fp.content.length} bytes) from ${fp.projectPath}`);
+      // Check if we have any files to upload
+      if (filesPayload.length === 0) {
+        progress.state = "error";
+        progress.statusMessage = "No valid files found to import";
+        progress.errorMessage = "All files were either empty or could not be read";
+        this.updateProgress(progress);
+        return progress;
       }
 
-      const response = await fetch(`${apiEndpoint}/import/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Split files into chunks to avoid payload size limits (max 4MB per chunk)
+      const MAX_CHUNK_SIZE = 4 * 1024 * 1024; // 4MB (conservative)
+      const MAX_SINGLE_FILE_SIZE = 3 * 1024 * 1024; // 3MB max for a single file
+      const chunks: Array<typeof filesPayload> = [];
+      let currentChunk: typeof filesPayload = [];
+      let currentChunkSize = 0;
+      let skippedLargeFiles = 0;
+
+      for (const file of filesPayload) {
+        const fileJson = JSON.stringify(file);
+        const fileSize = fileJson.length;
+
+        // Skip files that are too large (they likely have issues)
+        if (fileSize > MAX_SINGLE_FILE_SIZE) {
+          this.log(`Skipping large file: ${file.fileName} (${(fileSize / 1024 / 1024).toFixed(2)} MB)`);
+          skippedLargeFiles++;
+          continue;
+        }
+
+        // If adding this file would exceed chunk size, start a new chunk
+        if (currentChunkSize + fileSize > MAX_CHUNK_SIZE && currentChunk.length > 0) {
+          chunks.push(currentChunk);
+          currentChunk = [];
+          currentChunkSize = 0;
+        }
+
+        currentChunk.push(file);
+        currentChunkSize += fileSize;
+      }
+
+      // Don't forget the last chunk
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk);
+      }
+
+      this.log(`Split ${filesPayload.length - skippedLargeFiles} files into ${chunks.length} chunks (skipped ${skippedLargeFiles} large files)`);
+
+      // Upload chunks
+      let totalImported = 0;
+      let totalSkipped = 0;
+      let totalUpdated = 0;
+
+      for (let i = 0; i < chunks.length; i++) {
+        if (this.isCancelled) {
+          progress.state = "cancelled";
+          progress.statusMessage = "Import cancelled";
+          this.updateProgress(progress);
+          return progress;
+        }
+
+        const chunk = chunks[i];
+        progress.statusMessage = `Uploading batch ${i + 1}/${chunks.length}...`;
+        progress.progress = 50 + Math.floor((i / chunks.length) * 45);
+        this.updateProgress(progress);
+
+        this.log(`Uploading chunk ${i + 1}/${chunks.length} with ${chunk.length} files`);
+
+        // Debug: log file sizes in this chunk
+        for (const fp of chunk) {
+          this.log(`  Chunk ${i + 1}: ${fp.fileName} (${fp.content.length} bytes)`);
+        }
+
+        const payload = {
           teamId,
-          files: filesPayload,
-        }),
-      });
+          files: chunk,
+          ...(projectMappings && { projectMappings }),
+          ...(projectCustomNames && { projectCustomNames }),
+          ...(projectTeamIds && { projectTeamIds }),
+        };
+        const payloadString = JSON.stringify(payload);
+        const payloadSizeMB = payloadString.length / 1024 / 1024;
+        this.log(`Chunk ${i + 1} payload size: ${payloadSizeMB.toFixed(2)} MB`);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-      }
+        // Safety check - if payload is still too large, skip this chunk
+        if (payloadSizeMB > 5) {
+          this.logError(`Chunk ${i + 1} is too large (${payloadSizeMB.toFixed(2)} MB), skipping`, null);
+          progress.failedCount = (progress.failedCount || 0) + chunk.length;
+          continue;
+        }
 
-      const result = (await response.json()) as {
-        success: boolean;
-        imported?: number;
-        skipped?: number;
-        updated?: number;
-        error?: string;
-        duration?: number;
-        filesProcessed?: number;
-      };
+        // Use AbortController for timeout
+        // Backend maxDuration is 300s (5 min), so frontend needs longer timeout
+        // Use 6 minutes (360s) to give backend time to complete + network latency
+        const CHUNK_TIMEOUT_MS = 6 * 60 * 1000; // 6 minutes
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CHUNK_TIMEOUT_MS);
 
-      // Debug: log full response
-      this.log(`Server response: ${JSON.stringify(result)}`);
+        // Update progress to show upload is in progress
+        progress.statusMessage = `Uploading batch ${i + 1}/${chunks.length} (${payloadSizeMB.toFixed(1)} MB)...`;
+        this.updateProgress(progress);
 
-      if (!result.success) {
-        throw new Error(result.error || "Import failed on server");
+        let response: Response;
+        try {
+          this.log(`Sending chunk ${i + 1} to ${apiEndpoint}/import/upload`);
+          response = await fetch(`${apiEndpoint}/import/upload`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: payloadString,
+            signal: controller.signal,
+          });
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+          const errorName = fetchError instanceof Error ? fetchError.name : "Unknown";
+          this.logError(`Fetch failed for chunk ${i + 1}`, fetchError);
+
+          // Provide more specific error messages based on error type
+          if (errorName === "AbortError") {
+            throw new Error(
+              `Upload timed out for batch ${i + 1}/${chunks.length} after 6 minutes. ` +
+              `This may indicate a slow network connection or the server is under heavy load. ` +
+              `Try importing fewer projects at once.`
+            );
+          } else if (errorMessage.includes("ECONNREFUSED") || errorMessage.includes("ENOTFOUND")) {
+            throw new Error(
+              `Cannot connect to server at ${apiEndpoint}. ` +
+              `Please check your internet connection and ensure the API endpoint is correct in settings.`
+            );
+          } else if (errorMessage.includes("ETIMEDOUT") || errorMessage.includes("ENETUNREACH")) {
+            throw new Error(
+              `Network timeout while connecting to ${apiEndpoint}. ` +
+              `Please check your internet connection and try again.`
+            );
+          } else {
+            throw new Error(
+              `Network error during upload (batch ${i + 1}/${chunks.length}): ${errorName} - ${errorMessage}. ` +
+              `Please check your internet connection and try again.`
+            );
+          }
+        }
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          // Provide more helpful error messages for common HTTP errors
+          if (response.status === 401) {
+            throw new Error(
+              `Authentication failed. Your session may have expired. ` +
+              `Please sign out and sign back in to refresh your credentials.`
+            );
+          } else if (response.status === 403) {
+            throw new Error(
+              `Access denied. You may not have permission to import to this team. ` +
+              `Please check your team membership.`
+            );
+          } else if (response.status === 413) {
+            throw new Error(
+              `Upload too large. The batch size exceeded server limits. ` +
+              `This is unexpected - please report this issue.`
+            );
+          } else if (response.status === 502 || response.status === 503 || response.status === 504) {
+            throw new Error(
+              `Server temporarily unavailable (${response.status}). ` +
+              `The import may still be processing. Please wait a few minutes and check if your prompts were imported.`
+            );
+          } else {
+            throw new Error(`Upload failed (batch ${i + 1}): HTTP ${response.status} - ${errorText}`);
+          }
+        }
+
+        // Show processing status while parsing response
+        progress.statusMessage = `Processing batch ${i + 1}/${chunks.length} response...`;
+        this.updateProgress(progress);
+
+        const result = (await response.json()) as {
+          success: boolean;
+          imported?: number;
+          skipped?: number;
+          updated?: number;
+          error?: string;
+          duration?: number;
+          filesProcessed?: number;
+        };
+
+        this.log(`Chunk ${i + 1} response: ${JSON.stringify(result)}`);
+
+        if (!result.success) {
+          throw new Error(result.error || `Server error processing batch ${i + 1}. Please try again.`);
+        }
+
+        totalImported += result.imported || 0;
+        totalSkipped += result.skipped || 0;
+        totalUpdated += result.updated || 0;
       }
 
       progress.state = "complete";
-      progress.importedCount = result.imported || 0;
-      progress.skippedCount = result.skipped || 0;
+      progress.importedCount = totalImported;
+      progress.skippedCount = totalSkipped;
       progress.progress = 100;
-      progress.statusMessage = `Done! ${result.imported} imported, ${result.skipped} skipped`;
-
-      if (result.duration) {
-        progress.statusMessage += ` (${(result.duration / 1000).toFixed(1)}s)`;
-      }
+      progress.statusMessage = `Done! ${totalImported} imported, ${totalSkipped} skipped`;
 
       this.updateProgress(progress);
       this.log(
-        `Cloud import complete: ${result.imported} imported, ${result.skipped} skipped, ${result.filesProcessed} files processed in ${result.duration}ms`
+        `Cloud import complete: ${totalImported} imported, ${totalSkipped} skipped across ${chunks.length} chunks`
       );
 
       return progress;
@@ -965,6 +1152,76 @@ export class ImportService {
       return teams;
     } catch (error) {
       this.logError("Failed to fetch user teams", error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch all projects for all teams the user is a member of.
+   * Returns teams with their projects for grouped display.
+   */
+  async fetchAllTeamProjects(
+    accessToken?: string,
+    apiEndpoint?: string
+  ): Promise<Array<{
+    id: string;
+    name: string;
+    projects: Array<{ id: string; name: string }>;
+  }> | null> {
+    try {
+      // Get auth info if not provided
+      if (!accessToken) {
+        const isAuth = await this.authService.isAuthenticated();
+        if (!isAuth) {
+          this.log("Not authenticated - cannot fetch projects");
+          return null;
+        }
+        accessToken = (await this.authService.getAccessToken()) || undefined;
+        if (!accessToken) {
+          this.log("Could not get access token");
+          return null;
+        }
+      }
+
+      if (!apiEndpoint) {
+        apiEndpoint = this.settingsService.apiEndpoint;
+      }
+
+      // Use extension-specific endpoint that accepts VS Code tokens
+      const response = await fetch(`${apiEndpoint}/extension/team-projects`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        this.log(`Failed to fetch projects: ${response.status}`);
+        return null;
+      }
+
+      const data = (await response.json()) as {
+        success?: boolean;
+        teams?: Array<{
+          id: string;
+          name: string;
+          projects: Array<{ id: string; name: string }>;
+        }>;
+      };
+
+      const teams = data.teams;
+
+      if (!teams) {
+        this.log("No teams found");
+        return [];
+      }
+
+      const totalProjects = teams.reduce((sum, t) => sum + t.projects.length, 0);
+      this.log(`Found ${teams.length} team(s) with ${totalProjects} project(s) total`);
+      return teams;
+    } catch (error) {
+      this.logError("Failed to fetch team projects", error);
       return null;
     }
   }

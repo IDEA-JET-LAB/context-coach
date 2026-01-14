@@ -34,7 +34,6 @@ interface ApiResponse<T> {
  * ContextorAPI handles all communication with the Contextor backend.
  */
 export class ContextorAPI {
-  private readonly apiEndpoint: string;
   private readonly authService: AuthService;
   private readonly outputChannel: vscode.OutputChannel;
 
@@ -44,13 +43,15 @@ export class ContextorAPI {
   ) {
     this.authService = authService;
     this.outputChannel = outputChannel;
+  }
 
-    // Get API endpoint from configuration
+  /**
+   * Gets the current API endpoint from configuration.
+   * Read dynamically to support environment switching.
+   */
+  private get apiEndpoint(): string {
     const config = vscode.workspace.getConfiguration("contextor");
-    this.apiEndpoint = config.get<string>(
-      "apiEndpoint",
-      "http://127.0.0.1:3050/api"
-    );
+    return config.get<string>("apiEndpoint", "https://contextor.co/api");
   }
 
   /**
@@ -59,7 +60,7 @@ export class ContextorAPI {
    * @param projectId - Optional project UUID to filter analytics to specific project
    * @returns Analytics data or error
    */
-  async getAnalytics(timeRange: TimeRange = '7d', projectId?: string | null): Promise<ApiResponse<AnalyticsData>> {
+  async getAnalytics(timeRange: TimeRange = 'all', projectId?: string | null): Promise<ApiResponse<AnalyticsData>> {
     try {
       // Add cache-buster to ensure fresh data
       const cacheBuster = Date.now();

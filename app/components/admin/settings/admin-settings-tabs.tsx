@@ -12,6 +12,7 @@ import {
   Filter,
   Activity,
   History,
+  MessageSquare,
 } from 'lucide-react';
 
 // Tab content components (will be created next)
@@ -23,6 +24,7 @@ import { ExperimentsTab } from './tabs/experiments-tab';
 import { FilteringTab } from './tabs/filtering-tab';
 import { SystemTab } from './tabs/system-tab';
 import { AuditTab } from './tabs/audit-tab';
+import { FeedbackTab } from './tabs/feedback-tab';
 
 interface AdminSettingsTabsProps {
   activeTab: string;
@@ -32,6 +34,7 @@ interface AdminSettingsTabsProps {
     pageSize?: string;
     search?: string;
     status?: string;
+    category?: string;
   };
 }
 
@@ -42,6 +45,7 @@ const TABS = [
   { id: 'analysis', label: 'Analysis', icon: Settings2 },
   { id: 'experiments', label: 'Experiments', icon: FlaskConical },
   { id: 'filtering', label: 'Filtering', icon: Filter },
+  { id: 'feedback', label: 'Feedback', icon: MessageSquare },
   { id: 'system', label: 'System', icon: Activity },
   { id: 'audit', label: 'Audit', icon: History },
 ] as const;
@@ -108,6 +112,10 @@ export function AdminSettingsTabs({
 
         <TabsContent value="filtering">
           <FilteringTab />
+        </TabsContent>
+
+        <TabsContent value="feedback">
+          <FeedbackTab searchParams={searchParams} />
         </TabsContent>
 
         <TabsContent value="system">

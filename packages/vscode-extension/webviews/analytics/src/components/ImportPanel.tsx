@@ -21,7 +21,7 @@ export interface DiscoveredProjectInfo {
 }
 
 export interface ImportStatus {
-  state: "idle" | "scanning" | "selecting" | "importing" | "complete" | "error" | "cancelled";
+  state: "idle" | "scanning" | "selecting" | "project-matching" | "importing" | "complete" | "error" | "cancelled";
   totalSessions: number;
   importedCount: number;
   skippedCount: number;
@@ -31,6 +31,38 @@ export interface ImportStatus {
   progress?: number;
   discoveredProjects?: DiscoveredProjectInfo[];
 }
+
+/**
+ * Existing Contextor project for matching
+ */
+export interface ExistingProject {
+  id: string;
+  name: string;
+}
+
+/**
+ * Team with its projects for grouped display
+ */
+export interface TeamWithProjects {
+  id: string;
+  name: string;
+  projects: ExistingProject[];
+}
+
+/**
+ * Project mapping: local path to existing project ID or null for "create new"
+ */
+export type ProjectMappings = Record<string, string | null>;
+
+/**
+ * Custom names for new projects: local path to custom name
+ */
+export type ProjectCustomNames = Record<string, string>;
+
+/**
+ * Team IDs for new projects: local path to team ID
+ */
+export type ProjectTeamIds = Record<string, string>;
 
 /**
  * Team info for import team selection
@@ -46,10 +78,14 @@ interface ImportPanelProps {
   lastImport?: ImportHistory | null;
   teams?: ImportTeamInfo[];
   teamsLoading?: boolean;
+  allTeamProjects?: TeamWithProjects[];
+  allTeamProjectsLoading?: boolean;
   onStartImport: () => void;
   onCancelImport: () => void;
   onConfirmProjects: (selectedPaths: string[], teamId?: string) => void;
+  onConfirmProjectMappings: (mappings: ProjectMappings, customNames: ProjectCustomNames, teamIds: ProjectTeamIds) => void;
   onFetchTeams?: () => void;
+  onFetchAllTeamProjects?: () => void;
   onResetImport?: () => void;
 }
 
@@ -130,6 +166,279 @@ const ProjectItem: React.FC<{
 };
 
 /**
+ * Get the display name from a path
+ */
+const getDisplayNameFromPath = (path: string): string => {
+  // Extract just the folder name from the path
+  const parts = path.split("/");
+  return parts[parts.length - 1] || path;
+};
+
+/**
+ * Calculate similarity between two strings (0-1, higher = more similar)
+ * Uses a simple approach: lowercase comparison + common substring ratio
+ */
+const calculateSimilarity = (str1: string, str2: string): number => {
+  const s1 = str1.toLowerCase().replace(/[-_\s]/g, "");
+  const s2 = str2.toLowerCase().replace(/[-_\s]/g, "");
+
+  // Exact match
+  if (s1 === s2) return 1;
+
+  // One contains the other
+  if (s1.includes(s2) || s2.includes(s1)) return 0.9;
+
+  // Calculate Levenshtein-like similarity
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+
+  if (longer.length === 0) return 1;
+
+  // Count matching characters
+  let matches = 0;
+  for (let i = 0; i < shorter.length; i++) {
+    if (longer.includes(shorter[i])) matches++;
+  }
+
+  return matches / longer.length;
+};
+
+/**
+ * Find the best matching project for a given path
+ * Returns project ID if similarity > 0.7, otherwise null
+ */
+const findBestMatch = (
+  localPath: string,
+  existingProjects: ExistingProject[]
+): string | null => {
+  const displayName = getDisplayNameFromPath(localPath);
+
+  let bestMatch: { id: string; similarity: number } | null = null;
+
+  for (const project of existingProjects) {
+    const similarity = calculateSimilarity(displayName, project.name);
+    if (similarity > 0.7 && (!bestMatch || similarity > bestMatch.similarity)) {
+      bestMatch = { id: project.id, similarity };
+    }
+  }
+
+  return bestMatch?.id || null;
+};
+
+/**
+ * Project mapping item component - for matching import paths to existing projects
+ * Shows projects grouped by team in dropdown, with team selector for new projects
+ */
+const ProjectMappingItem: React.FC<{
+  localPath: string;
+  allTeamProjects: TeamWithProjects[];
+  selectedProjectId: string | null;
+  selectedTeamId: string;
+  customName: string;
+  onSelect: (projectId: string | null) => void;
+  onTeamChange: (teamId: string) => void;
+  onCustomNameChange: (name: string) => void;
+  onExclude: () => void;
+}> = ({ localPath, allTeamProjects, selectedProjectId, selectedTeamId, customName, onSelect, onTeamChange, onCustomNameChange, onExclude }) => {
+  const displayName = getDisplayNameFromPath(localPath);
+  const isCreatingNew = selectedProjectId === null;
+
+  // Flatten all projects for matching
+  const allProjects = useMemo(() => {
+    const projects: Array<ExistingProject & { teamId: string; teamName: string }> = [];
+    for (const team of allTeamProjects) {
+      for (const project of team.projects) {
+        projects.push({ ...project, teamId: team.id, teamName: team.name });
+      }
+    }
+    return projects;
+  }, [allTeamProjects]);
+
+  return (
+    <div className="project-mapping-item">
+      <div className="mapping-header">
+        <div className="mapping-path">
+          <span className="mapping-full-path">{localPath}</span>
+        </div>
+        <button
+          className="exclude-button"
+          onClick={onExclude}
+          title="Exclude from import"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div className="mapping-controls">
+        <select
+          className="mapping-select"
+          value={selectedProjectId ?? ""}
+          onChange={(e) => onSelect(e.target.value === "" ? null : e.target.value)}
+        >
+          <option value="">Create new project</option>
+          {allTeamProjects.map((team) => (
+            <optgroup key={team.id} label={team.name}>
+              {team.projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+      {isCreatingNew && (
+        <>
+          <div className="mapping-team-select">
+            <label className="mapping-name-label">Team:</label>
+            <select
+              className="mapping-team-dropdown"
+              value={selectedTeamId}
+              onChange={(e) => onTeamChange(e.target.value)}
+            >
+              {allTeamProjects.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mapping-name-input">
+            <label className="mapping-name-label">Project name:</label>
+            <input
+              type="text"
+              className="mapping-name-field"
+              value={customName}
+              onChange={(e) => onCustomNameChange(e.target.value)}
+              placeholder={displayName}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Project matching UI component - maps imported projects to existing ones
+ * Shows all teams' projects grouped in dropdowns
+ */
+const ProjectMatchingPanel: React.FC<{
+  selectedPaths: string[];
+  allTeamProjects: TeamWithProjects[];
+  isLoading: boolean;
+  mappings: ProjectMappings;
+  customNames: ProjectCustomNames;
+  teamIds: ProjectTeamIds;
+  onMappingChange: (path: string, projectId: string | null) => void;
+  onCustomNameChange: (path: string, name: string) => void;
+  onTeamIdChange: (path: string, teamId: string) => void;
+  onExclude: (path: string) => void;
+  onConfirm: () => void;
+  onBack: () => void;
+}> = ({ selectedPaths, allTeamProjects, isLoading, mappings, customNames, teamIds, onMappingChange, onCustomNameChange, onTeamIdChange, onExclude, onConfirm, onBack }) => {
+  // Flatten all projects for smart matching
+  const allProjects = useMemo(() => {
+    const projects: ExistingProject[] = [];
+    for (const team of allTeamProjects) {
+      for (const project of team.projects) {
+        projects.push(project);
+      }
+    }
+    return projects;
+  }, [allTeamProjects]);
+
+  // Apply smart matching when projects load
+  useEffect(() => {
+    if (!isLoading && allProjects.length > 0) {
+      // For each path that doesn't have a mapping yet, try to find a match
+      selectedPaths.forEach(path => {
+        if (mappings[path] === null || mappings[path] === undefined) {
+          const bestMatch = findBestMatch(path, allProjects);
+          if (bestMatch) {
+            onMappingChange(path, bestMatch);
+          }
+        }
+      });
+    }
+  }, [isLoading, allProjects, selectedPaths]); // Intentionally exclude mappings and onMappingChange to avoid loops
+
+  if (isLoading) {
+    return (
+      <div className="project-matching-loading">
+        <div className="loading-spinner" />
+        <p>Loading existing projects...</p>
+      </div>
+    );
+  }
+
+  // Get default team ID (first team)
+  const defaultTeamId = allTeamProjects[0]?.id || "";
+
+  const newProjectCount = selectedPaths.filter(p => mappings[p] === null || mappings[p] === undefined).length;
+  const linkedProjectCount = selectedPaths.filter(p => mappings[p] !== null && mappings[p] !== undefined).length;
+
+  return (
+    <div className="project-matching">
+      <div className="matching-header">
+        <h3 className="matching-title">Link Projects</h3>
+        <p className="matching-description">
+          Link imported projects to existing ones, or create new projects.
+        </p>
+      </div>
+
+      <div className="matching-summary">
+        <span className="summary-item">
+          <span className="summary-value">{linkedProjectCount}</span> linked
+        </span>
+        <span className="summary-separator">|</span>
+        <span className="summary-item">
+          <span className="summary-value">{newProjectCount}</span> new
+        </span>
+      </div>
+
+      <div className="mapping-list">
+        {selectedPaths.map((path) => (
+          <ProjectMappingItem
+            key={path}
+            localPath={path}
+            allTeamProjects={allTeamProjects}
+            selectedProjectId={mappings[path] ?? null}
+            selectedTeamId={teamIds[path] ?? defaultTeamId}
+            customName={customNames[path] ?? getDisplayNameFromPath(path)}
+            onSelect={(projectId) => onMappingChange(path, projectId)}
+            onTeamChange={(teamId) => onTeamIdChange(path, teamId)}
+            onCustomNameChange={(name) => onCustomNameChange(path, name)}
+            onExclude={() => onExclude(path)}
+          />
+        ))}
+      </div>
+
+      {selectedPaths.length === 0 && (
+        <div className="no-projects-message">
+          No projects selected. Go back to select projects.
+        </div>
+      )}
+
+      <div className="matching-footer">
+        <button className="secondary-button" onClick={onBack}>
+          Back
+        </button>
+        <button
+          className="primary-button"
+          onClick={onConfirm}
+          disabled={selectedPaths.length === 0}
+        >
+          Start Import
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/**
  * Project selection list component
  */
 const ProjectSelectionList: React.FC<{
@@ -200,15 +509,22 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
   lastImport,
   teams,
   teamsLoading,
+  allTeamProjects,
+  allTeamProjectsLoading,
   onStartImport,
   onCancelImport,
   onConfirmProjects,
+  onConfirmProjectMappings,
   onFetchTeams,
+  onFetchAllTeamProjects,
   onResetImport,
 }) => {
   const [confirmed, setConfirmed] = useState(false);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>();
+  const [projectMappings, setProjectMappings] = useState<ProjectMappings>({});
+  const [projectCustomNames, setProjectCustomNames] = useState<ProjectCustomNames>({});
+  const [projectTeamIds, setProjectTeamIds] = useState<ProjectTeamIds>({});
 
   // Initialize selected paths when projects are discovered
   useEffect(() => {
@@ -221,6 +537,23 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
       }
     }
   }, [importStatus?.state, importStatus?.discoveredProjects, onFetchTeams]);
+
+  // Initialize project mappings when entering project-matching state
+  useEffect(() => {
+    if (importStatus?.state === "project-matching") {
+      // Initialize all mappings to null (create new project)
+      const initialMappings: ProjectMappings = {};
+      Array.from(selectedPaths).forEach(path => {
+        initialMappings[path] = null;
+      });
+      setProjectMappings(initialMappings);
+
+      // Fetch all team projects for matching
+      if (onFetchAllTeamProjects) {
+        onFetchAllTeamProjects();
+      }
+    }
+  }, [importStatus?.state, selectedPaths, onFetchAllTeamProjects]);
 
   // Set default team when teams are loaded
   useEffect(() => {
@@ -251,8 +584,69 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
     setSelectedPaths(new Set());
   };
 
-  const handleConfirmImport = () => {
+  // Transition to project-matching state
+  const handleConfirmProjectSelection = () => {
     onConfirmProjects(Array.from(selectedPaths), selectedTeamId);
+  };
+
+  // Handle project mapping change
+  const handleMappingChange = (path: string, projectId: string | null) => {
+    setProjectMappings(prev => ({
+      ...prev,
+      [path]: projectId,
+    }));
+  };
+
+  // Handle custom name change for new projects
+  const handleCustomNameChange = (path: string, name: string) => {
+    setProjectCustomNames(prev => ({
+      ...prev,
+      [path]: name,
+    }));
+  };
+
+  // Handle team ID change for new projects
+  const handleTeamIdChange = (path: string, teamId: string) => {
+    setProjectTeamIds(prev => ({
+      ...prev,
+      [path]: teamId,
+    }));
+  };
+
+  // Confirm project mappings and start import
+  const handleConfirmMappings = () => {
+    onConfirmProjectMappings(projectMappings, projectCustomNames, projectTeamIds);
+  };
+
+  // Go back from project-matching to selection
+  const handleBackToSelection = () => {
+    // Reset to selecting state - this will be handled by extension
+    onCancelImport();
+  };
+
+  // Exclude a project from import (in project-matching state)
+  const handleExcludeProject = (path: string) => {
+    setSelectedPaths(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(path);
+      return newSet;
+    });
+    // Also remove from mappings, custom names, and team IDs
+    setProjectMappings(prev => {
+      const newMappings = { ...prev };
+      delete newMappings[path];
+      return newMappings;
+    });
+    setProjectCustomNames(prev => {
+      const newNames = { ...prev };
+      delete newNames[path];
+      return newNames;
+    });
+    setProjectTeamIds(prev => {
+      const newIds = { ...prev };
+      delete newIds[path];
+      return newIds;
+    });
   };
 
   const renderContent = () => {
@@ -333,13 +727,33 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
             </button>
             <button
               className="primary-button"
-              onClick={handleConfirmImport}
+              onClick={handleConfirmProjectSelection}
               disabled={selectedPaths.size === 0}
             >
-              Import {selectedPaths.size} Project{selectedPaths.size !== 1 ? "s" : ""}
+              Continue
             </button>
           </div>
         </div>
+      );
+    }
+
+    // Project matching state
+    if (importStatus?.state === "project-matching") {
+      return (
+        <ProjectMatchingPanel
+          selectedPaths={Array.from(selectedPaths)}
+          allTeamProjects={allTeamProjects || []}
+          isLoading={allTeamProjectsLoading || false}
+          mappings={projectMappings}
+          customNames={projectCustomNames}
+          teamIds={projectTeamIds}
+          onMappingChange={handleMappingChange}
+          onCustomNameChange={handleCustomNameChange}
+          onTeamIdChange={handleTeamIdChange}
+          onExclude={handleExcludeProject}
+          onConfirm={handleConfirmMappings}
+          onBack={handleBackToSelection}
+        />
       );
     }
 
@@ -400,6 +814,9 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({
             setConfirmed(false);
             setSelectedPaths(new Set());
             setSelectedTeamId(undefined);
+            setProjectMappings({});
+            setProjectCustomNames({});
+            setProjectTeamIds({});
             onResetImport?.();
           }}>
             Import More

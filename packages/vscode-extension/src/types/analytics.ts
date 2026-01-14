@@ -8,7 +8,7 @@
 /**
  * Time range options for analytics queries
  */
-export type TimeRange = '1d' | '7d' | '30d';
+export type TimeRange = '1d' | '7d' | '30d' | 'all';
 
 /**
  * Dimension score with trend information

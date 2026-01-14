@@ -486,3 +486,40 @@ development_status:
   # =============================================================================
   epic-29: deferred
   epic-29-retrospective: optional
+
+  # =============================================================================
+  # Epic 30: Conversation Analysis (P1) ✅ COMPLETED
+  # LLM-powered conversation analysis with interactive chat interface.
+  # Enables users to analyze conversations for context-engineering effectiveness.
+  # Story files at: _bmad-output/stories/story-30-*.md
+  # Completed: 2026-01-10
+  # =============================================================================
+  epic-30: done
+  30-1-anthropic-api-integration: done      # Anthropic client with Haiku/Sonnet/Opus, streaming, retry logic
+  30-2-deterministic-stats-service: done    # Instant stats (tokens, tools, agents, duration)
+  30-3-analysis-storage-schema: done        # conversation_analyses table with RLS
+  30-4-token-estimation-service: done       # Token/cost estimation for UI, slash command recognition
+  30-5-conversation-content-extraction: done # Extract & format content for LLM
+  30-6-analysis-panel-ui: done              # Stats panel in right sidebar
+  30-7-interactive-chat-interface: done     # Chat with conversation (streaming), click-to-load past analyses
+  30-8-quick-analysis-buttons: done         # Summarize, Find Issues, Suggestions, Deep Dive
+  epic-30-retrospective: optional
+
+  # =============================================================================
+  # Epic 31: Project Stage Analytics (P2) ✅ COMPLETED
+  # Analyze conversations to detect project stages (dev, debug, test, etc.)
+  # and visualize time distribution across stages.
+  # Story files at: _bmad-output/stories/story-31-*.md
+  # Completed: 2026-01-14
+  # =============================================================================
+  epic-31: done
+  31-1-conversation-aware-stage-detector: done  # Core detection algorithm with state machine, 40 tests
+  31-2-stage-persistence-backfill: done         # Database persistence and batch processing, migrations applied
+  31-3-active-time-calculator: done             # Gap filtering and active time calculation, 48 tests
+  31-4-session-stage-summary: done              # Session-level stage aggregation, 20 tests
+  31-5-project-stage-analytics-api: done        # API endpoints for analytics data, 13 tests
+  31-6-stage-analysis-ui-trigger: done          # "Analyze Stages" button with improved diagnostics
+  31-7-conversation-stage-badges: done          # Multiple stage badges per conversation, 28 tests
+  31-8-project-stage-timeline: done             # Timeline visualization with Recharts, 15 tests
+  31-9-stage-analytics-dashboard: done          # Dashboard with summary cards and charts
+  epic-31-retrospective: optional

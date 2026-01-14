@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Key, Terminal, Clock, Settings } from 'lucide-react';
+import { ArrowLeft, Key, Terminal, Clock, Settings, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { maskApiKey } from '@/lib/utils/api-key';
 import { CliInstructions } from '@/components/onboarding/cli-instructions';
@@ -84,12 +84,20 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             Created {createdDate} in {team?.name || 'Unknown Team'}
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={`/projects/${projectId}/settings`}>
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href={`/projects/${projectId}/stages`}>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Stage Analytics
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/projects/${projectId}/settings`}>
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* API Key Info */}

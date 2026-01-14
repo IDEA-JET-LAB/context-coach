@@ -84,25 +84,110 @@ async function getExistingPromptsByFingerprint(
 }
 
 /**
- * Check which prompts already have responses.
+ * Response metadata for richness comparison.
  */
-async function getPromptsWithResponses(
+interface ExistingResponseMeta {
+  promptId: string;
+  hasThinking: boolean;
+  toolCount: number;
+  model: string | null;
+}
+
+/**
+ * Get existing responses with metadata for richness comparison.
+ */
+async function getExistingResponsesWithMeta(
   promptIds: string[],
   supabase: ReturnType<typeof createAdminClient>
-): Promise<Set<string>> {
-  if (promptIds.length === 0) return new Set();
+): Promise<Map<string, ExistingResponseMeta>> {
+  if (promptIds.length === 0) return new Map();
 
   const { data, error } = await supabase
     .from('prompt_responses')
-    .select('prompt_id')
+    .select('prompt_id, has_thinking, tool_count, model')
     .in('prompt_id', promptIds);
 
   if (error) {
     logger.error('Failed to check existing responses', error);
-    return new Set();
+    return new Map();
   }
 
-  return new Set(data?.map((row) => row.prompt_id) ?? []);
+  const map = new Map<string, ExistingResponseMeta>();
+  data?.forEach((row) => {
+    map.set(row.prompt_id, {
+      promptId: row.prompt_id,
+      hasThinking: row.has_thinking ?? false,
+      toolCount: row.tool_count ?? 0,
+      model: row.model ?? null,
+    });
+  });
+  return map;
+}
+
+/**
+ * Details about why import is richer than existing response.
+ */
+interface EnrichmentReason {
+  isRicher: boolean;
+  reasons: string[];
+  comparison: {
+    existing: { hasThinking: boolean; toolCount: number; model: string | null };
+    import: { hasThinking: boolean; toolCount: number; model: string | null };
+  };
+}
+
+/**
+ * Check if import data is "richer" than existing response.
+ * Richer means: import has thinking when existing doesn't,
+ * OR import has more tools, OR import has model when existing doesn't.
+ * Returns detailed reasons for logging.
+ */
+function checkEnrichmentEligibility(
+  importPair: PromptWithFingerprint,
+  existing: ExistingResponseMeta
+): EnrichmentReason {
+  const reasons: string[] = [];
+  const importHasThinking = Boolean(importPair.response?.thinking);
+  const importToolCount = importPair.response?.tools?.length ?? 0;
+  const importModel = importPair.response?.model ?? null;
+
+  const comparison = {
+    existing: {
+      hasThinking: existing.hasThinking,
+      toolCount: existing.toolCount,
+      model: existing.model,
+    },
+    import: {
+      hasThinking: importHasThinking,
+      toolCount: importToolCount,
+      model: importModel,
+    },
+  };
+
+  if (!importPair.response) {
+    return { isRicher: false, reasons: ['no import response'], comparison };
+  }
+
+  // Import has thinking, existing doesn't
+  if (importHasThinking && !existing.hasThinking) {
+    reasons.push(`thinking: import has thinking, existing doesn't`);
+  }
+
+  // Import has more tools
+  if (importToolCount > existing.toolCount) {
+    reasons.push(`tools: import has ${importToolCount}, existing has ${existing.toolCount}`);
+  }
+
+  // Import has model, existing doesn't
+  if (importModel && !existing.model) {
+    reasons.push(`model: import has "${importModel}", existing has none`);
+  }
+
+  return {
+    isRicher: reasons.length > 0,
+    reasons,
+    comparison,
+  };
 }
 
 /**
@@ -262,13 +347,17 @@ export async function POST(request: NextRequest) {
     const fingerprints = pairs.map((p) => p.fingerprint);
     const existingPrompts = await getExistingPromptsByFingerprint(fingerprints, adminClient);
 
-    // Check which existing prompts already have responses
+    // Get existing responses with metadata for richness comparison
     const existingPromptIds = Array.from(existingPrompts.values());
-    const promptsWithResponses = await getPromptsWithResponses(existingPromptIds, adminClient);
+    const existingResponses = await getExistingResponsesWithMeta(existingPromptIds, adminClient);
 
-    // Separate into new prompts and existing prompts that need responses
+    // Separate into categories:
+    // - newPairs: new prompts to insert
+    // - existingPairsNeedingResponses: existing prompts without responses, import has response
+    // - existingPairsToEnrich: existing prompts with responses, but import has richer data
     const newPairs: PromptWithFingerprint[] = [];
     const existingPairsNeedingResponses: { promptId: string; pair: PromptWithFingerprint }[] = [];
+    const existingPairsToEnrich: { promptId: string; pair: PromptWithFingerprint }[] = [];
     let skippedCount = 0;
 
     for (const pair of pairs) {
@@ -279,10 +368,29 @@ export async function POST(request: NextRequest) {
 
       const existingPromptId = existingPrompts.get(pair.fingerprint);
       if (existingPromptId) {
-        // Prompt exists - check if it needs a response
-        if (!promptsWithResponses.has(existingPromptId) && pair.response) {
+        // Prompt exists - check what action to take
+        const existingResponse = existingResponses.get(existingPromptId);
+
+        if (!existingResponse && pair.response) {
+          // No response exists, import has one - add response
           existingPairsNeedingResponses.push({ promptId: existingPromptId, pair });
+        } else if (existingResponse && pair.response) {
+          // Check if import is richer
+          const enrichmentCheck = checkEnrichmentEligibility(pair, existingResponse);
+          if (enrichmentCheck.isRicher) {
+            // Response exists but import is richer - enrich
+            logger.log('[ENRICHMENT] Prompt eligible for enrichment', {
+              promptId: existingPromptId,
+              promptPreview: pair.prompt.text.substring(0, 80) + '...',
+              reasons: enrichmentCheck.reasons,
+              comparison: enrichmentCheck.comparison,
+            });
+            existingPairsToEnrich.push({ promptId: existingPromptId, pair });
+          } else {
+            skippedCount++;
+          }
         } else {
+          // No import response
           skippedCount++;
         }
       } else {
@@ -294,6 +402,7 @@ export async function POST(request: NextRequest) {
       total: pairs.length,
       newPrompts: newPairs.length,
       existingNeedingResponses: existingPairsNeedingResponses.length,
+      existingToEnrich: existingPairsToEnrich.length,
       skipped: skippedCount,
     });
 
@@ -351,6 +460,7 @@ export async function POST(request: NextRequest) {
 
       const tools = pair.response.tools || [];
       const toolNames = tools.map(t => t.toolName);
+      const hasThinking = Boolean(pair.response.thinking);
 
       try {
         // Insert response with encrypted text and get response ID
@@ -362,7 +472,7 @@ export async function POST(request: NextRequest) {
           p_model: pair.response.model || 'unknown',
           p_tokens_in: pair.response.tokens?.input || 0,
           p_tokens_out: pair.response.tokens?.output || 0,
-          p_has_thinking: false,
+          p_has_thinking: hasThinking,
         });
 
         if (rpcError) {
@@ -419,6 +529,7 @@ export async function POST(request: NextRequest) {
 
       const tools = pair.response.tools || [];
       const toolNames = tools.map(t => t.toolName);
+      const hasThinking = Boolean(pair.response.thinking);
 
       try {
         const { data: responseId, error: rpcError } = await adminClient.rpc('insert_encrypted_response', {
@@ -429,7 +540,7 @@ export async function POST(request: NextRequest) {
           p_model: pair.response.model || 'unknown',
           p_tokens_in: pair.response.tokens?.input || 0,
           p_tokens_out: pair.response.tokens?.output || 0,
-          p_has_thinking: false,
+          p_has_thinking: hasThinking,
         });
 
         if (rpcError) {
@@ -478,6 +589,146 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Enrich existing prompts that have responses but import has richer data
+    // Strategy: DELETE existing response (cascade deletes tool_executions), INSERT new one
+    let enrichedCount = 0;
+    let enrichedToolExecutionsCount = 0;
+
+    logger.log('[ENRICHMENT] Starting enrichment process', {
+      promptsToEnrich: existingPairsToEnrich.length,
+    });
+
+    for (const { promptId, pair } of existingPairsToEnrich) {
+      if (!pair.response) continue;
+
+      const tools = pair.response.tools || [];
+      const toolNames = tools.map(t => t.toolName);
+      const hasThinking = Boolean(pair.response.thinking);
+
+      logger.log('[ENRICHMENT] Processing prompt', {
+        promptId,
+        promptPreview: pair.prompt.text.substring(0, 60),
+        newData: {
+          model: pair.response.model,
+          hasThinking,
+          toolCount: tools.length,
+          tokensIn: pair.response.tokens?.input,
+          tokensOut: pair.response.tokens?.output,
+        },
+      });
+
+      try {
+        // Delete existing response (tool_executions will cascade delete)
+        const { error: deleteError } = await adminClient
+          .from('prompt_responses')
+          .delete()
+          .eq('prompt_id', promptId);
+
+        if (deleteError) {
+          logger.warn('[ENRICHMENT] Failed to delete existing response', {
+            promptId,
+            message: deleteError.message
+          });
+          continue;
+        }
+
+        logger.log('[ENRICHMENT] Deleted old response, inserting new one', { promptId });
+
+        const { data: responseId, error: rpcError } = await adminClient.rpc('insert_encrypted_response', {
+          p_prompt_id: promptId,
+          p_response_text: pair.response.text || null,
+          p_tool_count: tools.length,
+          p_tools_used: toolNames,
+          p_model: pair.response.model || 'unknown',
+          p_tokens_in: pair.response.tokens?.input || 0,
+          p_tokens_out: pair.response.tokens?.output || 0,
+          p_has_thinking: hasThinking,
+        });
+
+        if (rpcError) {
+          logger.warn('Response insert failed during enrichment', {
+            promptId,
+            message: rpcError.message
+          });
+          continue;
+        }
+
+        enrichedCount++;
+
+        logger.log('[ENRICHMENT] Successfully enriched prompt', {
+          promptId,
+          responseId,
+          model: pair.response.model,
+          hasThinking,
+          toolCount: tools.length,
+        });
+
+        // Update prompt metadata (model, tokens, has_thinking)
+        const promptUpdate: Record<string, unknown> = {};
+        if (pair.response.model) promptUpdate.model = pair.response.model;
+        if (pair.response.tokens?.input) promptUpdate.input_tokens = pair.response.tokens.input;
+        if (pair.response.tokens?.output) promptUpdate.output_tokens = pair.response.tokens.output;
+        if (hasThinking) promptUpdate.has_thinking = true;
+
+        if (Object.keys(promptUpdate).length > 0) {
+          const { error: updateError } = await adminClient
+            .from('prompts')
+            .update(promptUpdate)
+            .eq('id', promptId);
+
+          if (updateError) {
+            logger.warn('Failed to update prompt metadata during enrichment', {
+              promptId,
+              message: updateError.message
+            });
+          }
+        }
+
+        // Insert tool executions
+        if (tools.length > 0 && responseId) {
+          const toolExecutions = tools.map((tool, order) => ({
+            response_id: responseId,
+            tool_name: tool.toolName,
+            tool_id: tool.toolId,
+            input_summary: tool.inputSummary,
+            input_full: tool.inputFull || null,
+            output_summary: null,
+            result_matched: false,
+            success: null,
+            execution_order: order + 1,
+          }));
+
+          const { error: toolError } = await adminClient
+            .from('tool_executions')
+            .insert(toolExecutions);
+
+          if (toolError) {
+            logger.warn('Tool executions insert failed during enrichment', {
+              promptId,
+              responseId,
+              message: toolError.message
+            });
+          } else {
+            enrichedToolExecutionsCount += tools.length;
+          }
+        }
+      } catch (err) {
+        logger.warn('[ENRICHMENT] Exception during enrichment', {
+          promptId,
+          error: err instanceof Error ? err.message : String(err)
+        });
+      }
+    }
+
+    if (existingPairsToEnrich.length > 0) {
+      logger.log('[ENRICHMENT] Enrichment process complete', {
+        attempted: existingPairsToEnrich.length,
+        succeeded: enrichedCount,
+        failed: existingPairsToEnrich.length - enrichedCount,
+        toolExecutionsAdded: enrichedToolExecutionsCount,
+      });
+    }
+
     // Queue analysis jobs asynchronously for prompts that need it
     const promptsNeedingAnalysis = insertedPrompts
       ?.filter((p) => p.analysis_status === 'pending')
@@ -496,6 +747,8 @@ export async function POST(request: NextRequest) {
       toolExecutionsInserted: toolExecutionsInsertedCount,
       existingPromptsUpdated: existingResponsesCount,
       existingToolExecutionsInserted: existingToolExecutionsCount,
+      enrichedCount,
+      enrichedToolExecutionsCount,
       analysisQueued: promptsNeedingAnalysis.length,
     });
 
@@ -504,6 +757,7 @@ export async function POST(request: NextRequest) {
       imported: importedCount,
       skipped: skippedCount,
       updated: existingResponsesCount, // Number of existing prompts that got responses added
+      enriched: enrichedCount, // Number of existing prompts that got richer responses
     });
   } catch (error) {
     const err = error as Error;

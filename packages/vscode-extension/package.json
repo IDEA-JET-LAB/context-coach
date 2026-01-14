@@ -2,7 +2,7 @@
   "name": "contextor-vscode",
   "displayName": "Contextor - Prompt Analytics",
   "description": "Track, analyze, and improve your AI prompting skills. Real-time analytics dashboard with 5-dimension scoring, personalized coaching tips, and team insights - all directly in VS Code.",
-  "version": "0.1.20",
+  "version": "0.1.47",
   "publisher": "ideajetlab",
   "license": "MIT",
   "repository": {
@@ -127,6 +127,10 @@
         "command": "contextor.openWebApp",
         "title": "Contextor: Open Web Dashboard",
         "icon": "$(globe)"
+      },
+      {
+        "command": "contextor.checkForUpdates",
+        "title": "Contextor: Check for Updates"
       }
     ],
     "menus": {
@@ -148,8 +152,8 @@
       "properties": {
         "contextor.apiEndpoint": {
           "type": "string",
-          "default": "http://127.0.0.1:3050/api",
-          "description": "API endpoint URL for Contextor service. Change for self-hosted installations.",
+          "default": "https://contextor.co/api",
+          "description": "API endpoint URL for Contextor service. Use http://127.0.0.1:3050/api for local development.",
           "format": "uri"
         },
         "contextor.refreshInterval": {

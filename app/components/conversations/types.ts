@@ -13,6 +13,7 @@ export type ProjectStage =
   | "implementation"
   | "testing"
   | "documentation"
+  | "deployment"
   | "review"
   | "refactoring"
   | "exploration"
@@ -25,6 +26,37 @@ export type PromptType =
   | "correction"
   | "confirmation"
   | "clarification";
+
+/**
+ * Stage data within a session stage breakdown.
+ */
+export interface StageData {
+  /** Number of prompts in this stage */
+  promptCount: number;
+  /** Active work minutes in this stage */
+  activeMinutes: number;
+  /** Percentage of total active time */
+  percentage: number;
+}
+
+/**
+ * Complete stage breakdown for a session.
+ * Matches the structure from lib/analysis/stage-summary.ts.
+ */
+export interface SessionStageBreakdown {
+  /** Stage-by-stage breakdown */
+  stages: Record<string, StageData>;
+  /** Total active work minutes */
+  totalActiveMinutes: number;
+  /** Total number of prompts */
+  totalPrompts: number;
+  /** Number of stage transitions */
+  transitionCount: number;
+  /** Number of gaps > 30 min filtered out */
+  gapsExcluded: number;
+  /** When this analysis was performed */
+  analyzedAt: string;
+}
 
 export interface ConversationSummary {
   id: string;
@@ -46,6 +78,8 @@ export interface ConversationSummary {
   claudeCodeVersion: string | null;
   /** Whether this conversation was imported (vs live captured) */
   isImported: boolean;
+  /** Stage breakdown with time and prompt counts per stage */
+  stageBreakdown?: SessionStageBreakdown | null;
 }
 
 export interface ConversationMessage {
@@ -133,6 +167,7 @@ export interface StageBreakdown {
   implementation: number;
   testing: number;
   documentation: number;
+  deployment: number;
   review: number;
   refactoring: number;
   exploration: number;
@@ -188,6 +223,11 @@ export const STAGE_CONFIG: Record<
     label: "Documentation",
     color: "text-muted-foreground",
     bgColor: "bg-muted/50",
+  },
+  deployment: {
+    label: "Deployment",
+    color: "text-score-high",
+    bgColor: "bg-score-high/20",
   },
   review: {
     label: "Review",

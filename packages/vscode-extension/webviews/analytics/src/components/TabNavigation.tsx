@@ -19,6 +19,9 @@ interface TabNavigationProps {
   isImporting?: boolean;
   lastContextorTab?: TabId;
   lastBmadTab?: TabId;
+  // Environment toggle
+  apiEndpoint?: string;
+  onToggleEnvironment?: () => void;
 }
 
 // Icons
@@ -105,7 +108,6 @@ const contextorTabs: Tab[] = [
   { id: "team", label: "Team", icon: <TeamIcon /> },
   { id: "lastPrompt", label: "Last Prompt", icon: <LastPromptIcon /> },
   { id: "conversations", label: "Conversations", icon: <ConversationsIcon /> },
-  { id: "sessions", label: "Sessions", icon: <SessionsIcon /> },
   { id: "import", label: "Import", icon: <ImportIcon /> },
 ];
 
@@ -129,6 +131,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   isImporting = false,
   lastContextorTab = "analytics",
   lastBmadTab = "documents",
+  apiEndpoint = "",
+  onToggleEnvironment,
 }) => {
   const activeSection = getSection(activeTab);
   const secondaryTabs = activeSection === "bmad" ? bmadTabs : contextorTabs;
@@ -159,6 +163,16 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
         >
           BMAD
         </button>
+        {/* Environment Toggle - positioned at far right */}
+        {onToggleEnvironment && (
+          <button
+            className={`header-env-toggle ${apiEndpoint.includes("localhost") || apiEndpoint.includes("127.0.0.1") ? "dev" : "prod"}`}
+            onClick={onToggleEnvironment}
+            title={`Server: ${apiEndpoint}\nClick to switch environment`}
+          >
+            {apiEndpoint.includes("localhost") || apiEndpoint.includes("127.0.0.1") ? "DEV" : "PROD"}
+          </button>
+        )}
       </div>
 
       {/* Secondary tabs (page selector) */}

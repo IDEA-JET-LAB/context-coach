@@ -14,6 +14,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Route segment config for handling large payloads
+export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes for large imports
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createScopedLogger } from '@/lib/utils/logger';
 import { calculateWordCount } from '@/lib/capture/word-count';
@@ -35,6 +39,23 @@ interface ImportUploadRequest {
     fileName: string;
     content: string;
   }>;
+  /**
+   * Optional project mappings: local path to existing project ID.
+   * - null = create new project
+   * - string = use existing project ID
+   */
+  projectMappings?: Record<string, string | null>;
+  /**
+   * Optional custom names for new projects (local path -> custom name).
+   * Only used when projectMappings[path] is null (creating new project).
+   */
+  projectCustomNames?: Record<string, string>;
+  /**
+   * Optional team IDs for new projects (local path -> team ID).
+   * Allows creating projects in different teams.
+   * Only used when projectMappings[path] is null (creating new project).
+   */
+  projectTeamIds?: Record<string, string>;
 }
 
 interface ParsedMessage {
@@ -489,16 +510,39 @@ export async function POST(request: NextRequest) {
     // Parse JSON body
     let body: ImportUploadRequest;
     try {
-      body = await request.json() as ImportUploadRequest;
+      // Get raw text first for debugging
+      const rawText = await request.text();
+      logger.log('Request body received', {
+        contentLength: rawText.length,
+        contentType: request.headers.get('Content-Type'),
+        firstChars: rawText.substring(0, 100),
+        lastChars: rawText.substring(Math.max(0, rawText.length - 100)),
+      });
+
+      if (!rawText || rawText.trim() === '') {
+        logger.error('Empty request body received');
+        return NextResponse.json(
+          { success: false, error: 'Empty request body' },
+          { status: 400 }
+        );
+      }
+
+      body = JSON.parse(rawText) as ImportUploadRequest;
     } catch (parseError) {
-      logger.error('Failed to parse request body', { error: String(parseError) });
+      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+      const errorStack = parseError instanceof Error ? parseError.stack : undefined;
+      logger.error('Failed to parse request body', {
+        errorMessage,
+        errorStack,
+        errorType: parseError?.constructor?.name,
+      });
       return NextResponse.json(
-        { success: false, error: 'Invalid JSON body' },
+        { success: false, error: `Invalid JSON body: ${errorMessage}` },
         { status: 400 }
       );
     }
 
-    const { teamId, files } = body;
+    const { teamId, files, projectMappings, projectCustomNames, projectTeamIds } = body;
 
     if (!teamId) {
       return NextResponse.json(
@@ -555,14 +599,47 @@ export async function POST(request: NextRequest) {
     const projectPathToId = new Map<string, string>();
 
     for (const localPath of uniqueProjectPaths) {
-      // Extract project name from path (last folder name)
-      const projectName = localPath.split('/').filter(Boolean).pop() || 'Imported Project';
+      // Get project name: use custom name if provided, otherwise extract from path
+      const defaultName = localPath.split('/').filter(Boolean).pop() || 'Imported Project';
+      const projectName = projectCustomNames?.[localPath]?.trim() || defaultName;
+
+      // Get target team ID: use projectTeamIds if provided for new projects, otherwise fall back to main teamId
+      const targetTeamId = projectTeamIds?.[localPath] || teamId;
+
+      // Check if user has explicitly mapped this path to an existing project
+      const explicitMapping = projectMappings?.[localPath];
+
+      if (explicitMapping && explicitMapping !== null) {
+        // User explicitly linked to an existing project
+        // Verify the project exists (team verification is relaxed since projects are shown grouped by team in UI)
+        const { data: linkedProject } = await adminClient
+          .from('projects')
+          .select('id, team_id')
+          .eq('id', explicitMapping)
+          .eq('is_archived', false)
+          .single();
+
+        if (linkedProject) {
+          projectPathToId.set(localPath, linkedProject.id);
+          logger.log('Using user-linked existing project', {
+            localPath,
+            projectId: linkedProject.id,
+            projectTeamId: linkedProject.team_id,
+          });
+          continue;
+        } else {
+          logger.warn('User-linked project not found or invalid, will create new', {
+            localPath,
+            linkedId: explicitMapping,
+          });
+        }
+      }
 
       // Check if we already have a project with this import_source_path
       const { data: existingProject } = await adminClient
         .from('projects')
         .select('id')
-        .eq('team_id', teamId)
+        .eq('team_id', targetTeamId)
         .eq('is_archived', false)
         .contains('metadata', { import_source_path: localPath })
         .limit(1)
@@ -581,11 +658,12 @@ export async function POST(request: NextRequest) {
         const apiKeyHash = hashApiKey(apiKey);
         const apiKeyPrefix = getApiKeyPrefix(apiKey);
 
+        // NOTE: Project name NO LONGER includes "(Imported)" suffix
         const { data: newProject, error: createError } = await adminClient
           .from('projects')
           .insert({
-            team_id: teamId,
-            name: `${projectName} (Imported)`,
+            team_id: targetTeamId,  // Use target team ID from projectTeamIds or fallback to main teamId
+            name: projectName,  // Clean name, no suffix
             description: `Imported from: ${localPath}`,
             is_archived: false,
             api_key_hash: apiKeyHash,
@@ -603,11 +681,11 @@ export async function POST(request: NextRequest) {
             localPath,
             error: createError,
           });
-          // Fall back to default project
+          // Fall back to default project in target team
           const { data: defaultProject } = await adminClient
             .from('projects')
             .select('id')
-            .eq('team_id', teamId)
+            .eq('team_id', targetTeamId)
             .eq('is_archived', false)
             .limit(1)
             .single();
@@ -620,7 +698,7 @@ export async function POST(request: NextRequest) {
           logger.log('Created new Contextor project for import', {
             localPath,
             projectId: newProject.id,
-            projectName: `${projectName} (Imported)`,
+            projectName,
           });
         }
       }

@@ -4,7 +4,7 @@ import { ErrorState } from "./components/ErrorState";
 import { Loading } from "./components/Loading";
 import { TabNavigation, type TabId } from "./components/TabNavigation";
 import { SessionsPanel, type Session } from "./components/SessionsPanel";
-import { ImportPanel, type ImportStatus, type ImportHistory } from "./components/ImportPanel";
+import { ImportPanel, type ImportStatus, type ImportHistory, type ExistingProject, type ProjectMappings, type ProjectCustomNames, type ProjectTeamIds, type TeamWithProjects } from "./components/ImportPanel";
 import { LastPromptPanel, type LastPromptData } from "./components/LastPromptPanel";
 import { CommandsPanel } from "./components/CommandsPanel";
 import { ConversationsPanel } from "./components/ConversationsPanel";
@@ -13,6 +13,7 @@ import { NotInstalledPanel } from "./components/NotInstalledPanel";
 import { DocumentsPanel, type DocumentItem, type ProjectDocument } from "./components/DocumentsPanel";
 import { BmadSettingsPanel, type BmadVersionInfo } from "./components/BmadSettingsPanel";
 import { TeamPanel, type TeamStatsData, type TeamTimeRange, type TeamInfo } from "./components/TeamPanel";
+import { FeedbackPanel, type FeedbackCategory } from "./components/FeedbackPanel";
 import type { DimensionScore, PromptDimensions } from "../../shared/types";
 
 // ============================================
@@ -143,7 +144,15 @@ type ExtensionMessage =
   | { type: "teams"; teams: TeamInfo[] }
   | { type: "teams-loading"; isLoading: boolean }
   | { type: "team-stats"; data: TeamStatsData }
-  | { type: "team-stats-loading"; isLoading: boolean };
+  | { type: "team-stats-loading"; isLoading: boolean }
+  // Feedback messages
+  | { type: "feedback-submitted"; success: boolean; message?: string }
+  | { type: "feedback-loading"; isLoading: boolean }
+  // Team projects for import matching (all teams grouped)
+  | { type: "import-all-team-projects"; teams: TeamWithProjects[] }
+  | { type: "import-all-team-projects-loading"; isLoading: boolean }
+  // Environment info
+  | { type: "environment-info"; apiEndpoint: string };
 
 type WebviewMessage =
   | { type: "refresh" }
@@ -161,7 +170,9 @@ type WebviewMessage =
   | { type: "start-import" }
   | { type: "cancel-import" }
   | { type: "confirm-import-projects"; selectedPaths: string[]; teamId?: string }
+  | { type: "confirm-project-mappings"; mappings: ProjectMappings; customNames: ProjectCustomNames; teamIds: ProjectTeamIds }
   | { type: "fetch-import-teams" }
+  | { type: "fetch-all-team-projects" }
   // Last prompt messages
   | { type: "fetch-last-prompt" }
   // Status messages
@@ -190,8 +201,12 @@ type WebviewMessage =
   // Team stats actions
   | { type: "fetch-teams" }
   | { type: "fetch-team-stats"; teamId?: string; timeRange?: TeamTimeRange }
+  // Feedback actions
+  | { type: "submit-feedback"; category: string; message: string }
   // Global actions
-  | { type: "open-web" };
+  | { type: "open-web" }
+  // Environment toggle
+  | { type: "set-environment"; isDevelopment: boolean };
 
 // ============================================
 // App State
@@ -217,6 +232,10 @@ interface AppState {
   lastImport: ImportHistory | null;
   importTeams: Array<{ id: string; name: string }>;
   importTeamsLoading: boolean;
+  allTeamProjects: TeamWithProjects[];
+  allTeamProjectsLoading: boolean;
+  importSelectedPaths: string[];
+  importSelectedTeamId: string | undefined;
   // Last Prompt
   lastPrompt: LastPromptData | null;
   lastPromptLoading: boolean;
@@ -258,6 +277,12 @@ interface AppState {
   signupEmail: string;
   signupPassword: string;
   signupConfirmPassword: string;
+  // Feedback state
+  feedbackOpen: boolean;
+  feedbackLoading: boolean;
+  feedbackResult: { success: boolean; message: string } | null;
+  // Environment
+  apiEndpoint: string;
 }
 
 const initialState: AppState = {
@@ -276,6 +301,10 @@ const initialState: AppState = {
   lastImport: null,
   importTeams: [],
   importTeamsLoading: false,
+  allTeamProjects: [],
+  allTeamProjectsLoading: false,
+  importSelectedPaths: [],
+  importSelectedTeamId: undefined,
   lastPrompt: null,
   lastPromptLoading: false,
   // Project Status
@@ -321,6 +350,12 @@ const initialState: AppState = {
   signupEmail: "",
   signupPassword: "",
   signupConfirmPassword: "",
+  // Feedback state
+  feedbackOpen: false,
+  feedbackLoading: false,
+  feedbackResult: null,
+  // Environment
+  apiEndpoint: "https://contextor.co/api",
 };
 
 // ============================================
@@ -584,6 +619,21 @@ const App: React.FC = () => {
           }));
           break;
 
+        case "import-all-team-projects":
+          setState((prev) => ({
+            ...prev,
+            allTeamProjects: message.teams || [],
+            allTeamProjectsLoading: false,
+          }));
+          break;
+
+        case "import-all-team-projects-loading":
+          setState((prev) => ({
+            ...prev,
+            allTeamProjectsLoading: message.isLoading,
+          }));
+          break;
+
         // Last prompt messages
         case "last-prompt":
           setState((prev) => ({
@@ -793,6 +843,33 @@ const App: React.FC = () => {
             signupLoading: message.isLoading,
           }));
           break;
+
+        // Feedback messages
+        case "feedback-submitted":
+          setState((prev) => ({
+            ...prev,
+            feedbackResult: {
+              success: message.success,
+              message: message.message || (message.success ? "Thank you!" : "Failed to submit"),
+            },
+            feedbackLoading: false,
+          }));
+          break;
+
+        case "feedback-loading":
+          setState((prev) => ({
+            ...prev,
+            feedbackLoading: message.isLoading,
+          }));
+          break;
+
+        // Environment info
+        case "environment-info":
+          setState((prev) => ({
+            ...prev,
+            apiEndpoint: message.apiEndpoint,
+          }));
+          break;
       }
     };
 
@@ -960,19 +1037,38 @@ const App: React.FC = () => {
   }, []);
 
   const handleConfirmProjects = useCallback((selectedPaths: string[], teamId?: string) => {
+    // Store selected paths and team, then tell extension to transition to project-matching state
+    setState((prev) => ({
+      ...prev,
+      importSelectedPaths: selectedPaths,
+      importSelectedTeamId: teamId,
+    }));
     vscodeRef.current?.postMessage({ type: "confirm-import-projects", selectedPaths, teamId } satisfies WebviewMessage);
+  }, []);
+
+  const handleConfirmProjectMappings = useCallback((mappings: ProjectMappings, customNames: ProjectCustomNames, teamIds: ProjectTeamIds) => {
+    vscodeRef.current?.postMessage({ type: "confirm-project-mappings", mappings, customNames, teamIds } satisfies WebviewMessage);
   }, []);
 
   const handleFetchImportTeams = useCallback(() => {
     vscodeRef.current?.postMessage({ type: "fetch-import-teams" } satisfies WebviewMessage);
   }, []);
 
+  const handleFetchAllTeamProjects = useCallback(() => {
+    setState((prev) => ({ ...prev, allTeamProjectsLoading: true }));
+    vscodeRef.current?.postMessage({ type: "fetch-all-team-projects" } satisfies WebviewMessage);
+  }, []);
+
   const handleResetImport = useCallback(() => {
     setState((prev) => ({
       ...prev,
       importStatus: null,
-      importTeams: undefined,
+      importTeams: [],
       importTeamsLoading: false,
+      allTeamProjects: [],
+      allTeamProjectsLoading: false,
+      importSelectedPaths: [],
+      importSelectedTeamId: undefined,
     }));
   }, []);
 
@@ -1136,6 +1232,37 @@ const App: React.FC = () => {
     vscodeRef.current?.postMessage({ type: "open-web" } satisfies WebviewMessage);
   }, []);
 
+  // Environment toggle handler
+  const handleToggleEnvironment = useCallback(() => {
+    const isDevelopment = !state.apiEndpoint.includes("localhost") && !state.apiEndpoint.includes("127.0.0.1");
+    vscodeRef.current?.postMessage({ type: "set-environment", isDevelopment } satisfies WebviewMessage);
+  }, [state.apiEndpoint]);
+
+  // Feedback handlers
+  const handleOpenFeedback = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      feedbackOpen: true,
+      feedbackResult: null,
+    }));
+  }, []);
+
+  const handleCloseFeedback = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      feedbackOpen: false,
+      feedbackResult: null,
+    }));
+  }, []);
+
+  const handleSubmitFeedback = useCallback((category: FeedbackCategory, message: string) => {
+    vscodeRef.current?.postMessage({
+      type: "submit-feedback",
+      category,
+      message,
+    } satisfies WebviewMessage);
+  }, []);
+
   // Render based on state
   if (state.isLoading) {
     return <Loading />;
@@ -1148,7 +1275,17 @@ const App: React.FC = () => {
   if (!state.isAuthenticated) {
     return (
       <div className="welcome-container">
-        <h2>Welcome to Contextor</h2>
+        <div className="welcome-header">
+          <h2>Welcome to Contextor</h2>
+          {/* Environment toggle for switching between dev/prod when server is down */}
+          <button
+            className={`header-env-toggle ${state.apiEndpoint.includes("localhost") || state.apiEndpoint.includes("127.0.0.1") ? "dev" : "prod"}`}
+            onClick={handleToggleEnvironment}
+            title={`Server: ${state.apiEndpoint}\nClick to switch environment`}
+          >
+            {state.apiEndpoint.includes("localhost") || state.apiEndpoint.includes("127.0.0.1") ? "DEV" : "PROD"}
+          </button>
+        </div>
         <p>Track and improve your AI prompting skills.</p>
 
         {/* Server status warning */}
@@ -1316,6 +1453,8 @@ const App: React.FC = () => {
         isImporting={isImporting}
         lastContextorTab={state.lastContextorTab}
         lastBmadTab={state.lastBmadTab}
+        apiEndpoint={state.apiEndpoint}
+        onToggleEnvironment={handleToggleEnvironment}
       />
 
       <div className="tab-content">
@@ -1377,10 +1516,14 @@ const App: React.FC = () => {
             lastImport={state.lastImport}
             teams={state.importTeams}
             teamsLoading={state.importTeamsLoading}
+            allTeamProjects={state.allTeamProjects}
+            allTeamProjectsLoading={state.allTeamProjectsLoading}
             onStartImport={handleStartImport}
             onCancelImport={handleCancelImport}
             onConfirmProjects={handleConfirmProjects}
+            onConfirmProjectMappings={handleConfirmProjectMappings}
             onFetchTeams={handleFetchImportTeams}
+            onFetchAllTeamProjects={handleFetchAllTeamProjects}
             onResetImport={handleResetImport}
           />
         )}
@@ -1452,10 +1595,28 @@ const App: React.FC = () => {
             <span className="footer-project-name">{state.workspaceStatus.projectName}</span>
           </>
         )}
-        {state.extensionVersion && (
-          <span className="footer-version">v{state.extensionVersion}</span>
-        )}
+        <div className="footer-right">
+          <button
+            className="footer-feedback-btn"
+            onClick={handleOpenFeedback}
+            title="Send Feedback"
+          >
+            Feedback
+          </button>
+          {state.extensionVersion && (
+            <span className="footer-version">v{state.extensionVersion}</span>
+          )}
+        </div>
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackPanel
+        isOpen={state.feedbackOpen}
+        isLoading={state.feedbackLoading}
+        onClose={handleCloseFeedback}
+        onSubmit={handleSubmitFeedback}
+        submitResult={state.feedbackResult}
+      />
     </div>
   );
 };

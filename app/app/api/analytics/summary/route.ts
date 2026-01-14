@@ -49,30 +49,36 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = tokenData.user_id;
-    const range = request.nextUrl.searchParams.get("range") || "7d";
+    const range = request.nextUrl.searchParams.get("range") || "all";
     const projectId = request.nextUrl.searchParams.get("project_id");
 
-    // Calculate date range
+    // Calculate date range (null means all time)
     const now = new Date();
-    let startDate: Date;
+    let startDate: Date | null = null;
     switch (range) {
       case "1d":
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
+      case "7d":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
       case "30d":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
-      default: // 7d
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case "all":
+      default:
+        startDate = null; // No date filter for all time
     }
 
     // First, get the actual count of prompts (no Supabase 1000 row limit)
     let countQuery = adminClient
       .from("prompts")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", startDate.toISOString());
+      .eq("user_id", userId);
 
+    if (startDate) {
+      countQuery = countQuery.gte("created_at", startDate.toISOString());
+    }
     if (projectId) {
       countQuery = countQuery.eq("project_id", projectId);
     }
@@ -95,9 +101,11 @@ export async function GET(request: NextRequest) {
           dimension_scores
         )
       `)
-      .eq("user_id", userId)
-      .gte("created_at", startDate.toISOString());
+      .eq("user_id", userId);
 
+    if (startDate) {
+      promptsQuery = promptsQuery.gte("created_at", startDate.toISOString());
+    }
     if (projectId) {
       promptsQuery = promptsQuery.eq("project_id", projectId);
     }

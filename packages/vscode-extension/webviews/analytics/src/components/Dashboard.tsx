@@ -32,6 +32,19 @@ interface DashboardProps {
   onRefresh?: () => void;
 }
 
+/**
+ * Format time range for display
+ */
+function formatTimeRange(range: string): string {
+  switch (range) {
+    case '1d': return 'Last 24 hours';
+    case '7d': return 'Last 7 days';
+    case '30d': return 'Last 30 days';
+    case 'all': return 'All time';
+    default: return range;
+  }
+}
+
 export const Dashboard: React.FC<DashboardProps> = ({
   analytics,
   user,
@@ -125,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="stat-label">Total Prompts</span>
           </div>
           <div className="stat-card">
-            <span className="stat-value">All time</span>
+            <span className="stat-value">{formatTimeRange(summary.timeRange)}</span>
             <span className="stat-label">Time Range</span>
           </div>
         </div>

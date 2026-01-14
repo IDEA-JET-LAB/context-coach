@@ -95,7 +95,7 @@ export class AuthService {
     // Subscribe to settings changes for API endpoint
     const settingsDisposable = this.settingsService.onDidChange((changes) => {
       if (changes.apiEndpoint) {
-        this.log(`API endpoint updated to: ${changes.apiEndpoint}`);
+        this.log(`Data API endpoint updated to: ${changes.apiEndpoint} (auth always uses production)`);
       }
     });
     this.disposables.push(settingsDisposable);
@@ -103,7 +103,23 @@ export class AuthService {
   }
 
   /**
-   * Gets the current API endpoint from settings.
+   * Production API endpoint for authentication.
+   * Auth always uses production because user identity doesn't change between environments.
+   * Only data queries should switch based on DEV/PROD toggle.
+   */
+  private readonly PROD_API_ENDPOINT = "https://contextor.co/api";
+
+  /**
+   * Gets the API endpoint for authentication operations.
+   * Always uses production to avoid state mismatch issues when switching environments.
+   */
+  private get authEndpoint(): string {
+    return this.PROD_API_ENDPOINT;
+  }
+
+  /**
+   * Gets the current API endpoint from settings (for non-auth operations).
+   * @deprecated Use authEndpoint for auth operations
    */
   private get apiEndpoint(): string {
     return this.settingsService.apiEndpoint;
@@ -129,9 +145,9 @@ export class AuthService {
       const state = this.generateState();
       await this.secrets.store(KEYS.PENDING_STATE, state);
 
-      // Build the authorization URL
+      // Build the authorization URL - always use production for auth
       const redirectUri = this.getCallbackUri();
-      const authorizeUrl = new URL(`${this.apiEndpoint}/auth/vscode/authorize`);
+      const authorizeUrl = new URL(`${this.authEndpoint}/auth/vscode/authorize`);
       authorizeUrl.searchParams.set("state", state);
       authorizeUrl.searchParams.set("redirect_uri", redirectUri);
 
@@ -282,28 +298,45 @@ export class AuthService {
   async getAccessToken(): Promise<string | undefined> {
     const accessToken = await this.secrets.get(KEYS.ACCESS_TOKEN);
     if (!accessToken) {
+      this.log("getAccessToken: No access token stored");
       return undefined;
     }
 
     // Check if token needs refresh
     const expiryStr = await this.secrets.get(KEYS.TOKEN_EXPIRY);
-    if (expiryStr) {
-      const expiry = parseInt(expiryStr, 10);
-      const now = Date.now();
+    const now = Date.now();
 
-      // Refresh if within buffer window
-      if (now >= expiry - TOKEN_REFRESH_BUFFER_SECONDS * 1000) {
-        this.log("Access token expired or expiring soon, attempting refresh");
-        const refreshed = await this.refreshAccessToken();
-        if (refreshed) {
-          return this.secrets.get(KEYS.ACCESS_TOKEN);
-        }
-        // Refresh failed, clear tokens
-        await this.logout();
-        return undefined;
+    // If no expiry stored, treat token as potentially expired and try refresh
+    if (!expiryStr) {
+      this.log("getAccessToken: No expiry stored, attempting refresh to validate token");
+      const refreshed = await this.refreshAccessToken();
+      if (refreshed) {
+        return this.secrets.get(KEYS.ACCESS_TOKEN);
       }
+      // Refresh failed - token might still work, return it and let the API decide
+      this.log("getAccessToken: Refresh failed, returning existing token");
+      return accessToken;
     }
 
+    const expiry = parseInt(expiryStr, 10);
+    const timeUntilExpiry = expiry - now;
+    const bufferMs = TOKEN_REFRESH_BUFFER_SECONDS * 1000;
+
+    // Refresh if within buffer window (60 seconds before expiry)
+    if (now >= expiry - bufferMs) {
+      this.log(`getAccessToken: Token expired or expiring in ${Math.round(timeUntilExpiry / 1000)}s, attempting refresh`);
+      const refreshed = await this.refreshAccessToken();
+      if (refreshed) {
+        this.log("getAccessToken: Refresh successful, returning new token");
+        return this.secrets.get(KEYS.ACCESS_TOKEN);
+      }
+      // Refresh failed, clear tokens and prompt re-login
+      this.log("getAccessToken: Refresh failed, logging out");
+      await this.logout();
+      return undefined;
+    }
+
+    this.log(`getAccessToken: Token valid for ${Math.round(timeUntilExpiry / 1000)}s`);
     return accessToken;
   }
 
@@ -337,7 +370,7 @@ export class AuthService {
 
     try {
       this.log("User profile not cached, fetching from API");
-      const response = await fetch(`${this.apiEndpoint}/auth/vscode/me`, {
+      const response = await fetch(`${this.authEndpoint}/auth/vscode/me`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -447,7 +480,7 @@ export class AuthService {
     code: string,
     state: string
   ): Promise<TokenResponse> {
-    const response = await fetch(`${this.apiEndpoint}/auth/vscode/token`, {
+    const response = await fetch(`${this.authEndpoint}/auth/vscode/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -472,14 +505,14 @@ export class AuthService {
   private async refreshAccessToken(): Promise<boolean> {
     const refreshToken = await this.secrets.get(KEYS.REFRESH_TOKEN);
     if (!refreshToken) {
-      this.log("No refresh token available");
+      this.log("refreshAccessToken: No refresh token available");
       return false;
     }
 
     try {
-      this.log("Attempting token refresh");
+      this.log(`refreshAccessToken: Attempting refresh via ${this.authEndpoint}/auth/vscode/refresh`);
 
-      const response = await fetch(`${this.apiEndpoint}/auth/vscode/refresh`, {
+      const response = await fetch(`${this.authEndpoint}/auth/vscode/refresh`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -488,8 +521,14 @@ export class AuthService {
       });
 
       if (!response.ok) {
-        const errorBody = (await response.json()) as ApiError;
-        this.log(`Token refresh failed: ${errorBody.error?.message}`);
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorBody = (await response.json()) as ApiError;
+          errorMessage = `${errorBody.error?.code}: ${errorBody.error?.message}`;
+        } catch {
+          // Couldn't parse error body
+        }
+        this.log(`refreshAccessToken: Failed - ${errorMessage}`);
         return false;
       }
 
@@ -505,10 +544,11 @@ export class AuthService {
         this.secrets.store(KEYS.TOKEN_EXPIRY, expiryTime.toString()),
       ]);
 
-      this.log("Token refresh successful");
+      this.log(`refreshAccessToken: Success, new token expires in ${refreshResponse.expires_in}s`);
       return true;
     } catch (error) {
-      this.logError("Token refresh error", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.log(`refreshAccessToken: Network error - ${errorMsg}`);
       return false;
     }
   }
@@ -526,7 +566,7 @@ export class AuthService {
     this.log(`Starting signup for: ${email}`);
 
     try {
-      const response = await fetch(`${this.apiEndpoint}/auth/vscode/signup`, {
+      const response = await fetch(`${this.authEndpoint}/auth/vscode/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -595,8 +635,8 @@ export class AuthService {
   async signupWithGoogle(): Promise<void> {
     this.log("Opening Google signup in browser");
 
-    // Open the web app's signup page with OAuth focus
-    const signupUrl = new URL(`${this.apiEndpoint.replace("/api", "")}/signup`);
+    // Open the web app's signup page with OAuth focus - always use production
+    const signupUrl = new URL(`${this.authEndpoint.replace("/api", "")}/signup`);
     signupUrl.searchParams.set("from", "vscode");
 
     const opened = await vscode.env.openExternal(

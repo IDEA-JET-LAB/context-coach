@@ -165,6 +165,19 @@ export interface ExtractedToolUse {
 }
 
 /**
+ * Thinking content extracted from assistant messages.
+ * Matches structure from live capture hook.
+ */
+export interface ExtractedThinking {
+  /** Full thinking text content */
+  text: string;
+  /** Summary of the thinking (first 200 chars) */
+  summary: string;
+  /** Word count of thinking content */
+  wordCount: number;
+}
+
+/**
  * A parsed message from JSONL transcript.
  * Story 17-3: Batch Import Processing
  */
@@ -186,6 +199,8 @@ export interface ParsedMessage {
   };
   /** Tool usage (for assistant messages) */
   tools?: ExtractedToolUse[];
+  /** Thinking content (for assistant messages with extended thinking) */
+  thinking?: ExtractedThinking;
 }
 
 /**
@@ -219,6 +234,8 @@ export interface PromptResponsePair {
     };
     /** Tools used in this response */
     tools?: ExtractedToolUse[];
+    /** Thinking content (if extended thinking was used) */
+    thinking?: ExtractedThinking;
   };
 }
 
@@ -355,6 +372,7 @@ export interface BatchUploadRequest {
 /**
  * Response from batch upload API.
  * Story 17-3: Batch Import Processing
+ * Updated: Import Enrichment story - added enriched count
  */
 export interface BatchUploadResponse {
   /** Whether the batch was processed successfully */
@@ -363,8 +381,10 @@ export interface BatchUploadResponse {
   imported: number;
   /** Number of prompts skipped (duplicates) */
   skipped: number;
-  /** Number of existing prompts that got responses added */
+  /** Number of existing prompts that got responses added (no prior response) */
   updated?: number;
+  /** Number of existing prompts that got richer responses (had response, replaced with better) */
+  enriched?: number;
   /** Error message if batch failed */
   error?: string;
 }

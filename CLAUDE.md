@@ -35,6 +35,106 @@ Format:
 
 ---
 
+## CRITICAL: Agent Operational Guidelines
+
+**All agents in this project MUST follow these operational requirements.**
+
+### Mandatory Playwright Testing Before Feature Completion
+
+**No feature is "done" until it has been tested programmatically with Playwright or automated tests.**
+
+| Requirement | Description |
+|-------------|-------------|
+| **E2E Testing** | All new features MUST have Playwright E2E tests before marking complete |
+| **Test Before User** | NEVER pass a feature to the end user until automated tests verify it works |
+| **Test Coverage** | Include happy path, error cases, and edge cases |
+| **Run Tests** | Execute `cd app && npm test` and ensure all tests pass |
+
+```bash
+# Run all tests before declaring a feature complete
+cd app && npm test
+
+# Run specific test file for the feature
+cd app && npm test -- e2e/your-feature.spec.ts
+
+# Use headed mode to debug
+cd app && npm run test:headed
+```
+
+**Why:** Manual testing is error-prone and time-consuming. Automated tests catch regressions and verify functionality consistently.
+
+### Subagent Parallelization for Efficiency
+
+**Use subagents (Task tool) to parallelize work and preserve main agent context window.**
+
+| Guideline | Description |
+|-----------|-------------|
+| **Parallelize Independent Tasks** | When tasks have no dependencies, launch multiple subagents simultaneously |
+| **Use Opus 4.5 for Subagents** | Specify `model: "opus"` for subagents to maintain quality while preserving main context |
+| **Preserve Main Context** | Offload research, exploration, and independent implementation to subagents |
+| **Single Message, Multiple Tasks** | Launch parallel subagents in ONE message with multiple Task tool calls |
+
+**Example - Parallel Subagent Usage:**
+```
+User: "Add login and signup pages"
+
+# CORRECT - Launch both in parallel in ONE message:
+<Task 1: subagent_type="general-purpose" model="opus" prompt="Implement login page...">
+<Task 2: subagent_type="general-purpose" model="opus" prompt="Implement signup page...">
+
+# WRONG - Sequential when parallel is possible:
+<Task 1: ...login...>
+[wait for result]
+<Task 2: ...signup...>
+```
+
+**When to Use Subagents:**
+- Exploring multiple files/directories simultaneously
+- Implementing independent components
+- Running tests while continuing development
+- Research tasks that don't block other work
+
+### Agent Self-Sufficiency Requirements
+
+**Agents MUST handle these tasks automatically - NEVER ask the user to do them.**
+
+| Action | Agent Responsibility |
+|--------|---------------------|
+| **VS Code Extension Version** | ALWAYS bump version in `packages/vscode-extension/package.json` when making changes |
+| **Extension Installation** | ALWAYS build and install the extension BEFORE telling user to test it |
+| **Dev Server** | ALWAYS start the dev server when needed for testing - don't ask user |
+| **Port Checks** | Check if port is available, use alternative if occupied |
+
+**VS Code Extension Workflow:**
+```bash
+# 1. Bump version (patch/minor/major as appropriate)
+cd packages/vscode-extension && npm version patch
+
+# 2. Build the extension
+npm run compile && npm run package
+
+# 3. Install it locally
+code --install-extension contextor-vscode-*.vsix --force
+
+# 4. THEN tell user to reload VS Code window to test
+```
+
+**Dev Server Workflow:**
+```bash
+# Check if port 3050 is in use
+lsof -i :3050
+
+# Start dev server (in background if needed for parallel testing)
+cd app && npm run dev -- -p 3050
+
+# Or use alternative port if 3050 is occupied
+cd app && npm run dev -- -p 3051
+```
+
+**Why:** The user should focus on reviewing results, not running commands. Agents must be self-sufficient and prepare everything before presenting to the user.
+
+---
+
 ## CRITICAL: API Endpoint Convention
 
 **This is a common source of bugs. All agents MUST understand this.**

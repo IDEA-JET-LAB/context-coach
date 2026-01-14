@@ -6,6 +6,7 @@ import { Bot, User, GitBranch, Cpu, Zap, ChevronDown, ChevronUp, MessageSquare, 
 import { PromptTypeBadge } from "./PromptTypeBadge";
 import { ScoreBadge } from "@/components/feed/score-badge";
 import { ThinkingSummary } from "./ThinkingSummary";
+import { CollapsiblePastedContent } from "./CollapsiblePastedContent";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ConversationMessage,
@@ -91,9 +92,7 @@ function UserMessageBubble({
 
           {/* Content */}
           <div className="px-3 py-2">
-            <p className="text-sm text-foreground whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
+            <CollapsiblePastedContent content={message.content} />
           </div>
 
           {/* Metadata Footer */}

@@ -37,6 +37,8 @@ import {
 import Link from "next/link";
 import { useConversation } from "@/lib/hooks/use-conversations";
 import { useRealtimeConversationThread } from "@/lib/hooks/use-realtime-conversations";
+import { useSelectedProject } from "@/lib/hooks/use-selected-project";
+import { ConversationStatsPanel, AnalysisChatPanel } from "@/components/conversations/analysis";
 
 interface ConversationThreadClientProps {
   sessionId: string;
@@ -70,6 +72,14 @@ export function ConversationThreadClient({
   // Extract data from response
   const conversation = data?.data?.conversation;
   const apiMessages = data?.data?.messages || [];
+
+  // Sync project selection in header when conversation loads
+  const { setProjectId } = useSelectedProject();
+  useEffect(() => {
+    if (conversation?.projectId) {
+      setProjectId(conversation.projectId);
+    }
+  }, [conversation?.projectId, setProjectId]);
 
   // Map API messages to component type
   const messages: ConversationMessage[] = useMemo(() => {
@@ -623,6 +633,12 @@ export function ConversationThreadClient({
                 </CardContent>
               </Card>
             )}
+
+            {/* Session Stats Panel - Story 30-6 */}
+            <ConversationStatsPanel sessionId={sessionId} />
+
+            {/* Analysis Chat Panel - Story 30-7 */}
+            <AnalysisChatPanel sessionId={sessionId} teamId={teamId} />
           </div>
         </aside>
       </div>

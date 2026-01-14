@@ -14,6 +14,7 @@
  */
 
 import * as vscode from "vscode";
+import { chmod } from "fs/promises";
 import { AuthService } from "../services/auth";
 import { ContextorAPI } from "../services/api";
 import { SettingsService } from "../services/settings";
@@ -111,6 +112,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    * Discovered projects cache for import selection.
    */
   private _discoveredProjects?: DiscoveredProject[];
+
+  /**
+   * Selected project paths for import (after project selection, before mapping).
+   */
+  private _importSelectedPaths: string[] = [];
+
+  /**
+   * Selected team ID for import.
+   */
+  private _importSelectedTeamId?: string;
 
   /**
    * Workspace config service for reading project ID.
@@ -537,6 +548,12 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
           } as ExtensionToWebviewMessage);
         }
 
+        // Send current environment info
+        this.postMessage({
+          type: "environment-info",
+          apiEndpoint: this.getCurrentApiEndpoint(),
+        } as ExtensionToWebviewMessage);
+
         // Reset import state on init (fix stuck spinner after reload)
         this.postMessage({
           type: "import-status",
@@ -626,7 +643,9 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
       case "open-web":
         this.log("Open web requested from webview");
-        vscode.env.openExternal(vscode.Uri.parse(this.settingsService.apiEndpoint.replace('/api', '')));
+        const webUrl = this.getCurrentApiEndpoint().replace('/api', '');
+        this.log(`Opening web URL: ${webUrl}`);
+        vscode.env.openExternal(vscode.Uri.parse(webUrl));
         break;
 
       case "signup":
@@ -685,6 +704,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       case "fetch-import-teams":
         this.log("Fetch import teams requested");
         await this.handleFetchImportTeams();
+        break;
+
+      case "fetch-all-team-projects":
+        this.log("Fetch all team projects requested for import matching");
+        await this.handleFetchAllTeamProjects();
+        break;
+
+      case "confirm-project-mappings":
+        this.log(`Confirm project mappings: ${Object.keys(message.mappings).length} mappings`);
+        await this.handleConfirmProjectMappings(message.mappings, message.customNames || {}, message.teamIds || {});
         break;
 
       // Last prompt message handler
@@ -804,6 +833,16 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       case "fetch-team-stats":
         this.log("Team stats requested");
         await this.handleFetchTeamStats(message.teamId, message.timeRange);
+        break;
+
+      case "submit-feedback":
+        this.log("Feedback submission requested");
+        await this.handleSubmitFeedback(message.category, message.message);
+        break;
+
+      case "set-environment":
+        this.log(`Environment toggle requested: isDevelopment=${message.isDevelopment}`);
+        await this.handleSetEnvironment(message.isDevelopment);
         break;
     }
   }
@@ -1042,8 +1081,6 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
    * @param teamId - Optional team ID to import to
    */
   private async handleConfirmImportProjects(selectedPaths: string[], teamId?: string): Promise<void> {
-    const importService = this.getImportService();
-
     if (!this._discoveredProjects) {
       this.logError("No discovered projects to import", null);
       this.postMessage({
@@ -1059,12 +1096,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    // Filter to only selected projects
-    const projectsToImport = this._discoveredProjects.filter(p =>
-      selectedPaths.includes(p.path)
-    );
-
-    if (projectsToImport.length === 0) {
+    if (selectedPaths.length === 0) {
       this.log("No projects selected for import");
       this.postMessage({
         type: "import-status",
@@ -1078,9 +1110,122 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       return;
     }
 
+    // Store selected paths and team for later use when project mappings are confirmed
+    this._importSelectedPaths = selectedPaths;
+    this._importSelectedTeamId = teamId;
+
+    // Transition to project-matching state
+    this.log(`Transitioning to project-matching state for ${selectedPaths.length} projects`);
+    this.postMessage({
+      type: "import-status",
+      status: {
+        state: "project-matching",
+        totalSessions: 0,
+        importedCount: 0,
+        skippedCount: 0,
+        statusMessage: "Select how to link projects...",
+      },
+    } as ExtensionToWebviewMessage);
+  }
+
+  /**
+   * Handles fetching all team projects for import matching.
+   * Returns all teams with their projects for grouped display.
+   */
+  private async handleFetchAllTeamProjects(): Promise<void> {
+    this.postMessage({
+      type: "import-all-team-projects-loading",
+      isLoading: true,
+    } as ExtensionToWebviewMessage);
+
     try {
-      this.log(`Starting import of ${projectsToImport.length} projects${teamId ? ` to team ${teamId}` : ""}...`);
-      const result = await importService.startImport(projectsToImport, teamId);
+      const importService = this.getImportService();
+      const teams = await importService.fetchAllTeamProjects();
+
+      if (!teams) {
+        this.log("Failed to fetch team projects or no teams found");
+        this.postMessage({
+          type: "import-all-team-projects",
+          teams: [],
+        } as ExtensionToWebviewMessage);
+      } else {
+        const totalProjects = teams.reduce((sum, t) => sum + t.projects.length, 0);
+        this.log(`Found ${teams.length} team(s) with ${totalProjects} project(s)`);
+        this.postMessage({
+          type: "import-all-team-projects",
+          teams: teams,
+        } as ExtensionToWebviewMessage);
+      }
+    } catch (error) {
+      this.logError("Failed to fetch team projects", error);
+      this.postMessage({
+        type: "import-all-team-projects",
+        teams: [],
+      } as ExtensionToWebviewMessage);
+    } finally {
+      this.postMessage({
+        type: "import-all-team-projects-loading",
+        isLoading: false,
+      } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles confirmed project mappings and starts the actual import.
+   * @param mappings - Project path to existing project ID mappings (null = create new)
+   * @param customNames - Custom project names for new projects (path -> name)
+   * @param teamIds - Team IDs for new projects (path -> teamId)
+   */
+  private async handleConfirmProjectMappings(
+    mappings: Record<string, string | null>,
+    customNames: Record<string, string>,
+    teamIds: Record<string, string> = {}
+  ): Promise<void> {
+    const importService = this.getImportService();
+
+    if (!this._discoveredProjects || this._importSelectedPaths.length === 0) {
+      this.logError("No projects to import", null);
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "error",
+          totalSessions: 0,
+          importedCount: 0,
+          skippedCount: 0,
+          errorMessage: "No projects selected. Please start over.",
+        },
+      } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    // Filter to only selected projects
+    const projectsToImport = this._discoveredProjects.filter(p =>
+      this._importSelectedPaths.includes(p.path)
+    );
+
+    if (projectsToImport.length === 0) {
+      this.log("No projects to import after filtering");
+      this.postMessage({
+        type: "import-status",
+        status: {
+          state: "idle",
+          totalSessions: 0,
+          importedCount: 0,
+          skippedCount: 0,
+        },
+      } as ExtensionToWebviewMessage);
+      return;
+    }
+
+    try {
+      this.log(`Starting import of ${projectsToImport.length} projects with mappings...`);
+      const result = await importService.startImport(
+        projectsToImport,
+        this._importSelectedTeamId,
+        mappings,
+        customNames,
+        teamIds
+      );
 
       // Show completion message and save history
       if (result.state === "complete") {
@@ -1101,8 +1246,10 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
         );
       }
 
-      // Clear cached projects
+      // Clear cached projects and import state
       this._discoveredProjects = undefined;
+      this._importSelectedPaths = [];
+      this._importSelectedTeamId = undefined;
     } catch (error) {
       this.logError("Failed to import projects", error);
       this.postMessage({
@@ -1130,8 +1277,10 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       this.log("Import cancelled by user");
     }
 
-    // Clear cached projects and reset state
+    // Clear cached projects and import state
     this._discoveredProjects = undefined;
+    this._importSelectedPaths = [];
+    this._importSelectedTeamId = undefined;
     this.postMessage({
       type: "import-status",
       status: {
@@ -1709,7 +1858,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
       );
       if (action === "Open Web App") {
         const config = vscode.workspace.getConfiguration("contextor");
-        const apiEndpoint = config.get<string>("apiEndpoint", "http://127.0.0.1:3050/api");
+        const apiEndpoint = config.get<string>("apiEndpoint", "https://contextor.co/api");
         const webUrl = apiEndpoint.replace("/api", "");
         vscode.env.openExternal(vscode.Uri.parse(`${webUrl}/dashboard/settings/team`));
       }
@@ -1748,7 +1897,7 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
 
     if (selectedTeam.teamId === "__create_new__") {
       const config = vscode.workspace.getConfiguration("contextor");
-      const apiEndpoint = config.get<string>("apiEndpoint", "http://127.0.0.1:3050/api");
+      const apiEndpoint = config.get<string>("apiEndpoint", "https://contextor.co/api");
       const webUrl = apiEndpoint.replace("/api", "");
       vscode.env.openExternal(vscode.Uri.parse(`${webUrl}/teams/new`));
       return;
@@ -1819,11 +1968,26 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
             };
             const userPath = vscode.Uri.joinPath(contextorDir, ".user");
             await vscode.workspace.fs.writeFile(userPath, Buffer.from(JSON.stringify(userConfig, null, 2), "utf-8"));
-            this.log(`User config saved to: ${userPath.fsPath}`);
+
+            // Set restrictive file permissions (0600 - owner read/write only) to protect API key
+            // This matches the CLI behavior in packages/cli/src/lib/config.ts
+            try {
+              await chmod(userPath.fsPath, 0o600);
+              this.log(`User config saved with restricted permissions: ${userPath.fsPath}`);
+            } catch (permError) {
+              // Permission setting may fail on some platforms, but file is still created
+              this.log(`User config saved (permissions not set): ${userPath.fsPath}`);
+            }
 
             // Install capture hook
             await this.installCaptureHook(workspacePath);
             this.log("Capture hook installed");
+
+            // Ensure .contextor/.user is in .gitignore (matches CLI behavior)
+            const gitignoreUpdated = await this.ensureGitignore(workspacePath);
+            if (gitignoreUpdated) {
+              this.log("Added .contextor/.user to .gitignore");
+            }
           } else {
             this.log("Warning: Could not parse install token");
           }
@@ -2939,6 +3103,59 @@ export class AnalyticsPanelProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * Ensure .contextor/.user is in .gitignore to prevent API key from being committed.
+   * IMPORTANT: This must be kept in sync with packages/cli/src/lib/gitignore.ts ensureGitignore()
+   * See CLAUDE.md "Hook Script Sync Requirements" section for maintenance instructions.
+   * @returns true if .gitignore was modified, false otherwise
+   */
+  private async ensureGitignore(workspacePath: string): Promise<boolean> {
+    const workspaceUri = vscode.Uri.file(workspacePath);
+    const gitignorePath = vscode.Uri.joinPath(workspaceUri, ".gitignore");
+    const gitignoreEntry = ".contextor/.user";
+
+    let content = "";
+    let exists = false;
+
+    try {
+      const fileContent = await vscode.workspace.fs.readFile(gitignorePath);
+      content = Buffer.from(fileContent).toString("utf-8");
+      exists = true;
+    } catch {
+      exists = false;
+    }
+
+    // Check if entry is already covered by existing patterns
+    const lines = content.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Skip comments and empty lines
+      if (trimmed.startsWith("#") || trimmed === "") continue;
+      // Check for exact match or broader patterns
+      if (
+        trimmed === gitignoreEntry ||
+        trimmed === ".contextor/" ||
+        trimmed === ".contextor" ||
+        trimmed === ".contextor/*"
+      ) {
+        return false; // Already covered
+      }
+    }
+
+    // Add entry to gitignore
+    let newContent: string;
+    if (!content.trim()) {
+      newContent = `# Contextor user configuration (personal, not shared)\n${gitignoreEntry}\n`;
+    } else {
+      // Ensure file ends with newline before adding our entry
+      const base = content.endsWith("\n") ? content : content + "\n";
+      newContent = base + `\n# Contextor user configuration\n${gitignoreEntry}\n`;
+    }
+
+    await vscode.workspace.fs.writeFile(gitignorePath, Buffer.from(newContent, "utf-8"));
+    return true;
+  }
+
+  /**
    * Generate the capture script content.
    * IMPORTANT: This must be kept in sync with packages/cli/src/lib/hooks.ts getCaptureScriptContent()
    * See CLAUDE.md "Hook Script Sync Requirements" section for maintenance instructions.
@@ -3848,6 +4065,127 @@ exit 0
       this.logError("Failed to fetch team stats", error);
       this.postMessage({ type: "team-stats-loading", isLoading: false } as ExtensionToWebviewMessage);
     }
+  }
+
+  // ============================================
+  // Feedback Methods
+  // ============================================
+
+  /**
+   * Handles feedback submission from the webview.
+   */
+  private async handleSubmitFeedback(category: string, message: string): Promise<void> {
+    this.postMessage({ type: "feedback-loading", isLoading: true } as ExtensionToWebviewMessage);
+
+    try {
+      const accessToken = await this.authService.getAccessToken();
+      if (!accessToken) {
+        this.postMessage({
+          type: "feedback-submitted",
+          success: false,
+          message: "Not authenticated. Please sign in first.",
+        } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      const apiEndpoint = this.settingsService.apiEndpoint;
+
+      const response = await fetch(`${apiEndpoint}/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          category,
+          message,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || "Failed to submit feedback";
+        this.postMessage({
+          type: "feedback-submitted",
+          success: false,
+          message: errorMessage,
+        } as ExtensionToWebviewMessage);
+        return;
+      }
+
+      const data = await response.json();
+      this.postMessage({
+        type: "feedback-submitted",
+        success: true,
+        message: data?.data?.message || "Thank you for your feedback!",
+      } as ExtensionToWebviewMessage);
+
+      this.log("Feedback submitted successfully");
+    } catch (error) {
+      this.logError("Failed to submit feedback", error);
+      this.postMessage({
+        type: "feedback-submitted",
+        success: false,
+        message: "Failed to submit feedback. Please try again.",
+      } as ExtensionToWebviewMessage);
+    } finally {
+      this.postMessage({ type: "feedback-loading", isLoading: false } as ExtensionToWebviewMessage);
+    }
+  }
+
+  /**
+   * Handles environment toggle request from the webview.
+   * Switches between production and development API endpoints.
+   */
+  private async handleSetEnvironment(isDevelopment: boolean): Promise<void> {
+    const newEndpoint = isDevelopment
+      ? "http://127.0.0.1:3050/api"
+      : "https://contextor.co/api";
+
+    this.log(`Switching environment to: ${newEndpoint}`);
+
+    // Store in extension's global state (reliable persistence)
+    if (this.globalState) {
+      await this.globalState.update("contextor.apiEndpoint", newEndpoint);
+      this.log(`Saved endpoint to globalState: ${newEndpoint}`);
+    }
+
+    // Also try to update VS Code settings (may not always work)
+    try {
+      const config = vscode.workspace.getConfiguration("contextor");
+      await config.update("apiEndpoint", newEndpoint, vscode.ConfigurationTarget.Global);
+    } catch (error) {
+      this.log(`VS Code config update failed (using globalState instead): ${error}`);
+    }
+
+    // Send updated endpoint back to webview
+    this.postMessage({
+      type: "environment-info",
+      apiEndpoint: newEndpoint,
+    } as ExtensionToWebviewMessage);
+
+    // Show notification
+    vscode.window.showInformationMessage(
+      `Contextor switched to ${isDevelopment ? "Development" : "Production"} mode`
+    );
+
+    // Re-check auth state with new endpoint
+    await this.sendAuthState();
+  }
+
+  /**
+   * Gets the current API endpoint, checking globalState first, then VS Code config.
+   */
+  private getCurrentApiEndpoint(): string {
+    // First check globalState (our reliable storage)
+    if (this.globalState) {
+      const savedEndpoint = this.globalState.get<string>("contextor.apiEndpoint");
+      if (savedEndpoint) {
+        return savedEndpoint;
+      }
+    }
+    // Fall back to VS Code config
+    return this.settingsService.apiEndpoint;
   }
 
   /**

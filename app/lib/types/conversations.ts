@@ -19,6 +19,7 @@ export type ProjectStage =
   | 'refactoring'
   | 'testing'
   | 'documentation'
+  | 'deployment'
   | 'review'
   | 'exploration'
   | 'unknown';
@@ -37,6 +38,7 @@ export interface StageBreakdown {
   refactoring?: number;
   testing?: number;
   documentation?: number;
+  deployment?: number;
   review?: number;
   exploration?: number;
   unknown?: number;
